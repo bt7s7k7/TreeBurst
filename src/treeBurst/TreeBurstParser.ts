@@ -1,0 +1,85 @@
+import { isWord } from "../comTypes/util"
+import { NUMBER_PRIMITIVE } from "../primitiveParser/NumberPrimitive"
+import { PredicatePrimitive } from "../primitiveParser/PredicatePrimitive"
+import { Primitive, SKIP } from "../primitiveParser/Primitive"
+import { PrimitiveParser } from "../primitiveParser/PrimitiveParser"
+import { STRING_PRIMITIVE } from "../primitiveParser/StringPrimitive"
+import { TreeNode } from "./TreeNode"
+
+export class TreeBurstParser extends PrimitiveParser {
+    public parse() {
+        const result = this.parsePrimitive(TreeBurstParser.NODE)
+        if (result == SKIP) {
+            this.unexpectedToken()
+            return null
+        }
+
+        this.skipWhitespace()
+        if (!this.isDone()) {
+            this.unexpectedToken()
+        }
+
+        return result
+    }
+}
+
+export namespace TreeBurstParser {
+    export const WORD = new PredicatePrimitive((v, i) => v[i] == "." || v[i] == "/" || isWord(v, i))
+
+    export const NODE_CHILD = Primitive.create(parser => {
+        const start = parser.index
+        let name = parser.parsePrimitive(WORD)
+
+        if (name != SKIP) {
+            if (!parser.consume(":")) {
+                parser.index = start
+                name = SKIP
+            }
+        }
+
+        parser.skipWhitespace()
+
+        const child = parser.parsePrimitive(NODE)
+        if (child == SKIP) {
+            if (name != SKIP) {
+                parser.unexpectedToken()
+                return { name, child: TreeNode.default() }
+            }
+
+            return SKIP
+        }
+
+        return { name: name == SKIP ? null : name, child }
+    })
+
+    export const NODE_VALUE = [NUMBER_PRIMITIVE, STRING_PRIMITIVE, WORD]
+    export const NODE = Primitive.create(parser => {
+        let value = parser.parsePrimitives(NODE_VALUE)
+
+        const node = new TreeNode({
+            value: value == SKIP ? null : value,
+            children: null,
+            entries: null,
+        })
+
+        parser.skipWhitespace()
+        if (parser.consume("{")) {
+            for (const { name, child } of parser.parsePrimitivesUntil("}", [NODE_CHILD])) {
+                if (name == null) {
+                    node.addChild(child)
+                } else {
+                    node.setEntry(name, child)
+                }
+
+                parser.skipWhitespace()
+                parser.consume(",")
+            }
+        } else {
+            if (value == SKIP) {
+                return SKIP
+            }
+        }
+
+        return node
+    })
+}

@@ -500,6 +500,25 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@types/codemirror@5":
+  version "5.60.15"
+  resolved "https://registry.yarnpkg.com/@types/codemirror/-/codemirror-5.60.15.tgz#0f82be6f4126d1e59cf4c4830e56dcd49d3c3e8a"
+  integrity sha512-dTOvwEQ+ouKJ/rE9LT1Ue2hmP6H1mZv5+CCnNWu2qtiOe2LQa9lCprEY20HxiDmV/Bxh+dXjywmy5aKvoGjULA==
+  dependencies:
+    "@types/tern" "*"
+
+"@types/estree@*":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@types/estree/-/estree-1.0.7.tgz#4158d3105276773d5b7695cd4834b1722e4f37a8"
+  integrity sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==
+
+"@types/tern@*":
+  version "0.23.9"
+  resolved "https://registry.yarnpkg.com/@types/tern/-/tern-0.23.9.tgz#6f6093a4a9af3e6bb8dde528e024924d196b367c"
+  integrity sha512-ypzHFE/wBzh+BlH6rrBgS5I/Z7RD21pGhZ2rltb/+ZrVM1awdZwjx7hE5XfuYgHWk9uvV5HLZN3SloevCAp3Bw==
+  dependencies:
+    "@types/estree" "*"
+
 "@typescript-eslint/eslint-plugin@^8.13.0":
   version "8.32.0"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.32.0.tgz#86630dd3084f9d6c4239bbcd6a7ee1a7ee844f7f"
@@ -871,6 +890,11 @@ cliui@^8.0.1:
     string-width "^4.2.0"
     strip-ansi "^6.0.1"
     wrap-ansi "^7.0.0"
+
+codemirror@5:
+  version "5.65.19"
+  resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.65.19.tgz#71016c701d6a4b6e1982b0f6e7186be65e49653d"
+  integrity sha512-+aFkvqhaAVr1gferNMuN8vkTSrWIFvzlMV9I2KBLCWS2WpZ2+UAkZjlMZmEuT+gcXTi6RrGQCkWq1/bDtGqhIA==
 
 color-convert@^1.9.0:
   version "1.9.3"
