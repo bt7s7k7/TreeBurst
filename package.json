@@ -13,7 +13,7 @@
         "sass": "^1.63.6",
         "typescript": "^5.1.6",
         "@types/codemirror": "5",
-        "vite": "^4.4.3"
+        "vite": "^4.5.14"
     },
     "scripts": {
         "dev": "concurrently --raw --kill-others \"vite\" \"tsc --noEmit --watch --incremental --preserveWatchOutput\"",
