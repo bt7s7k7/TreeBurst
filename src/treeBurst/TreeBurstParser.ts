@@ -9,7 +9,13 @@ import { TreeNode } from "./TreeNode"
 export class TreeBurstParser extends PrimitiveParser {
     public parse() {
         const result = this.parsePrimitive(TreeBurstParser.NODE)
+
+
         if (result == SKIP) {
+            if (this.isDone()) {
+                return TreeNode.withValue(null)
+            }
+
             this.unexpectedToken()
             return null
         }
@@ -56,11 +62,8 @@ export namespace TreeBurstParser {
     export const NODE = Primitive.create(parser => {
         let value = parser.parsePrimitives(NODE_VALUE)
 
-        const node = new TreeNode({
-            value: value == SKIP ? null : value,
-            children: null,
-            entries: null,
-        })
+        const node = TreeNode.withValue(value == SKIP ? null : value)
+        node.position = parser.getTokenPosition()
 
         parser.skipWhitespace()
         if (parser.consume("{")) {

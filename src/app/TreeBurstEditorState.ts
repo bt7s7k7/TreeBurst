@@ -1,20 +1,27 @@
+import { h } from "vue"
 import { EditorState } from "../editor/useEditorState"
 import { Diagnostic } from "../primitiveParser/Diagnostic"
 import { InputDocument } from "../primitiveParser/InputDocument"
 import { diagnosticToHtml, inspectToHtml } from "../primitiveParser/interop"
 import { TreeBurstParser } from "../treeBurst/TreeBurstParser"
 import { TreeNode } from "../treeBurst/TreeNode"
+import { TreeBurstSimulatorView } from "./TreeBurstSimulatorView"
 
 export class TreeBurstEditorState extends EditorState {
     public result: TreeNode | null = null
     public _load: string | null = null
     public diagnostics: Diagnostic[] = []
+    public iteration = 0
 
     public getOutput(): EditorState.OutputTab[] {
         return [
             {
                 name: "ast", label: "AST",
                 content: this._load ?? "",
+            },
+            {
+                name: "run", label: "Run",
+                content: () => this.result ? h(TreeBurstSimulatorView, { state: this, key: this.iteration }) : null,
             },
         ]
     }
@@ -23,6 +30,7 @@ export class TreeBurstEditorState extends EditorState {
         this.ready = true
         this.result = null
         this._load = null
+        this.iteration++
 
         const input = new InputDocument("anon", code)
         const parser = new TreeBurstParser(input)
