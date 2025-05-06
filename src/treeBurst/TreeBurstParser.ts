@@ -57,6 +57,7 @@ export namespace TreeBurstParser {
         let value = parser.parsePrimitives(NODE_VALUE)
 
         const node = new TreeNode({
+            flags: 0,
             value: value == SKIP ? null : value,
             children: null,
             entries: null,
