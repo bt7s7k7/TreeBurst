@@ -8,7 +8,7 @@ export const Editor = (defineComponent({
         const editorState = new TreeBurstEditorState()
 
         return () => (
-            <EditorView state={editorState} root localStorageId="tree-burst:editor"></EditorView>
+            <EditorView state={editorState} root mode="tree-burst" localStorageId="tree-burst:editor"></EditorView>
         )
     },
 }))

@@ -1,3 +1,4 @@
+import CodeMirror from "codemirror"
 import { h } from "vue"
 import { EditorState } from "../editor/useEditorState"
 import { Diagnostic } from "../primitiveParser/Diagnostic"
@@ -5,7 +6,10 @@ import { InputDocument } from "../primitiveParser/InputDocument"
 import { diagnosticToHtml, inspectToHtml } from "../primitiveParser/interop"
 import { TreeBurstParser } from "../treeBurst/TreeBurstParser"
 import { TreeNode } from "../treeBurst/TreeNode"
+import { TREE_BURST_MODE } from "./TreeBurstMode"
 import { TreeBurstSimulatorView } from "./TreeBurstSimulatorView"
+
+CodeMirror.defineSimpleMode("tree-burst", TREE_BURST_MODE)
 
 export class TreeBurstEditorState extends EditorState {
     public result: TreeNode | null = null
