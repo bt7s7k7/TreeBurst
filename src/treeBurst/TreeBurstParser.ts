@@ -59,9 +59,24 @@ export namespace TreeBurstParser {
     })
 
     export const NODE_VALUE = [NUMBER_PRIMITIVE, STRING_PRIMITIVE, WORD]
-    export const NODE = Primitive.create(parser => {
+    export const NODE = Primitive.create((parser): TreeNode | typeof SKIP => {
+        if (parser.consume("!")) {
+            const forceConstant = parser.matches("#")
+            const node = parser.parsePrimitive(NODE)
+            if (node == SKIP) return SKIP
 
-        const modifier = parser.consume(["#", "!", "$"])
+            if (node.value == null && !forceConstant) {
+                node.setValue(".x")
+                return node
+            } else {
+                const container = TreeNode.withValue(".x")
+                container.position = node.position
+                container.addChild(node)
+                return container
+            }
+        }
+
+        const modifier = parser.consume(["#", "$"])
 
         let value = parser.parsePrimitives(NODE_VALUE)
 
@@ -95,18 +110,6 @@ export namespace TreeBurstParser {
         } else {
             if (value == SKIP) {
                 return SKIP
-            }
-        }
-
-        if (modifier == "!") {
-            if (node.value == null) {
-                node.setValue(".x")
-                return node
-            } else {
-                const container = TreeNode.withValue(".x")
-                container.position = node.position
-                container.addChild(node)
-                return container
             }
         }
 
