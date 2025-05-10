@@ -8,8 +8,20 @@ import { Type } from "../struct/Type"
 import { UnionType } from "../struct/UnionType"
 import { Path } from "./TreeBurst"
 
-export const TreeNodeValue_t = UnionType.create(Type.string, Type.number).as(Type.nullable)
+export class TreeNodeRef extends Struct.define("TreeNodeRef", class {
+    public readonly target: TreeNode = Struct.field(TreeNode.ref())
+}) {
+    public [LogMarker.CUSTOM](ctx: ObjectDescription.Context) {
+        return LogMarker.raw([
+            ...LogMarker.textSegment("(ref) "),
+            ObjectDescription.inspectObject(this.target, ctx),
+        ])
+    }
+}
+
+export const TreeNodeValue_t = UnionType.create(Type.string, Type.number, TreeNodeRef.ref()).as(Type.nullable)
 export type TreeNodeValue = Type.Extract<typeof TreeNodeValue_t>
+export type TreeNodeKey = string | number
 
 export class TreeNode extends Struct.define("TreeNode", class {
     public flags = Struct.field(Type.number)
@@ -69,7 +81,7 @@ export class TreeNode extends Struct.define("TreeNode", class {
         this.flags = flags | (revision << 16)
     }
 
-    public setValue(value: string | number | null) {
+    public setValue(value: TreeNodeValue | null) {
         if (this.value == value) return
         (this as Readwrite<this>).value = value
         this._incrementRevision()
@@ -88,7 +100,7 @@ export class TreeNode extends Struct.define("TreeNode", class {
         this._incrementRevision()
     }
 
-    public setEntry(name: string | number, node: TreeNode) {
+    public setEntry(name: TreeNodeKey, node: TreeNode) {
         node.parent = this
         node.name = name
 
@@ -119,7 +131,7 @@ export class TreeNode extends Struct.define("TreeNode", class {
         return node
     }
 
-    public deleteEntry(name: string | number) {
+    public deleteEntry(name: TreeNodeKey) {
         if (typeof name == "number") {
             if (this.children && this.children.length > name) {
                 const removedChild = this.children![name]
@@ -164,7 +176,7 @@ export class TreeNode extends Struct.define("TreeNode", class {
         return false
     }
 
-    public getEntry(name: string | number) {
+    public getEntry(name: TreeNodeKey) {
         if (typeof name == "number") {
             if (this.children && this.children.length > name) {
                 return this.children[name]

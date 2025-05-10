@@ -10,7 +10,6 @@ export class TreeBurstParser extends PrimitiveParser {
     public parse() {
         const result = this.parsePrimitive(TreeBurstParser.NODE)
 
-
         if (result == SKIP) {
             if (this.isDone()) {
                 return TreeNode.withValue(null)
@@ -61,14 +60,14 @@ export namespace TreeBurstParser {
     export const NODE_VALUE = [NUMBER_PRIMITIVE, STRING_PRIMITIVE, WORD]
     export const NODE = Primitive.create(parser => {
 
-        const constant = parser.consume("#")
+        const modifier = parser.consume(["#", "!"])
 
         let value = parser.parsePrimitives(NODE_VALUE)
 
         const node = TreeNode.withValue(value == SKIP ? null : value)
         node.position = parser.getTokenPosition()
 
-        if (constant) {
+        if (modifier == "#") {
             if (value == SKIP) {
                 parser.unexpectedToken()
             }
@@ -78,7 +77,6 @@ export namespace TreeBurstParser {
             container.position = node.position
             return container
         }
-
 
         parser.skipWhitespace()
         let start
@@ -96,6 +94,18 @@ export namespace TreeBurstParser {
         } else {
             if (value == SKIP) {
                 return SKIP
+            }
+        }
+
+        if (modifier == "!") {
+            if (node.value == null) {
+                node.setValue(".x")
+                return node
+            } else {
+                const container = TreeNode.withValue(".x")
+                container.position = node.position
+                container.addChild(node)
+                return container
             }
         }
 

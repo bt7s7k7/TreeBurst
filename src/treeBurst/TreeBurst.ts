@@ -1,7 +1,8 @@
 import { EMPTY_ARRAY } from "../comTypes/const"
 import { unreachable } from "../comTypes/util"
 import { Diagnostic } from "../primitiveParser/Diagnostic"
-import { TreeNode, TreeNodeValue } from "./TreeNode"
+import { Position } from "../primitiveParser/Position"
+import { TreeNode, TreeNodeRef, TreeNodeValue } from "./TreeNode"
 
 function _arrayEquals<T>(a: readonly T[], b: readonly T[]) {
     if (a.length != b.length) return false
@@ -79,6 +80,11 @@ export class ExecutionFrame {
     public targetScope: TreeNode | null = null
     public targetPath: Path | null = null
 
+    public getPositionAtIp() {
+        if (!(this.thunk instanceof TreeNode)) unreachable()
+        return this.thunk.getEntry(this.ip - 1)!.getPosition()
+    }
+
     constructor(
         public readonly thunk: TreeNode | IntrinsicInstruction,
         public readonly scope: TreeNode,
@@ -110,7 +116,7 @@ export class TreeBurst {
 
     public get currentFrame() { return this.stack.length == 0 ? null : this.stack[this.stack.length - 1] }
 
-    public readonly intrinsics = new Map<string | number, IntrinsicInstruction>()
+    public readonly intrinsics = new Map<TreeNodeValue, IntrinsicInstruction>()
 
     public read(path: Path, cwd: Path | TreeNode): TreeNode | null {
         if (path.isEmpty) {
@@ -157,19 +163,67 @@ export class TreeBurst {
         return true
     }
 
+    public emplaceFrame(thunk: ExecutionFrame["thunk"], scope: TreeNode, cwd: Path, isFunctionRoot: boolean) {
+        this.stack.push(new ExecutionFrame(thunk, scope, 0, cwd, isFunctionRoot))
+    }
+
+    public executeThunk(thunk: TreeNodeValue, owner: ExecutionFrame) {
+        if (thunk == null) {
+            return true
+        }
+
+        if (typeof thunk == "object") {
+            this.emplaceFrame(thunk.target, owner.scope, owner.cwd, false)
+        } else {
+            const targetValue = this.read(Path.parse(thunk), owner.cwd)
+            if (targetValue == null) {
+                this.raiseException("Cannot find the specified path", owner.getPositionAtIp())
+                return false
+            }
+            this.emplaceFrame(targetValue, owner.scope, owner.cwd, false)
+        }
+
+        return true
+    }
+
     public finalizeExecutionFrame() {
         const executionFrame = this.stack.pop() ?? unreachable()
 
         if (executionFrame.target) {
-            this.stack.push(new ExecutionFrame(
+            this.emplaceFrame(
                 executionFrame.target,
                 executionFrame.targetScope ?? unreachable(),
-                0, executionFrame.targetPath ?? unreachable(),
+                executionFrame.targetPath ?? unreachable(),
                 true,
-            ))
+            )
         } else {
-            this.setArgument(executionFrame.scope.getEntry(".return")?.value ?? null)
+            if (!this.setArgument(executionFrame.scope.getEntry(".return")?.value ?? null)) {
+                return false
+            }
         }
+
+        return true
+    }
+
+    public prepareFunctionCall(instructionName: NonNullable<TreeNodeValue>, cwd: Path, parent: TreeNode) {
+        const intrinsic = this.intrinsics.get(instructionName)
+        let instruction
+        let path
+        if (intrinsic != null) {
+            instruction = intrinsic
+            path = intrinsic.getPath()
+        } else if (typeof instructionName == "object") {
+            instruction = instructionName.target
+            path = instruction.getPath()
+        } else {
+            path = Path.parse(instructionName)
+            instruction = this.read(path, cwd)
+            if (instruction == null) {
+                this.raiseException(`Cannot find function "${instructionName}"`, parent.getPosition())
+            }
+        }
+
+        return { instruction, path }
     }
 
     public step() {
@@ -177,15 +231,23 @@ export class TreeBurst {
         if (executionFrame == null) return false
 
         if (executionFrame.thunk instanceof IntrinsicInstruction) {
-            const result = executionFrame.thunk.callback(this, executionFrame)
-            this.finalizeExecutionFrame()
-            return result
+            const lastStackLength = this.stack.length
+            if (executionFrame.ip == 0) {
+                const result = executionFrame.thunk.callback(this, executionFrame)
+                if (this.stack.length > lastStackLength) {
+                    executionFrame.ip++
+                    return result
+                } else {
+                    return this.finalizeExecutionFrame() && result
+                }
+            } else {
+                return this.finalizeExecutionFrame()
+            }
         }
 
         const instructionNode = executionFrame.thunk.getEntry(executionFrame.ip)
         if (instructionNode == null) {
-            this.finalizeExecutionFrame()
-            return true
+            return this.finalizeExecutionFrame()
         }
 
         const instructionName = instructionNode.value
@@ -196,24 +258,17 @@ export class TreeBurst {
             }
             const constant = instructionNode.getEntry(0)
             executionFrame.ip++
-            this.setArgument(constant?.value ?? null)
-            return true
+            return this.setArgument(constant?.value ?? null)
         }
 
-        const intrinsic = this.intrinsics.get(instructionName)
-        let instruction
-        let path
-        if (intrinsic != null) {
-            instruction = intrinsic
-            path = intrinsic.getPath()
-        } else {
-            path = Path.parse(instructionName)
-            instruction = this.read(path, executionFrame.cwd)
-            if (instruction == null) {
-                this.print(new Diagnostic(`Cannot find function "${instructionName}"`, instructionNode.getPosition()))
-                return false
-            }
+        if (instructionName == ".x") {
+            executionFrame.ip++
+            return this.setArgument(new TreeNodeRef({ target: instructionNode }))
         }
+
+        const { instruction, path } = this.prepareFunctionCall(instructionName, executionFrame.cwd, instructionNode)
+        if (instruction == null) return false
+
         const instructionFrame = new ExecutionFrame(
             instructionNode,
             executionFrame.scope,
@@ -249,6 +304,11 @@ export class TreeBurst {
 
         let index = 0
         for (const param of paramsNode.children) {
+            if (typeof param.value == "object") {
+                this.raiseException("Unexpected reference in parameter list", param.getPosition())
+                return null
+            }
+
             params.push(param.value ?? index)
             index++
         }
@@ -259,12 +319,16 @@ export class TreeBurst {
     public setArgument(value: TreeNodeValue) {
         if (this.currentFrame == null) {
             this.result = value
-            return
+            return true
         }
 
         const executionFrame = this.currentFrame
         if (executionFrame.target) {
             const params = this.getParameters(executionFrame.target)
+            if (params == null) {
+                return false
+            }
+
             const index = executionFrame.ip - 1
             if (index < 0) unreachable()
             if (index >= params.length) {
@@ -275,6 +339,8 @@ export class TreeBurst {
         } else {
             executionFrame.scope.ensureEntry(".return").setValue(value)
         }
+
+        return true
     }
 
     public addIntrinsicInstruction(instruction: IntrinsicInstruction) {
@@ -283,9 +349,11 @@ export class TreeBurst {
     }
 
     public getOwner() {
-        const owner = this.stack[this.stack.length - 2]
-        if (!(owner.thunk instanceof TreeNode)) unreachable()
-        return { scope: owner.scope, position: owner.thunk.getEntry(owner.ip - 1)!.getPosition() }
+        return this.stack[this.stack.length - 2]
+    }
+
+    public raiseException(message: string, position: Position) {
+        this.print(new Diagnostic(message, position))
     }
 
     constructor(
@@ -320,30 +388,40 @@ export class TreeBurst {
         }))
 
         this.addIntrinsicInstruction(new IntrinsicInstruction(".st", ["name", "value"], (ctx, frame) => {
-            const { scope, position } = ctx.getOwner()
+            const owner = ctx.getOwner()
 
             const name = frame.scope.getEntry("name")?.value
             if (name == null) {
-                ctx.print(new Diagnostic("Missing variable name", position))
+                ctx.raiseException("Missing variable name", owner.getPositionAtIp())
+                return false
+            }
+
+            if (typeof name == "object") {
+                ctx.raiseException("Variable name cannot be a reference", owner.getPositionAtIp())
                 return false
             }
 
             const value = frame.scope.getEntry("value")?.value
-            scope.ensureEntry(name).setValue(value ?? null)
+            owner.scope.ensureEntry(name).setValue(value ?? null)
 
             return true
         }))
 
         this.addIntrinsicInstruction(new IntrinsicInstruction(".ld", ["name"], (ctx, frame) => {
-            const { scope, position } = ctx.getOwner()
+            const owner = ctx.getOwner()
 
             const name = frame.scope.getEntry("name")?.value
             if (name == null) {
-                ctx.print(new Diagnostic("Missing variable name", position))
+                ctx.raiseException("Missing variable name", owner.getPositionAtIp())
                 return false
             }
 
-            frame.scope.ensureEntry(".return").setValue(scope.getEntry(name)?.value ?? null)
+            if (typeof name == "object") {
+                ctx.raiseException("Variable name cannot be a reference", owner.getPositionAtIp())
+                return false
+            }
+
+            frame.scope.ensureEntry(".return").setValue(owner.scope.getEntry(name)?.value ?? null)
 
             return true
         }))
@@ -355,6 +433,70 @@ export class TreeBurst {
                 ctx.print(frame.scope.children[0].value)
             } else {
                 ctx.print(frame.scope.children.map(v => v.value))
+            }
+
+            return true
+        }))
+
+        this.addIntrinsicInstruction(new IntrinsicInstruction(".do", ["then"], (ctx, frame) => {
+            const owner = ctx.getOwner()
+
+            const then = frame.scope.getEntry("then")
+            if (then == null) {
+                ctx.raiseException("Missing then block", owner.getPositionAtIp())
+                return false
+            }
+
+            return ctx.executeThunk(then.value, owner)
+        }))
+
+        this.addIntrinsicInstruction(new IntrinsicInstruction(".if", ["predicate", "then", "else"], (ctx, frame) => {
+            const owner = ctx.getOwner()
+
+            const predicate = frame.scope.getEntry("predicate")
+            if (predicate == null) {
+                ctx.raiseException("Missing predicate", owner.getPositionAtIp())
+                return false
+            }
+
+            const then = frame.scope.getEntry("then")
+            if (then == null) {
+                ctx.raiseException("Missing then block", owner.getPositionAtIp())
+                return false
+            }
+
+            const predicateValue = predicate.value
+            if (predicateValue) {
+                return ctx.executeThunk(then.value, owner)
+            } else {
+                const elseEntry = frame.scope.getEntry("else")
+                if (elseEntry) {
+                    return ctx.executeThunk(elseEntry.value, owner)
+                }
+            }
+
+            return true
+        }))
+
+        this.addIntrinsicInstruction(new IntrinsicInstruction(".while", ["predicate", "then"], (ctx, frame) => {
+            const owner = ctx.getOwner()
+
+            const predicate = frame.scope.getEntry("predicate")
+            if (predicate == null) {
+                ctx.raiseException("Missing predicate", owner.getPositionAtIp())
+                return false
+            }
+
+            const then = frame.scope.getEntry("then")
+            if (then == null) {
+                ctx.raiseException("Missing then block", owner.getPositionAtIp())
+                return false
+            }
+
+            const predicateValue = predicate.value
+            if (predicateValue) {
+                owner.ip--
+                return ctx.executeThunk(then.value, owner)
             }
 
             return true
