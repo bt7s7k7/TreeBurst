@@ -360,146 +360,225 @@ export class TreeBurst {
         public readonly root: TreeNode,
         public readonly print: (msg: any) => void,
     ) {
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".add", [], (ctx, frame) => {
-            let result = 0
-
-            if (frame.scope.children) {
-                for (const child of frame.scope.children) {
-                    result += child.value == null ? 0 : +child.value
-                }
-            }
-
-            frame.scope.ensureEntry(".return").setValue(result)
-            return true
-        }))
-
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".str", [], (ctx, frame) => {
-            let result = ""
-
-            if (frame.scope.children) {
-                for (const child of frame.scope.children) {
-                    result += String(child.value)
-                }
-            }
-
-            frame.scope.ensureEntry(".return").setValue(result)
-
-            return true
-        }))
-
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".st", ["name", "value"], (ctx, frame) => {
-            const owner = ctx.getOwner()
-
-            const name = frame.scope.getEntry("name")?.value
-            if (name == null) {
-                ctx.raiseException("Missing variable name", owner.getPositionAtIp())
-                return false
-            }
-
-            if (typeof name == "object") {
-                ctx.raiseException("Variable name cannot be a reference", owner.getPositionAtIp())
-                return false
-            }
-
-            const value = frame.scope.getEntry("value")?.value
-            owner.scope.ensureEntry(name).setValue(value ?? null)
-
-            return true
-        }))
-
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".ld", ["name"], (ctx, frame) => {
-            const owner = ctx.getOwner()
-
-            const name = frame.scope.getEntry("name")?.value
-            if (name == null) {
-                ctx.raiseException("Missing variable name", owner.getPositionAtIp())
-                return false
-            }
-
-            if (typeof name == "object") {
-                ctx.raiseException("Variable name cannot be a reference", owner.getPositionAtIp())
-                return false
-            }
-
-            frame.scope.ensureEntry(".return").setValue(owner.scope.getEntry(name)?.value ?? null)
-
-            return true
-        }))
-
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".out", [], (ctx, frame) => {
-            if (frame.scope.children == null || frame.scope.children.length == 0) {
-                ctx.print(null)
-            } else if (frame.scope.children.length == 1) {
-                ctx.print(frame.scope.children[0].value)
-            } else {
-                ctx.print(frame.scope.children.map(v => v.value))
-            }
-
-            return true
-        }))
-
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".do", ["then"], (ctx, frame) => {
-            const owner = ctx.getOwner()
-
-            const then = frame.scope.getEntry("then")
-            if (then == null) {
-                ctx.raiseException("Missing then block", owner.getPositionAtIp())
-                return false
-            }
-
-            return ctx.executeThunk(then.value, owner)
-        }))
-
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".if", ["predicate", "then", "else"], (ctx, frame) => {
-            const owner = ctx.getOwner()
-
-            const predicate = frame.scope.getEntry("predicate")
-            if (predicate == null) {
-                ctx.raiseException("Missing predicate", owner.getPositionAtIp())
-                return false
-            }
-
-            const then = frame.scope.getEntry("then")
-            if (then == null) {
-                ctx.raiseException("Missing then block", owner.getPositionAtIp())
-                return false
-            }
-
-            const predicateValue = predicate.value
-            if (predicateValue) {
-                return ctx.executeThunk(then.value, owner)
-            } else {
-                const elseEntry = frame.scope.getEntry("else")
-                if (elseEntry) {
-                    return ctx.executeThunk(elseEntry.value, owner)
-                }
-            }
-
-            return true
-        }))
-
-        this.addIntrinsicInstruction(new IntrinsicInstruction(".while", ["predicate", "then"], (ctx, frame) => {
-            const owner = ctx.getOwner()
-
-            const predicate = frame.scope.getEntry("predicate")
-            if (predicate == null) {
-                ctx.raiseException("Missing predicate", owner.getPositionAtIp())
-                return false
-            }
-
-            const then = frame.scope.getEntry("then")
-            if (then == null) {
-                ctx.raiseException("Missing then block", owner.getPositionAtIp())
-                return false
-            }
-
-            const predicateValue = predicate.value
-            if (predicateValue) {
-                owner.ip--
-                return ctx.executeThunk(then.value, owner)
-            }
-
-            return true
-        }))
+        for (const inst of _DEFAULT_INSTRUCTIONS) {
+            this.addIntrinsicInstruction(inst)
+        }
     }
+}
+
+const _DEFAULT_INSTRUCTIONS = [
+    new IntrinsicInstruction(".str", [], (ctx, frame) => {
+        let result = ""
+
+        if (frame.scope.children) {
+            for (const child of frame.scope.children) {
+                result += String(child.value)
+            }
+        }
+
+        frame.scope.ensureEntry(".return").setValue(result)
+
+        return true
+    }),
+    new IntrinsicInstruction(".not", ["a"], (ctx, frame) => {
+        const owner = ctx.getOwner()
+
+        const a = frame.scope.getEntry("a")
+        if (a == null) {
+            ctx.raiseException("Missing value", owner.getPositionAtIp())
+            return false
+        }
+
+        frame.scope.ensureEntry(".return").setValue(+!a.value)
+
+        return true
+    }),
+    new IntrinsicInstruction(".bool", ["a"], (ctx, frame) => {
+        const owner = ctx.getOwner()
+
+        const a = frame.scope.getEntry("a")
+        if (a == null) {
+            ctx.raiseException("Missing value", owner.getPositionAtIp())
+            return false
+        }
+
+        frame.scope.ensureEntry(".return").setValue(+!!a.value)
+
+        return true
+    }),
+    new IntrinsicInstruction(".st", ["name", "value"], (ctx, frame) => {
+        const owner = ctx.getOwner()
+
+        const name = frame.scope.getEntry("name")?.value
+        if (name == null) {
+            ctx.raiseException("Missing variable name", owner.getPositionAtIp())
+            return false
+        }
+
+        if (typeof name == "object") {
+            ctx.raiseException("Variable name cannot be a reference", owner.getPositionAtIp())
+            return false
+        }
+
+        const value = frame.scope.getEntry("value")?.value
+        owner.scope.ensureEntry(name).setValue(value ?? null)
+
+        return true
+    }),
+    new IntrinsicInstruction(".ld", ["name"], (ctx, frame) => {
+        const owner = ctx.getOwner()
+
+        const name = frame.scope.getEntry("name")?.value
+        if (name == null) {
+            ctx.raiseException("Missing variable name", owner.getPositionAtIp())
+            return false
+        }
+
+        if (typeof name == "object") {
+            ctx.raiseException("Variable name cannot be a reference", owner.getPositionAtIp())
+            return false
+        }
+
+        frame.scope.ensureEntry(".return").setValue(owner.scope.getEntry(name)?.value ?? null)
+
+        return true
+    }),
+    new IntrinsicInstruction(".out", [], (ctx, frame) => {
+        if (frame.scope.children == null || frame.scope.children.length == 0) {
+            ctx.print(null)
+        } else if (frame.scope.children.length == 1) {
+            ctx.print(frame.scope.children[0].value)
+        } else {
+            ctx.print(frame.scope.children.map(v => v.value))
+        }
+
+        return true
+    }),
+    new IntrinsicInstruction(".do", ["then"], (ctx, frame) => {
+        const owner = ctx.getOwner()
+
+        const then = frame.scope.getEntry("then")
+        if (then == null) {
+            ctx.raiseException("Missing then block", owner.getPositionAtIp())
+            return false
+        }
+
+        return ctx.executeThunk(then.value, owner)
+    }),
+    new IntrinsicInstruction(".if", ["predicate", "then", "else"], (ctx, frame) => {
+        const owner = ctx.getOwner()
+
+        const predicate = frame.scope.getEntry("predicate")
+        if (predicate == null) {
+            ctx.raiseException("Missing predicate", owner.getPositionAtIp())
+            return false
+        }
+
+        const then = frame.scope.getEntry("then")
+        if (then == null) {
+            ctx.raiseException("Missing then block", owner.getPositionAtIp())
+            return false
+        }
+
+        const predicateValue = predicate.value
+        if (predicateValue) {
+            return ctx.executeThunk(then.value, owner)
+        } else {
+            const elseEntry = frame.scope.getEntry("else")
+            if (elseEntry) {
+                return ctx.executeThunk(elseEntry.value, owner)
+            }
+        }
+
+        return true
+    }),
+    new IntrinsicInstruction(".while", ["predicate", "then"], (ctx, frame) => {
+        const owner = ctx.getOwner()
+
+        const predicate = frame.scope.getEntry("predicate")
+        if (predicate == null) {
+            ctx.raiseException("Missing predicate", owner.getPositionAtIp())
+            return false
+        }
+
+        const then = frame.scope.getEntry("then")
+        if (then == null) {
+            ctx.raiseException("Missing then block", owner.getPositionAtIp())
+            return false
+        }
+
+        const predicateValue = predicate.value
+        if (predicateValue) {
+            owner.ip--
+            return ctx.executeThunk(then.value, owner)
+        }
+
+        return true
+    }),
+]
+
+for (const { name, defaultValue, operator, skip, shortCircuit } of [
+    { name: ".add", operator: "+" },
+    { name: ".sub", operator: "-" },
+    { name: ".mul", defaultValue: "1", operator: "*" },
+    { name: ".div", defaultValue: "children ? +children[0].value : 0", operator: "/", skip: true },
+    { name: ".pow", defaultValue: "children ? +children[0].value : 0", operator: "**", skip: true },
+    { name: ".bAnd", defaultValue: "0xffffffff", operator: "&" },
+    { name: ".bXor", defaultValue: "0", operator: "^" },
+    { name: ".bOr", defaultValue: "0", operator: "|" },
+    { name: ".and", defaultValue: "1", operator: "&&", shortCircuit: "0" },
+    { name: ".or", defaultValue: "0", operator: "||", shortCircuit: "1" },
+] as { name: string, defaultValue?: string | null, operator: string, skip?: boolean, shortCircuit?: string }[]) {
+    _DEFAULT_INSTRUCTIONS.push(new IntrinsicInstruction(name, [], new Function("ctx", "frame", `
+const children = frame.scope.children
+let result = ${defaultValue ?? "0"}
+
+if (children) {
+    ${!skip ? (
+            "for (const child of children) {"
+        ) : (
+            `for (let i = 1; i < children.length; i++) { const child = children[i]`
+        )}
+        result ${operator}= child.value == null ? 0 : +child.value
+
+        ${shortCircuit == null ? "" : `if (result == ${shortCircuit}) break`}
+    }
+}
+
+frame.scope.ensureEntry(".return").setValue(+result)
+return true
+//# sourceURL=tree-burst-generated://arithmetic/${name}`,
+    ) as any))
+}
+
+for (const { name, operator } of [
+    { name: ".eq", operator: "==" },
+    { name: ".lt", operator: "<" },
+    { name: ".lte", operator: "<=" },
+    { name: ".gt", operator: ">" },
+    { name: ".gte", operator: ">=" },
+    { name: ".neq", operator: "!=" },
+] as { name: string, operator: string, }[]) {
+    _DEFAULT_INSTRUCTIONS.push(new IntrinsicInstruction(name, ["a", "b"], new Function("ctx", "frame", `
+const a = frame.scope.getEntry("a")
+if (a == null) {
+    ctx.raiseException("Missing first value", owner.getPositionAtIp())
+    return false
+}
+
+const b = frame.scope.getEntry("b")
+if (b == null) {
+    ctx.raiseException("Missing second value", owner.getPositionAtIp())
+    return false
+}
+
+if (a.value != null && typeof a.value == "object" && b.value != null && typeof b.value == "object") {
+    frame.scope.ensureEntry(".return").setValue(+(a.value.target ${operator} b.value.target))
+} else {
+    frame.scope.ensureEntry(".return").setValue(+(a.value ${operator} b.value))
+}
+
+return true
+//# sourceURL=tree-burst-generated://comparison/${name}`,
+    ) as any))
 }

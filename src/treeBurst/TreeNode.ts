@@ -204,7 +204,7 @@ export class TreeNode extends Struct.define("TreeNode", class {
         const result: (ObjectDescription.AnyDescription | RawSegment)[] = []
 
         if (this.value != null) {
-            if (typeof this.value == "string" && this.value.match(/^\.[a-z]+$/)) {
+            if (typeof this.value == "string" && this.value.match(/^\.\w+$/)) {
                 result.push(...LogMarker.textSegment(this.value, "yellow"))
             } else {
                 result.push(ObjectDescription.inspectObject(this.value, ctx))

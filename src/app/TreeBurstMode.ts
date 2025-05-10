@@ -13,6 +13,6 @@ export const TREE_BURST_MODE = createMode({
     multilineComment: { start: "/*", end: "*/" },
     tokensBefore: [
         { regex: /(?:\w|\.)*?\/(?:\w|\.)+/, token: "atom" },
-        { regex: /\.[a-z]+/, token: "keyword" },
+        { regex: /\.\w+/, token: "keyword" },
     ],
 })
