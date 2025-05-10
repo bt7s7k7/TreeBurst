@@ -63,7 +63,7 @@ export class Position {
     }
 
     public [LogMarker.CUSTOM]() {
-        return LogMarker.rawText(this.format(null, { colors: true }), "white", { indent: true })
+        return LogMarker.rawText(this.format(null, { colors: true }), "blue", { indent: true })
     }
 
     constructor(

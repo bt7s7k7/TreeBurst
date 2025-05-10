@@ -1,6 +1,6 @@
 import { Readwrite } from "../comTypes/types"
-import { cloneWithout } from "../comTypes/util"
-import { LogMarker } from "../prettyPrint/ObjectDescription"
+import { unreachable } from "../comTypes/util"
+import { LogMarker, ObjectDescription, RawSegment } from "../prettyPrint/ObjectDescription"
 import { InputDocument } from "../primitiveParser/InputDocument"
 import { Position } from "../primitiveParser/Position"
 import { Struct } from "../struct/Struct"
@@ -22,6 +22,10 @@ export class TreeNode extends Struct.define("TreeNode", class {
     public parent: TreeNode | null = null
     public name: string | number | null = null
     public position: Position | null = null
+
+    public isPrimitive() {
+        return this.entries == null && this.children == null
+    }
 
     public getPath() {
         const segments: (string | number)[] = []
@@ -176,12 +180,41 @@ export class TreeNode extends Struct.define("TreeNode", class {
         return this.getEntry(name) ?? this.setEntry(name, TreeNode.default())
     }
 
-    public [LogMarker.CUSTOM]() {
-        if (this.children == null && this.entries == null) return this.value
-        if (this.value == null && this.entries == null) return this.children
-        if (this.value == null && this.children == null) return this.entries
+    public [LogMarker.CUSTOM](ctx: ObjectDescription.Context) {
 
-        return "flags" in this ? cloneWithout(this, "flags", "parent", "name") : this
+        if (this.value == null && this.entries == null && this.children != null && this.children.length == 1 && this.children[0].isPrimitive()) {
+            return LogMarker.raw([
+                ...LogMarker.textSegment("#"),
+                ObjectDescription.inspectObject(this.children[0].value, ctx),
+            ])
+        }
+
+        const result: (ObjectDescription.AnyDescription | RawSegment)[] = []
+
+        if (this.value != null) {
+            if (typeof this.value == "string" && this.value.match(/^\.[a-z]+$/)) {
+                result.push(...LogMarker.textSegment(this.value, "yellow"))
+            } else {
+                result.push(ObjectDescription.inspectObject(this.value, ctx))
+            }
+        }
+
+        if (this.entries != null) {
+            if (result.length > 0) result.push(...LogMarker.textSegment(" "))
+            const entries = ObjectDescription.inspectObject(this.entries, ctx)
+            if (entries.type != "record") unreachable()
+            entries.name = null
+            result.push(entries)
+        }
+
+        if (this.children != null) {
+            if (result.length > 0) result.push(...LogMarker.textSegment(" "))
+            const children = ObjectDescription.inspectObject(this.children, ctx)
+            if (children.type != "list") unreachable()
+            result.push(children)
+        }
+
+        return LogMarker.raw(result)
     }
 
     public static withValue(value: TreeNodeValue) {

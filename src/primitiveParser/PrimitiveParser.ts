@@ -21,7 +21,7 @@ export class PrimitiveParser extends GenericParser {
     }
 
     public getTokenPosition() {
-        return new Position(this.document, this.tokenStart, this.index - this.tokenStart)
+        return new Position(this.document, this.tokenStart, Math.max(1, this.index - this.tokenStart))
     }
 
     public createDiagnostic(message: string) {
