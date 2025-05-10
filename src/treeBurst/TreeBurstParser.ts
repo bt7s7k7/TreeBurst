@@ -60,14 +60,30 @@ export namespace TreeBurstParser {
 
     export const NODE_VALUE = [NUMBER_PRIMITIVE, STRING_PRIMITIVE, WORD]
     export const NODE = Primitive.create(parser => {
+
+        const constant = parser.consume("#")
+
         let value = parser.parsePrimitives(NODE_VALUE)
 
         const node = TreeNode.withValue(value == SKIP ? null : value)
         node.position = parser.getTokenPosition()
 
+        if (constant) {
+            if (value == SKIP) {
+                parser.unexpectedToken()
+            }
+
+            const container = TreeNode.default()
+            container.addChild(node)
+            container.position = node.position
+            return container
+        }
+
+
         parser.skipWhitespace()
-        if (parser.consume("{")) {
-            for (const { name, child } of parser.parsePrimitivesUntil("}", [NODE_CHILD])) {
+        let start
+        if ((start = parser.consume(["{", "("]))) {
+            for (const { name, child } of parser.parsePrimitivesUntil(start == "{" ? "}" : ")", [NODE_CHILD])) {
                 if (name == null) {
                     node.addChild(child)
                 } else {
