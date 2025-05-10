@@ -1,4 +1,5 @@
 import { isWord } from "../comTypes/util"
+import { Diagnostic } from "../primitiveParser/Diagnostic"
 import { NUMBER_PRIMITIVE } from "../primitiveParser/NumberPrimitive"
 import { PredicatePrimitive } from "../primitiveParser/PredicatePrimitive"
 import { Primitive, SKIP } from "../primitiveParser/Primitive"
@@ -60,7 +61,7 @@ export namespace TreeBurstParser {
     export const NODE_VALUE = [NUMBER_PRIMITIVE, STRING_PRIMITIVE, WORD]
     export const NODE = Primitive.create(parser => {
 
-        const modifier = parser.consume(["#", "!"])
+        const modifier = parser.consume(["#", "!", "$"])
 
         let value = parser.parsePrimitives(NODE_VALUE)
 
@@ -106,6 +107,37 @@ export namespace TreeBurstParser {
                 container.position = node.position
                 container.addChild(node)
                 return container
+            }
+        }
+
+        if (modifier == "$") {
+            if (node.value == null) {
+                parser.addDiagnostic(new Diagnostic("Missing variable name", node.position))
+                return node
+            }
+
+            if (node.entries != null || (node.children != null && node.children.length != 1)) {
+                parser.addDiagnostic(new Diagnostic("Invalid variable usage", node.position))
+                return node
+            }
+
+            const variableOperation = TreeNode.default()
+            const container = TreeNode.default()
+
+            variableOperation.position = node.position
+            container.position = node.position
+            variableOperation.addChild(container)
+            container.addChild(node)
+
+            if (node.children) {
+                variableOperation.setValue(".st")
+                const value = node.children[0]
+                node.deleteEntry(0)
+                variableOperation.addChild(value)
+                return variableOperation
+            } else {
+                variableOperation.setValue(".ld")
+                return variableOperation
             }
         }
 
