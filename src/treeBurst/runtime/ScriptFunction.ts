@@ -1,6 +1,7 @@
 import { Expression } from "../syntax/Expression"
 import { evaluateExpression, LABEL_RETURN } from "./evaluateExpression"
 import { ExpressionResult } from "./ExpressionResult"
+import { VOID } from "./GlobalScope"
 import { ManagedFunction } from "./ManagedFunction"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedValue } from "./ManagedValue"
@@ -10,9 +11,9 @@ export class ScriptFunction extends ManagedFunction {
     public override invoke(args: ManagedValue[], scope: Scope, result: ExpressionResult): void {
         const functionScope = scope.makeChild()
 
-        for (let i = 0; i < args.length && i < this.parameters.length; i++) {
+        for (let i = 0; i < this.parameters.length; i++) {
             const parameter = this.parameters[i]
-            const arg = args[i]
+            const arg = i < args.length ? args[i] : VOID
 
             functionScope.declareVariable(parameter)!.value = arg
         }

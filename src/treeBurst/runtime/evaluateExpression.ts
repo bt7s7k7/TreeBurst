@@ -1,4 +1,4 @@
-import { unreachable } from "../../comTypes/util"
+import { convertCase } from "../../comTypes/util"
 import { Diagnostic } from "../support/Diagnostic"
 import { Position } from "../support/Position"
 import { Expression } from "../syntax/Expression"
@@ -9,6 +9,7 @@ import { ManagedObject } from "./ManagedObject"
 import { ManagedTable } from "./ManagedTable"
 import { ManagedValue } from "./ManagedValue"
 import { Scope } from "./Scope"
+import { ScriptFunction } from "./ScriptFunction"
 import { UnmanagedHandle } from "./UnmanagedHandle"
 
 export const LABEL_RETURN = "!return"
@@ -87,16 +88,20 @@ export function evaluateDeclaration(declaration: Expression, value: ManagedValue
 }
 
 export function getValueName(container: ManagedValue) {
-    if (container instanceof ManagedObject && container.name != null) {
-        return `${container.name}`
+    if (container == VOID) {
+        return "void"
+    } else if (container == null) {
+        return "null"
+    } else if (container instanceof ManagedObject && container.name != null) {
+        return `[${container.name}]`
     } else if (container instanceof ManagedFunction) {
-        return `<function>`
+        return `Function`
     } else if (container instanceof ManagedTable) {
-        return `<table>`
+        return `Table`
     } else if (container instanceof UnmanagedHandle) {
         return `<unmanaged>`
     } else {
-        return `<${typeof container}>`
+        return convertCase(typeof container, "camel", "pascal")
     }
 }
 
@@ -170,17 +175,13 @@ export function evaluateExpression(expression: Expression, scope: Scope, result:
             receiverValue = result.value
             functionValue = target.member
             functionName = target.member
-        } else if (target instanceof Expression.Identifier) {
+        } else {
             evaluateExpression(target, scope, result)
             if (result.label != null) return
 
             receiverValue = VOID
             functionValue = result.value
-            functionName = target.name
-        } else {
-            result.value = new Diagnostic(`Invalid invocation target`, target.position)
-            result.label = LABEL_EXCEPTION
-            return
+            functionName = target instanceof Expression.Identifier ? target.name : ""
         }
 
         if (functionName.startsWith("@")) {
@@ -244,5 +245,8 @@ export function evaluateExpression(expression: Expression, scope: Scope, result:
         return
     }
 
-    unreachable()
+    if (expression instanceof Expression.FunctionDeclaration) {
+        result.value = new ScriptFunction(scope.globalScope.FunctionPrototype, expression.parameters, expression.body, scope)
+        return
+    }
 }
