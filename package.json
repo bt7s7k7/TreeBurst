@@ -1,0 +1,29 @@
+{
+    "name": "tree-burst",
+    "version": "0.0.0",
+    "private": true,
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^8.13.0",
+        "@typescript-eslint/parser": "^8.13.0",
+        "eslint": "^8.57.1",
+        "@vitejs/plugin-vue": "^4.2.3",
+        "@vitejs/plugin-vue-jsx": "^3.0.1",
+        "concurrently": "^8.2.0",
+        "dotenv": "^16.3.1",
+        "sass": "^1.63.6",
+        "typescript": "^5.1.6",
+        "vite": "^4.4.3"
+    },
+    "scripts": {
+        "dev": "concurrently --raw --kill-others \"vite\" \"tsc --noEmit --watch --incremental --preserveWatchOutput\"",
+        "build": "tsc --noEmit --incremental && vite build",
+        "serve": "vite preview",
+        "lint": "yarn eslint ./",
+        "get-ucpem": "curl -L https://github.com/bt7s7k7/UCPeM/releases/latest/download/ucpem.js -o node_modules/.bin/ucpem"
+    },
+    "dependencies": {
+        "@mdi/js": "^7.2.96",
+        "vue": "^3.3.4",
+        "vue-router": "^4.2.4"
+    }
+}
