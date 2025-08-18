@@ -7,8 +7,9 @@ import { VOID } from "./GlobalScope"
 import { ManagedFunction } from "./ManagedFunction"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedTable } from "./ManagedTable"
-import { Scope } from "./Scope"
 import { ManagedValue } from "./ManagedValue"
+import { Scope } from "./Scope"
+import { UnmanagedHandle } from "./UnmanagedHandle"
 
 export const LABEL_RETURN = "!return"
 export const LABEL_EXCEPTION = "!exception"
@@ -92,6 +93,8 @@ export function getValueName(container: ManagedValue) {
         return `<function>`
     } else if (container instanceof ManagedTable) {
         return `<table>`
+    } else if (container instanceof UnmanagedHandle) {
+        return `<unmanaged>`
     } else {
         return `<${typeof container}>`
     }
@@ -154,28 +157,44 @@ export function evaluateExpression(expression: Expression, scope: Scope, result:
     if (expression instanceof Expression.Invocation) {
         const { args, position, target } = expression
 
-        const argValues = evaluateExpressions(args, scope, result)
-        if (argValues == null) {
-            return
-        }
+
+
+        let receiverValue: ManagedValue
+        let functionValue: ManagedValue
+        let functionName: string
 
         if (target instanceof Expression.MemberAccess) {
             evaluateExpression(target.receiver, scope, result)
             if (result.label != null) return
 
-            evaluateInvocation(result.value, result.value, target.member, position, argValues, scope, result)
-            return
+            receiverValue = result.value
+            functionValue = target.member
+            functionName = target.member
         } else if (target instanceof Expression.Identifier) {
             evaluateExpression(target, scope, result)
             if (result.label != null) return
 
-            evaluateInvocation(VOID, VOID, result.value, position, argValues, scope, result)
-            return
+            receiverValue = VOID
+            functionValue = result.value
+            functionName = target.name
         } else {
             result.value = new Diagnostic(`Invalid invocation target`, target.position)
             result.label = LABEL_EXCEPTION
             return
         }
+
+        if (functionName.startsWith("@")) {
+            evaluateInvocation(receiverValue, receiverValue, functionValue, position, args.map(v => new UnmanagedHandle(scope.globalScope.TablePrototype, v)), scope, result)
+        } else {
+            const argValues = evaluateExpressions(args, scope, result)
+            if (argValues == null) {
+                return
+            }
+
+            evaluateInvocation(receiverValue, receiverValue, functionValue, position, argValues, scope, result)
+        }
+
+        return
     }
 
     if (expression instanceof Expression.Assignment) {

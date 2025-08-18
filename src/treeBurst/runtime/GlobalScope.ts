@@ -4,13 +4,15 @@ import { LogMarker } from "../../prettyPrint/ObjectDescription"
 import { OPERATOR_ADD, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_IS, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_POW, OPERATOR_SUB } from "../const"
 import { Diagnostic } from "../support/Diagnostic"
 import { Position } from "../support/Position"
-import { evaluateInvocation, findProperty, getValueName, LABEL_EXCEPTION } from "./evaluateExpression"
+import { Expression } from "../syntax/Expression"
+import { evaluateExpression, evaluateInvocation, findProperty, getValueName, LABEL_EXCEPTION } from "./evaluateExpression"
 import { ExpressionResult } from "./ExpressionResult"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedTable } from "./ManagedTable"
 import { ManagedValue } from "./ManagedValue"
 import { NativeFunction, NativeHandler } from "./NativeFunction"
 import { Scope } from "./Scope"
+import { UnmanagedHandle } from "./UnmanagedHandle"
 
 export const VOID = new class Void {
     public static readonly [LogMarker.CUSTOM_NAME] = "Void"
@@ -55,6 +57,27 @@ export function ensureArgumentTypes<T extends any[] = any[]>(args: ManagedValue[
     }
 
     return results as any as T
+}
+
+export function ensureExpression(value: ManagedValue, result: ExpressionResult) {
+    if (value instanceof UnmanagedHandle && value.value instanceof Expression) return value.value
+    result.value = new Diagnostic("Expected expression arguments", INTRINSIC)
+    result.label = LABEL_EXCEPTION
+    return null as never
+}
+
+export function ensureBoolean(value: ManagedValue, scope: Scope, result: ExpressionResult) {
+    if (typeof value != "boolean") {
+        evaluateInvocation(value, value, OPERATOR_BOOLEAN, INTRINSIC, [], scope, result)
+        if (result.label != null) return false
+
+        if (typeof value != "boolean") {
+            evaluateInvocation(result.value, scope.globalScope.TablePrototype, OPERATOR_BOOLEAN, INTRINSIC, [], scope, result)
+            if (result.label != null) return false
+        }
+    }
+
+    return result.value as boolean
 }
 
 const _HANDLERS = {
@@ -107,6 +130,34 @@ const _HANDLERS = {
         const [self, a] = args
 
         result.value = self == a
+    },
+    k_if(args, scope, result) {
+        for (let i = 0; i < args.length; i += 2) {
+            if (args.length - i < 2) {
+                const elseValue = ensureExpression(args[i], result)
+                if (result.label != null) return
+                evaluateExpression(elseValue, scope, result)
+                return
+            }
+
+            const predicate = ensureExpression(args[i], result)
+            if (result.label != null) return
+            const thenValue = ensureExpression(args[i + 1], result)
+            if (result.label != null) return
+
+            evaluateExpression(predicate, scope, result)
+            if (result.label != null) return
+
+            const predicateValue = ensureBoolean(result.value, scope, result)
+            if (result.label != null) return false
+
+            if (predicateValue) {
+                evaluateExpression(thenValue, scope, result)
+                return
+            }
+        }
+
+        result.value = VOID
     },
 } satisfies Record<string, NativeHandler>
 
@@ -191,6 +242,8 @@ export class GlobalScope extends Scope {
         this.BooleanPrototype.declareProperty(OPERATOR_NOT, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Boolean_not)) || unreachable()
         this.TablePrototype.declareProperty(OPERATOR_NOT, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Table_not)) || unreachable()
         this.TablePrototype.declareProperty(OPERATOR_BOOLEAN, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Table_boolean)) || unreachable()
+
+        this.declareGlobal("@if", new NativeFunction(this.FunctionPrototype, [], _HANDLERS.k_if)) || unreachable()
 
         this.declareGlobal("true", true)
         this.declareGlobal("false", false)

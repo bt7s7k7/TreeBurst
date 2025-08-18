@@ -1,6 +1,7 @@
 import { VOID } from "./GlobalScope"
 import { ManagedFunction } from "./ManagedFunction"
 import { ManagedTable } from "./ManagedTable"
+import { UnmanagedHandle } from "./UnmanagedHandle"
 
 export type ManagedValue =
     | string | number | boolean
@@ -8,3 +9,4 @@ export type ManagedValue =
     | ManagedFunction
     | null
     | typeof VOID
+    | UnmanagedHandle
