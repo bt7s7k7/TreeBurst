@@ -348,7 +348,7 @@ export class TreeBurstParser extends GenericParser {
 
             if (this.consume(".")) {
                 numberText += "."
-                numberText += this.readUntil(isNumber)
+                numberText += this.readWhile(isNumber)
             }
 
             const number = parseFloat(numberText)
