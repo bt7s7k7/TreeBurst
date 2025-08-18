@@ -322,23 +322,6 @@ export class TreeBurstParser extends GenericParser {
         }
 
         const start = this.index
-        for (const token of _OPERATOR_TOKENS) {
-            if (this.consume(token)) {
-                return this._token = new OperatorInstance(this.getPosition(start), token)
-            }
-        }
-
-        if (this.consume("(")) {
-            this._token = new Expression.Group(this.getPosition(start), this.parseBlock(")"))
-            this._skippedNewline = skippedNewline
-            return this._token
-        }
-
-        if (this.consume("[")) {
-            this._token = new Expression.ArrayLiteral(this.getPosition(start), this.parseBlock("]"))
-            this._skippedNewline = skippedNewline
-            return this._token
-        }
 
         if (isNumber(this.input, this.index) || this.getCurrent() == "-") {
             let numberText = ""
@@ -358,6 +341,24 @@ export class TreeBurstParser extends GenericParser {
             }
 
             return this._token = new Expression.NumberLiteral(this.getPosition(start), number)
+        }
+
+        for (const token of _OPERATOR_TOKENS) {
+            if (this.consume(token)) {
+                return this._token = new OperatorInstance(this.getPosition(start), token)
+            }
+        }
+
+        if (this.consume("(")) {
+            this._token = new Expression.Group(this.getPosition(start), this.parseBlock(")"))
+            this._skippedNewline = skippedNewline
+            return this._token
+        }
+
+        if (this.consume("[")) {
+            this._token = new Expression.ArrayLiteral(this.getPosition(start), this.parseBlock("]"))
+            this._skippedNewline = skippedNewline
+            return this._token
         }
 
         if (this.consume("\"")) return this._token = this.parseString("\"")
