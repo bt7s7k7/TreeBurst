@@ -33,14 +33,17 @@ export function verifyArguments(args: ManagedValue[], names: string[], result: E
     return true
 }
 
-export function ensureArgumentTypes<T extends any[] = any[]>(args: ManagedValue[], names: string[], types: (string | AbstractConstructor & { readonly [LogMarker.CUSTOM_NAME]: string })[], result: ExpressionResult): T {
+export function ensureArgumentTypes<T extends any[] = any[]>(args: ManagedValue[], names: string[], types: (null | string | AbstractConstructor & { readonly [LogMarker.CUSTOM_NAME]: string })[], result: ExpressionResult): T {
+    if (types.length != names.length) unreachable()
+
     if (!verifyArguments(args, names, result)) return [] as any as T
 
     const results: any[] = []
     let errors: Diagnostic[] | null = null
-    for (let i = 0; i < args.length; i++) {
-        const value = args[i]
+    for (let i = 0; i < types.length; i++) {
         const type = types[i]
+        if (type == null) continue
+        const value = args[i]
         const name = names[i]
         const passes = typeof type == "string" ? typeof value == type : value instanceof type
 
@@ -233,7 +236,7 @@ const _HANDLERS = {
 
 
 const _defaultFallback = ((name, a, b, scope, result) => {
-    result.value = new Diagnostic(`This pair of operands do not support operator "${name}"`, INTRINSIC)
+    result.value = new Diagnostic(`Operands "${getValueName(a)}" and "${getValueName(b)}" do not support operator "${name}"`, INTRINSIC)
     result.label = LABEL_EXCEPTION
 }) satisfies Parameters<typeof _makeOperatorFallback>[1]
 function _makeOperatorFallback(name: string, fallback: (name: string, a: ManagedValue, b: ManagedValue, scope: Scope, result: ExpressionResult) => void = _defaultFallback) {
@@ -241,7 +244,7 @@ function _makeOperatorFallback(name: string, fallback: (name: string, a: Managed
         if (!verifyArguments(args, ["this", "other"], result)) return
         const [self, a, b] = args
 
-        if (self == VOID) {
+        if (args.length > 2) {
             fallback(name, a, b, scope, result)
             return
         }
@@ -269,7 +272,15 @@ _makeOperatorFallback(OPERATOR_POW)
 const _NUMBER_OPERATORS: Record<string, NativeHandler> = {}
 function _makeNumberOperator(name: string, operator: (a: number, b: number) => any) {
     _NUMBER_OPERATORS[name] = function (args, scope, result) {
-        const [a, b] = ensureArgumentTypes(args, ["this", "other"], ["number", "number"], result)
+        if (args.length > 2) {
+            const [_, a, b] = ensureArgumentTypes(args, ["this", "left", "right"], [null, "number", "number"], result)
+            if (result.label != null) return
+
+            result.value = operator(a, b)
+            return
+        }
+
+        const [a, b] = ensureArgumentTypes(args, ["this", "right"], ["number", "number"], result)
         if (result.label != null) return
 
         result.value = operator(a, b)
