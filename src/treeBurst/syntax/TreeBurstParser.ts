@@ -1,7 +1,7 @@
 import { GenericParser } from "../../comTypes/GenericParser"
 import { Readwrite } from "../../comTypes/types"
 import { isNumber, isWord, joinIterable, unreachable } from "../../comTypes/util"
-import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_GT, OPERATOR_GTE, OPERATOR_IS, OPERATOR_LT, OPERATOR_LTE, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_NUMBER, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
+import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_COALESCE, OPERATOR_DIV, OPERATOR_ELSE, OPERATOR_EQ, OPERATOR_GT, OPERATOR_GTE, OPERATOR_IS, OPERATOR_LT, OPERATOR_LTE, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_NUMBER, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
 import { Diagnostic } from "../support/Diagnostic"
 import { InputDocument } from "../support/InputDocument"
 import { Position } from "../support/Position"
@@ -55,8 +55,10 @@ const _PREFIX_OPERATORS = new Map<string, Operator>([
 const _INFIX_OPERATORS = new Map<string, Operator>([
     ["=", new Operator(0, OPERATOR_ASSIGNMENT).withResultPresentence(0)],
 
-    ["&&", new Operator(1, "@" + OPERATOR_AND)],
-    ["||", new Operator(1, "@" + OPERATOR_OR)],
+    ["&&", new Operator(1, OPERATOR_AND)],
+    ["||", new Operator(1, OPERATOR_OR)],
+    ["??", new Operator(1, OPERATOR_COALESCE)],
+    ["else", new Operator(1, OPERATOR_ELSE)],
 
     ["<", new Operator(2, OPERATOR_LT)],
     ["<=", new Operator(2, OPERATOR_LTE)],

@@ -8,7 +8,7 @@ import { Formatter } from "../textFormat/Formatter"
 import { HTMLFormatter } from "../textFormatHTML/HTMLFormatter"
 import { evaluateExpression } from "../treeBurst/runtime/evaluateExpression"
 import { ExpressionResult } from "../treeBurst/runtime/ExpressionResult"
-import { GlobalScope } from "../treeBurst/runtime/GlobalScope"
+import { GlobalScope, VOID } from "../treeBurst/runtime/GlobalScope"
 import { NativeFunction } from "../treeBurst/runtime/NativeFunction"
 import { Diagnostic } from "../treeBurst/support/Diagnostic"
 import { InputDocument } from "../treeBurst/support/InputDocument"
@@ -75,6 +75,7 @@ export class TreeBurstLanguage extends LanguageServiceState {
         const output: string[] = []
         scope.declareGlobal("print", new NativeFunction(scope.FunctionPrototype, [], (args, scope, result) => {
             output.push(args.map(inspectToHtml).join(" "))
+            result.value = VOID
         }))
 
         evaluateExpression(root, scope, result)

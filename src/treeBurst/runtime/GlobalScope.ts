@@ -1,7 +1,7 @@
 import { AbstractConstructor, Readwrite } from "../../comTypes/types"
 import { convertCase, unreachable } from "../../comTypes/util"
 import { LogMarker } from "../../prettyPrint/ObjectDescription"
-import { OPERATOR_ADD, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_IS, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_POW, OPERATOR_SUB } from "../const"
+import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_COALESCE, OPERATOR_DIV, OPERATOR_ELSE, OPERATOR_EQ, OPERATOR_IS, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
 import { Diagnostic } from "../support/Diagnostic"
 import { Position } from "../support/Position"
 import { Expression } from "../syntax/Expression"
@@ -77,7 +77,7 @@ export function ensureBoolean(value: ManagedValue, scope: Scope, result: Express
         }
     }
 
-    return result.value as boolean
+    return value as boolean
 }
 
 const _HANDLERS = {
@@ -170,6 +170,64 @@ const _HANDLERS = {
         }
 
         result.value = VOID
+    },
+    Table_and(args, scope, result) {
+        if (!verifyArguments(args, ["this", "other"], result)) return
+        const predicateResult = args[0]
+        const predicateValue = ensureBoolean(predicateResult, scope, result)
+        if (result.label != null) return
+
+        const alternative = ensureExpression(args[1], result)
+        if (result.label != null) return
+
+        if (predicateValue) {
+            evaluateExpression(alternative, scope, result)
+        } else {
+            result.value = predicateResult
+        }
+    },
+    Table_or(args, scope, result) {
+        if (!verifyArguments(args, ["this", "other"], result)) return
+        const predicateResult = args[0]
+        const predicateValue = ensureBoolean(predicateResult, scope, result)
+        if (result.label != null) return
+
+        const alternative = ensureExpression(args[1], result)
+        if (result.label != null) return
+
+        if (!predicateValue) {
+            evaluateExpression(alternative, scope, result)
+        } else {
+            result.value = predicateResult
+        }
+    },
+    Table_coalesce(args, scope, result) {
+        if (!verifyArguments(args, ["this", "other"], result)) return
+        const predicateResult = args[0]
+        if (result.label != null) return
+
+        const alternative = ensureExpression(args[1], result)
+        if (result.label != null) return
+
+        if (predicateResult == null || predicateResult == VOID) {
+            evaluateExpression(alternative, scope, result)
+        } else {
+            result.value = predicateResult
+        }
+    },
+    Table_else(args, scope, result) {
+        if (!verifyArguments(args, ["this", "other"], result)) return
+        const predicateResult = args[0]
+        if (result.label != null) return
+
+        const alternative = ensureExpression(args[1], result)
+        if (result.label != null) return
+
+        if (predicateResult == VOID) {
+            evaluateExpression(alternative, scope, result)
+        } else {
+            result.value = predicateResult
+        }
     },
 } satisfies Record<string, NativeHandler>
 
@@ -275,6 +333,11 @@ export class GlobalScope extends Scope {
             this.TablePrototype.declareProperty(name, new NativeFunction(this.FunctionPrototype, ["this", "a", "b"], operator)) || unreachable()
         }
         this.TablePrototype.declareProperty(OPERATOR_IS, new NativeFunction(this.FunctionPrototype, ["this", "a", "b"], _HANDLERS.Table_is)) || unreachable()
+
+        this.TablePrototype.declareProperty(OPERATOR_AND, new NativeFunction(this.FunctionPrototype, ["this", "other"], _HANDLERS.Table_and)) || unreachable()
+        this.TablePrototype.declareProperty(OPERATOR_OR, new NativeFunction(this.FunctionPrototype, ["this", "other"], _HANDLERS.Table_or)) || unreachable()
+        this.TablePrototype.declareProperty(OPERATOR_COALESCE, new NativeFunction(this.FunctionPrototype, ["this", "other"], _HANDLERS.Table_coalesce)) || unreachable()
+        this.TablePrototype.declareProperty(OPERATOR_ELSE, new NativeFunction(this.FunctionPrototype, ["this", "other"], _HANDLERS.Table_else)) || unreachable()
 
         this.BooleanPrototype.declareProperty(OPERATOR_NOT, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Boolean_not)) || unreachable()
         this.TablePrototype.declareProperty(OPERATOR_NOT, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Table_not)) || unreachable()
