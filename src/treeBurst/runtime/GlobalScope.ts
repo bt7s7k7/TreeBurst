@@ -1,7 +1,7 @@
 import { AbstractConstructor, Readwrite } from "../../comTypes/types"
 import { convertCase, unreachable } from "../../comTypes/util"
 import { LogMarker } from "../../prettyPrint/ObjectDescription"
-import { OPERATOR_ADD, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_IS, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_POW, OPERATOR_SUB } from "../const"
+import { OPERATOR_ADD, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_IS, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_POW, OPERATOR_SUB } from "../const"
 import { Diagnostic } from "../support/Diagnostic"
 import { Position } from "../support/Position"
 import { Expression } from "../syntax/Expression"
@@ -131,6 +131,18 @@ const _HANDLERS = {
 
         result.value = self == a
     },
+    Number_neg(args, scope, result) {
+        const [self] = ensureArgumentTypes(args, ["this"], ["number"], result)
+        if (result.label != null) return
+
+        result.value = -self
+    },
+    Number_bitNeg(args, scope, result) {
+        const [self] = ensureArgumentTypes(args, ["this"], ["number"], result)
+        if (result.label != null) return
+
+        result.value = ~self
+    },
     k_if(args, scope, result) {
         for (let i = 0; i < args.length; i += 2) {
             if (args.length - i < 2) {
@@ -160,6 +172,7 @@ const _HANDLERS = {
         result.value = VOID
     },
 } satisfies Record<string, NativeHandler>
+
 
 const _defaultFallback = ((name, a, b, scope, result) => {
     result.value = new Diagnostic(`This pair of operands do not support operator "${name}"`, INTRINSIC)
@@ -194,6 +207,30 @@ _makeOperatorFallback(OPERATOR_DIV)
 _makeOperatorFallback(OPERATOR_MOD)
 _makeOperatorFallback(OPERATOR_POW)
 
+
+const _NUMBER_OPERATORS: Record<string, NativeHandler> = {}
+function _makeNumberOperator(name: string, operator: (a: number, b: number) => any) {
+    _NUMBER_OPERATORS[name] = function (args, scope, result) {
+        const [a, b] = ensureArgumentTypes(args, ["this", "other"], ["number", "number"], result)
+        if (result.label != null) return
+
+        result.value = operator(a, b)
+    }
+}
+
+_makeNumberOperator(OPERATOR_ADD, (a, b) => a + b)
+_makeNumberOperator(OPERATOR_SUB, (a, b) => a - b)
+_makeNumberOperator(OPERATOR_MUL, (a, b) => a * b)
+_makeNumberOperator(OPERATOR_DIV, (a, b) => a / b)
+_makeNumberOperator(OPERATOR_MOD, (a, b) => a % b)
+_makeNumberOperator(OPERATOR_POW, (a, b) => a ** b)
+
+_makeNumberOperator(OPERATOR_BIT_XOR, (a, b) => a ^ b)
+_makeNumberOperator(OPERATOR_BIT_AND, (a, b) => a & b)
+_makeNumberOperator(OPERATOR_BIT_OR, (a, b) => a | b)
+_makeNumberOperator(OPERATOR_BIT_SHL, (a, b) => a << b)
+_makeNumberOperator(OPERATOR_BIT_SHR, (a, b) => a >> b)
+_makeNumberOperator(OPERATOR_BIT_SHR_UNSIGNED, (a, b) => a >>> b)
 
 export class GlobalScope extends Scope {
     public readonly TablePrototype = new ManagedTable(null)
@@ -244,6 +281,13 @@ export class GlobalScope extends Scope {
         this.TablePrototype.declareProperty(OPERATOR_BOOLEAN, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Table_boolean)) || unreachable()
 
         this.declareGlobal("@if", new NativeFunction(this.FunctionPrototype, [], _HANDLERS.k_if)) || unreachable()
+
+        for (const [name, operator] of Object.entries(_NUMBER_OPERATORS)) {
+            this.NumberPrototype.declareProperty(name, new NativeFunction(this.FunctionPrototype, ["this", "other"], operator)) || unreachable()
+        }
+
+        this.NumberPrototype.declareProperty(OPERATOR_NEG, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Number_neg)) || unreachable()
+        this.NumberPrototype.declareProperty(OPERATOR_BIT_NEG, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Number_bitNeg)) || unreachable()
 
         this.declareGlobal("true", true)
         this.declareGlobal("false", false)

@@ -1,7 +1,7 @@
 import { GenericParser } from "../../comTypes/GenericParser"
 import { Readwrite } from "../../comTypes/types"
 import { isNumber, isWord, joinIterable, unreachable } from "../../comTypes/util"
-import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_GT, OPERATOR_GTE, OPERATOR_IS, OPERATOR_LT, OPERATOR_LTE, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_NUMBER, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
+import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_GT, OPERATOR_GTE, OPERATOR_IS, OPERATOR_LT, OPERATOR_LTE, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_NUMBER, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
 import { Diagnostic } from "../support/Diagnostic"
 import { InputDocument } from "../support/InputDocument"
 import { Position } from "../support/Position"
@@ -44,6 +44,7 @@ export class Operator {
 
 const _PREFIX_OPERATORS = new Map<string, Operator>([
     ["-", new Operator(10, OPERATOR_NEG)],
+    ["~", new Operator(10, OPERATOR_BIT_NEG)],
     ["!", new Operator(10, OPERATOR_NOT)],
     ["+", new Operator(10, OPERATOR_NUMBER)],
     ["!!", new Operator(10, OPERATOR_BOOLEAN)],
@@ -65,14 +66,22 @@ const _INFIX_OPERATORS = new Map<string, Operator>([
     ["is", new Operator(2, OPERATOR_IS)],
     ["!=", new Operator(2, OPERATOR_NEQ)],
 
-    ["+", new Operator(3, OPERATOR_ADD)],
-    ["-", new Operator(3, OPERATOR_SUB)],
+    ["^", new Operator(3, OPERATOR_BIT_XOR)],
+    ["&", new Operator(3, OPERATOR_BIT_AND)],
+    ["|", new Operator(3, OPERATOR_BIT_OR)],
 
-    ["*", new Operator(4, OPERATOR_MUL)],
-    ["/", new Operator(4, OPERATOR_DIV)],
-    ["%", new Operator(4, OPERATOR_MOD)],
+    ["<<", new Operator(4, OPERATOR_BIT_SHL)],
+    [">>", new Operator(4, OPERATOR_BIT_SHR)],
+    [">>>", new Operator(4, OPERATOR_BIT_SHR_UNSIGNED)],
 
-    ["**", new Operator(5, OPERATOR_POW).withResultPresentence(5)],
+    ["+", new Operator(5, OPERATOR_ADD)],
+    ["-", new Operator(5, OPERATOR_SUB)],
+
+    ["*", new Operator(6, OPERATOR_MUL)],
+    ["/", new Operator(6, OPERATOR_DIV)],
+    ["%", new Operator(6, OPERATOR_MOD)],
+
+    ["**", new Operator(7, OPERATOR_POW).withResultPresentence(5)],
 
     [".", new Operator(100, OPERATOR_MEMBER_ACCESS)],
 ])
