@@ -1,6 +1,7 @@
 import { GenericParser } from "../../comTypes/GenericParser"
 import { Readwrite } from "../../comTypes/types"
 import { isNumber, isWord, joinIterable, unreachable } from "../../comTypes/util"
+import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_BOOLEAN, OPERATOR_DIV, OPERATOR_EQ, OPERATOR_GT, OPERATOR_GTE, OPERATOR_IS, OPERATOR_LT, OPERATOR_LTE, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_NUMBER, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
 import { Diagnostic } from "../support/Diagnostic"
 import { InputDocument } from "../support/InputDocument"
 import { Position } from "../support/Position"
@@ -42,9 +43,10 @@ export class Operator {
 }
 
 const _PREFIX_OPERATORS = new Map<string, Operator>([
-    ["-", new Operator(10, "k:neg")],
-    ["!", new Operator(10, "k:not")],
-    ["+", new Operator(10, "k:number")],
+    ["-", new Operator(10, OPERATOR_NEG)],
+    ["!", new Operator(10, OPERATOR_NOT)],
+    ["+", new Operator(10, OPERATOR_NUMBER)],
+    ["!!", new Operator(10, OPERATOR_BOOLEAN)],
 
     ["$", new Operator(20, OPERATOR_VARIABLE_DECLARATION)],
 ])
@@ -52,24 +54,25 @@ const _PREFIX_OPERATORS = new Map<string, Operator>([
 const _INFIX_OPERATORS = new Map<string, Operator>([
     ["=", new Operator(0, OPERATOR_ASSIGNMENT).withResultPresentence(0)],
 
-    ["&&", new Operator(1, "@k:and")],
-    ["||", new Operator(1, "@k:or")],
+    ["&&", new Operator(1, "@" + OPERATOR_AND)],
+    ["||", new Operator(1, "@" + OPERATOR_OR)],
 
-    ["<", new Operator(2, "k:lt")],
-    ["<=", new Operator(2, "k:lte")],
-    [">", new Operator(2, "k:gt")],
-    [">=", new Operator(2, "k:gte")],
-    ["==", new Operator(2, "k:eq")],
-    ["!=", new Operator(2, "k:neq")],
+    ["<", new Operator(2, OPERATOR_LT)],
+    ["<=", new Operator(2, OPERATOR_LTE)],
+    [">", new Operator(2, OPERATOR_GT)],
+    [">=", new Operator(2, OPERATOR_GTE)],
+    ["==", new Operator(2, OPERATOR_EQ)],
+    ["is", new Operator(2, OPERATOR_IS)],
+    ["!=", new Operator(2, OPERATOR_NEQ)],
 
-    ["+", new Operator(3, "k:add")],
-    ["-", new Operator(3, "k:sub")],
+    ["+", new Operator(3, OPERATOR_ADD)],
+    ["-", new Operator(3, OPERATOR_SUB)],
 
-    ["*", new Operator(4, "k:mul")],
-    ["/", new Operator(4, "k:div")],
-    ["%", new Operator(4, "k:mod")],
+    ["*", new Operator(4, OPERATOR_MUL)],
+    ["/", new Operator(4, OPERATOR_DIV)],
+    ["%", new Operator(4, OPERATOR_MOD)],
 
-    ["**", new Operator(5, "k:pow").withResultPresentence(5)],
+    ["**", new Operator(5, OPERATOR_POW).withResultPresentence(5)],
 
     [".", new Operator(100, OPERATOR_MEMBER_ACCESS)],
 ])

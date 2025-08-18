@@ -14,7 +14,7 @@ export namespace Expression {
     export class MemberAccess extends recordClass(Expression, (receiver: Expression, member: string) => ({ receiver, member })) { public static readonly [LogMarker.CUSTOM_NAME] = "MemberAccess" }
     export class Group extends recordClass(Expression, (children: Expression[]) => ({ children })) { public static readonly [LogMarker.CUSTOM_NAME] = "Group" }
     export class FunctionDeclaration extends recordClass(Expression, (parameters: string[], body: Expression) => ({ parameters, body })) { public static readonly [LogMarker.CUSTOM_NAME] = "FunctionDeclaration" }
-    export class Invocation extends recordClass(Expression, (receiver: Expression, args: Expression[]) => ({ receiver, args })) {
+    export class Invocation extends recordClass(Expression, (target: Expression, args: Expression[]) => ({ target, args })) {
         public static readonly [LogMarker.CUSTOM_NAME] = "Invocation"
 
         public static makeMethodCall(position: Position, receiver: Expression, method: string, args: Expression[]) {

@@ -84,10 +84,9 @@ export type _PositionFormattingOptions = Parameters<Position["format"]>[1]
 class _SpecialPosition extends Position {
     public format(message?: string | null, { colors = false, indent = "", error = false }: _PositionFormattingOptions = {}): string {
         const format = colors ? FORMAT[error ? "danger" : "primary"] : ((v: string) => v)
-        const formatLocation = colors ? FORMAT.primary : format
 
         return (
-            indent + formatLocation(`${this.kind}`) + (message != null ? format(" - " + message) : "")
+            indent + (message != null ? format(message) : "")
         )
     }
 

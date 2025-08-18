@@ -6,6 +6,10 @@ import { DescriptionFormatter } from "../prettyPrint/DescriptionFormatter"
 import { inspect } from "../prettyPrint/inspect"
 import { Formatter } from "../textFormat/Formatter"
 import { HTMLFormatter } from "../textFormatHTML/HTMLFormatter"
+import { evaluateExpression } from "../treeBurst/runtime/evaluateExpression"
+import { ExpressionResult } from "../treeBurst/runtime/ExpressionResult"
+import { GlobalScope } from "../treeBurst/runtime/GlobalScope"
+import { NativeFunction } from "../treeBurst/runtime/NativeFunction"
 import { Diagnostic } from "../treeBurst/support/Diagnostic"
 import { InputDocument } from "../treeBurst/support/InputDocument"
 import { TreeBurstParser } from "../treeBurst/syntax/TreeBurstParser"
@@ -18,6 +22,7 @@ export function inspectToHtml(object: any) {
 
 export class TreeBurstLanguage extends LanguageServiceState {
     protected _ast: string | null = null
+    protected _output: string | null = null
     protected _diagnostics: Diagnostic[] = []
 
     protected override _getHints(editor: Editor, position: Position, word: string): LanguageServiceHintResult {
@@ -40,22 +45,42 @@ export class TreeBurstLanguage extends LanguageServiceState {
                 name: "ast", label: "AST",
                 content: this._ast ?? "",
             },
+            {
+                name: "output", label: "Output",
+                content: this._output ?? "",
+            },
         ]
     }
 
     protected override _compile(code: string): void {
         this.ready = true
+        this._output = null
 
         const input = new InputDocument("anon", code)
         const parser = new TreeBurstParser(input)
 
-        const result = parser.parse()
-        this._ast = inspectToHtml(result)
+        const root = parser.parse()
+        this._ast = inspectToHtml(root)
 
         this._diagnostics = parser.diagnostics
 
         if (this._diagnostics.length > 0) {
             this.errors.push(...this._diagnostics.map(inspectToHtml))
+            return
         }
+
+        const result = new ExpressionResult()
+        const scope = new GlobalScope()
+
+        const output: string[] = []
+        scope.declareGlobal("print", new NativeFunction(scope.FunctionPrototype, [], (args, scope, result) => {
+            output.push(args.map(inspectToHtml).join(" "))
+        }))
+
+        evaluateExpression(root, scope, result)
+
+        output.push(`${inspectToHtml(result.value)}`)
+        if (result.label != null) output.push(`Label: ${inspectToHtml(result.label)}`)
+        this._output = output.join("\n")
     }
 }
