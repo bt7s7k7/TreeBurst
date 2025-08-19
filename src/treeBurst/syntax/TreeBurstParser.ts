@@ -153,7 +153,17 @@ export class TreeBurstParser extends GenericParser {
             prefix = "@"
         }
 
-        const word = this.readWhile((v, i) => isWord(v, i) || v[i] == ":")
+        if (this.getCurrent() == ":") {
+            this.index = start
+            return ""
+        }
+
+        let word = this.readWhile((v, i) => isWord(v, i) || v[i] == ":")
+        if (word.endsWith(":")) {
+            this.index--
+            word = word.slice(0, -1)
+        }
+
         if (word.length == 0) {
             this.index = start
             return ""
@@ -367,6 +377,67 @@ export class TreeBurstParser extends GenericParser {
         // resulting AST will be `Invocation(FunctionDeclaration)`, instead of `FunctionDeclaration,
         // Invocation(Identifier)`. 
         if (operatorOnly) return this._token = null
+
+        if (this.consume("{")) {
+            const map = new Expression.MapLiteral(this.getPosition(start))
+
+            while (!this.isDone()) {
+                this.skipWhitespace()
+                if (this.isDone()) break
+                if (this.consume("}")) break
+                if (this.consume(",")) continue
+
+                const entryStart = this.index
+
+                let key: Expression | null = null
+                let staticName: string | null = null
+                let value: Expression
+
+                if (this.consume("[")) {
+                    const keyExpressionPosition = this.getPosition()
+                    const content = this.parseBlock("]")
+                    if (content.length == 0) {
+                        this.createDiagnostic("Expected key expression", entryStart)
+                    } else {
+                        key = content.length == 1 ? content[0] : new Expression.Group(keyExpressionPosition, content)
+                    }
+                } else {
+                    staticName = this.consumeWord()
+                    if (staticName == "") {
+                        this.createDiagnostic("Expected key expression")
+                        key = null
+                        staticName = null
+                    } else {
+                        key = new Expression.StringLiteral(this.getPosition(entryStart), staticName)
+                    }
+                }
+
+                this.skipWhitespace()
+
+                if (this.consume(":")) {
+                    this.skipWhitespace()
+                    this._token = null
+                    const parseResult = this.parseExpression()
+                    if (parseResult == null) {
+                        this.createDiagnostic("Expected value expression")
+                        continue
+                    }
+
+                    value = parseResult
+                } else if (staticName != null && key != null) {
+                    value = new Expression.Identifier(key.position, staticName)
+                } else {
+                    this.createDiagnostic("Expected value expression")
+                    continue
+                }
+
+                if (key == null) continue
+
+                map.entries.push([key, value])
+            }
+
+            return this._token = map
+        }
 
         if (isNumber(this.input, this.index) || (this.getCurrent() == "-" && isNumber(this.at(1)))) {
             let numberText = ""

@@ -6,6 +6,7 @@ import { ExpressionResult } from "./ExpressionResult"
 import { VOID } from "./GlobalScope"
 import { ManagedArray } from "./ManagedArray"
 import { ManagedFunction } from "./ManagedFunction"
+import { ManagedMap } from "./ManagedMap"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedTable } from "./ManagedTable"
 import { ManagedValue } from "./ManagedValue"
@@ -289,6 +290,25 @@ export function evaluateExpression(expression: Expression, scope: Scope, result:
         const elements = evaluateExpressions(expression.elements, scope, result)
         if (elements == null) return null
         result.value = new ManagedArray(scope.globalScope.ArrayPrototype, elements)
+        return
+    }
+
+    if (expression instanceof Expression.MapLiteral) {
+        const map = new ManagedMap(scope.globalScope.MapPrototype)
+
+        for (const [keyExpression, valueExpression] of expression.entries) {
+            evaluateExpression(keyExpression, scope, result)
+            if (result.label != null) return
+            const key = result.value
+
+            evaluateExpression(valueExpression, scope, result)
+            if (result.label != null) return
+            const value = result.value
+
+            map.entries.set(key, value)
+        }
+
+        result.value = map
         return
     }
 

@@ -151,3 +151,19 @@ x[4]
 // Test: array bounds check 2, expect fail
 $x = [1,2,3]
 x[-4]
+
+// Test: map
+$a = 5
+$map = {a, b: true, [1]: "c"}
+assertEqual(map.length, 3)
+assertEqual(map["a"], 5)
+assertEqual(map["b"], true)
+assertEqual(map[1], "c")
+assertEqual(map["other"], void)
+
+map["a"] = 6
+assertEqual(map["a"], 6)
+
+map["a"] = void
+assertEqual(map["a"], void)
+assertEqual(map.length, 2)

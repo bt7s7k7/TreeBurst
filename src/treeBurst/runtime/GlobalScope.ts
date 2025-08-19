@@ -8,6 +8,7 @@ import { Expression } from "../syntax/Expression"
 import { evaluateExpression, evaluateInvocation, findProperty, getValueName, LABEL_EXCEPTION } from "./evaluateExpression"
 import { ExpressionResult } from "./ExpressionResult"
 import { ManagedArray } from "./ManagedArray"
+import { ManagedMap } from "./ManagedMap"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedTable } from "./ManagedTable"
 import { ManagedValue } from "./ManagedValue"
@@ -290,13 +291,36 @@ const _HANDLERS = {
 
             result.value = self.elements[index]
         } else {
-            let [self, index, value] = ensureArgumentTypes<[ManagedArray, number, any]>(args, ["this", "index", "value"], [ManagedArray, "number", null], scope, result)
+            let [self, index, value] = ensureArgumentTypes<[ManagedArray, number, ManagedValue]>(args, ["this", "index", "value"], [ManagedArray, "number", null], scope, result)
             if (result.label != null) return
 
             index = self.normalizeIndex(index, result)
             if (result.label != null) return
 
             self.elements[index] = value
+            result.value = value
+        }
+    },
+    Map_at(args, scope, result) {
+        if (args.length <= 2) {
+            let [self, index] = ensureArgumentTypes<[ManagedMap, ManagedValue]>(args, ["this", "index"], [ManagedMap, null], scope, result)
+            if (result.label != null) return
+
+            if (self.entries.has(index)) {
+                result.value = self.entries.get(index)!
+            } else {
+                result.value = VOID
+            }
+        } else {
+            let [self, index, value] = ensureArgumentTypes<[ManagedMap, ManagedValue, ManagedValue]>(args, ["this", "index", "value"], [ManagedMap, null, null], scope, result)
+            if (result.label != null) return
+
+            if (value == VOID) {
+                self.entries.delete(index)
+            } else {
+                self.entries.set(index, value)
+            }
+
             result.value = value
         }
     },
@@ -388,6 +412,9 @@ export class GlobalScope extends Scope {
     public readonly ArrayPrototype = new ManagedTable(this.TablePrototype)
     public readonly Array = this.declareGlobal("Array", new ManagedTable(this.TablePrototype))
 
+    public readonly MapPrototype = new ManagedTable(this.TablePrototype)
+    public readonly Map = this.declareGlobal("Map", new ManagedTable(this.TablePrototype))
+
     public declareGlobal<T extends ManagedValue>(name: string, value: T) {
         const variable = this.declareVariable(name)
         if (variable == null) {
@@ -413,6 +440,7 @@ export class GlobalScope extends Scope {
         this.String.declareProperty("prototype", this.StringPrototype) || unreachable()
         this.Boolean.declareProperty("prototype", this.BooleanPrototype) || unreachable()
         this.Array.declareProperty("prototype", this.ArrayPrototype) || unreachable()
+        this.Map.declareProperty("prototype", this.MapPrototype) || unreachable()
 
         this.Table.declareProperty("new", new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Table_new)) || unreachable()
 
@@ -440,6 +468,7 @@ export class GlobalScope extends Scope {
         this.NumberPrototype.declareProperty(OPERATOR_BIT_NEG, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Number_bitNeg)) || unreachable()
 
         this.ArrayPrototype.declareProperty(OPERATOR_AT, new NativeFunction(this.FunctionPrototype, ["this", "other"], _HANDLERS.Array_at)) || unreachable()
+        this.MapPrototype.declareProperty(OPERATOR_AT, new NativeFunction(this.FunctionPrototype, ["this", "other"], _HANDLERS.Map_at)) || unreachable()
 
         this.declareGlobal("true", true)
         this.declareGlobal("false", false)

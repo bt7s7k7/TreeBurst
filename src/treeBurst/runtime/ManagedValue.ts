@@ -1,6 +1,7 @@
 import { VOID } from "./GlobalScope"
 import { ManagedArray } from "./ManagedArray"
 import { ManagedFunction } from "./ManagedFunction"
+import { ManagedMap } from "./ManagedMap"
 import { ManagedTable } from "./ManagedTable"
 import { UnmanagedHandle } from "./UnmanagedHandle"
 
@@ -9,6 +10,7 @@ export type ManagedValue =
     | ManagedTable
     | ManagedFunction
     | ManagedArray
+    | ManagedMap
     | null
     | typeof VOID
     | UnmanagedHandle
