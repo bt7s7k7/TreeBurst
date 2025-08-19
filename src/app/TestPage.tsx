@@ -72,7 +72,6 @@ class _Test {
 export const TestPage = (defineComponent({
     name: "TestPage",
     setup(props, ctx) {
-        const router = useRouter()
         const tests = shallowRef<_Test[]>(null!)
         const fails = ref(0)
 
@@ -89,7 +88,7 @@ export const TestPage = (defineComponent({
         run()
 
         return () => (
-            <div class="flex column as-page my-4">
+            <div class="flex column as-page p-4">
                 <div class="flex row justify-main center-cross mb-4">
                     {fails.value > 0 ? (
                         <div class="text-danger monospace">{fails.value} test failures</div>
