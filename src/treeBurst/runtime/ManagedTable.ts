@@ -40,4 +40,6 @@ export class ManagedTable extends ManagedObject {
         this._properties.set(name, value)
         return true
     }
+
+    public static readonly [LogMarker.CUSTOM_NAME] = "Table"
 }

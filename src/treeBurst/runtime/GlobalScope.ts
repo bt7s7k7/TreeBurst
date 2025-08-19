@@ -1,12 +1,13 @@
 import { AbstractConstructor, Readwrite } from "../../comTypes/types"
 import { convertCase, unreachable } from "../../comTypes/util"
 import { LogMarker } from "../../prettyPrint/ObjectDescription"
-import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_COALESCE, OPERATOR_DIV, OPERATOR_ELSE, OPERATOR_EQ, OPERATOR_IS, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
+import { OPERATOR_ADD, OPERATOR_AND, OPERATOR_AT, OPERATOR_BIT_AND, OPERATOR_BIT_NEG, OPERATOR_BIT_OR, OPERATOR_BIT_SHL, OPERATOR_BIT_SHR, OPERATOR_BIT_SHR_UNSIGNED, OPERATOR_BIT_XOR, OPERATOR_BOOLEAN, OPERATOR_COALESCE, OPERATOR_DIV, OPERATOR_ELSE, OPERATOR_EQ, OPERATOR_IS, OPERATOR_MOD, OPERATOR_MUL, OPERATOR_NEG, OPERATOR_NEQ, OPERATOR_NOT, OPERATOR_NUMBER, OPERATOR_OR, OPERATOR_POW, OPERATOR_SUB } from "../const"
 import { Diagnostic } from "../support/Diagnostic"
 import { Position } from "../support/Position"
 import { Expression } from "../syntax/Expression"
 import { evaluateExpression, evaluateInvocation, findProperty, getValueName, LABEL_EXCEPTION } from "./evaluateExpression"
 import { ExpressionResult } from "./ExpressionResult"
+import { ManagedArray } from "./ManagedArray"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedTable } from "./ManagedTable"
 import { ManagedValue } from "./ManagedValue"
@@ -27,28 +28,61 @@ export function verifyArguments(args: ManagedValue[], names: string[], result: E
             `Expected ${names.length} arguments, but got ${args.length}`, INTRINSIC,
             names.slice(args.length).map(name => new Diagnostic(`Missing argument "${name}"`, INTRINSIC)),
         )
+        result.label = LABEL_EXCEPTION
         return false
     }
 
     return true
 }
 
-export function ensureArgumentTypes<T extends any[] = any[]>(args: ManagedValue[], names: string[], types: (null | string | AbstractConstructor & { readonly [LogMarker.CUSTOM_NAME]: string })[], result: ExpressionResult): T {
+export function ensureArgumentTypes<T extends any[] = any[]>(args: ManagedValue[], names: string[], types: (null | string | AbstractConstructor & { readonly [LogMarker.CUSTOM_NAME]: string })[], scope: Scope, result: ExpressionResult): T {
     if (types.length != names.length) unreachable()
 
-    if (!verifyArguments(args, names, result)) return [] as any as T
+    if (!verifyArguments(args, names, result)) return [] as never
 
     const results: any[] = []
     let errors: Diagnostic[] | null = null
     for (let i = 0; i < types.length; i++) {
         const type = types[i]
-        if (type == null) continue
-        const value = args[i]
+        if (type == null) {
+            results[i] = args[i]
+            continue
+        }
+
+        let value = args[i]
         const name = names[i]
         const passes = typeof type == "string" ? typeof value == type : value instanceof type
 
         if (!passes) {
-            (errors ??= []).push(new Diagnostic(`Wrong type for argument "${name}", expected "${typeof type == "string" ? convertCase(type, "camel", "pascal") : type[LogMarker.CUSTOM_NAME]}", but got "${getValueName(value)}"`, INTRINSIC))
+            let conversionError: Diagnostic | null = null
+
+            if (type == "boolean") {
+                value = ensureBoolean(value, scope, result)
+                if (result.label == null) {
+                    results[i] = value
+                    continue
+                }
+
+                if (result.label != LABEL_EXCEPTION || !(result.value instanceof Diagnostic)) return results as never
+                conversionError = result.value
+            }
+
+            if (type == "number") {
+                value = ensureNumber(value, scope, result)
+                if (result.label == null) {
+                    results[i] = value
+                    continue
+                }
+
+                if (result.label != LABEL_EXCEPTION || !(result.value instanceof Diagnostic)) return results as never
+                conversionError = result.value
+            }
+
+            (errors ??= []).push(new Diagnostic(
+                `Wrong type for argument "${name}", expected "${typeof type == "string" ? convertCase(type, "camel", "pascal") : type[LogMarker.CUSTOM_NAME]}", but got "${getValueName(value)}"`,
+                INTRINSIC,
+                conversionError != null ? [conversionError] : undefined,
+            ))
         }
 
         results[i] = value
@@ -59,7 +93,7 @@ export function ensureArgumentTypes<T extends any[] = any[]>(args: ManagedValue[
         result.label = LABEL_EXCEPTION
     }
 
-    return results as any as T
+    return results as never
 }
 
 export function ensureExpression(value: ManagedValue, result: ExpressionResult) {
@@ -83,6 +117,20 @@ export function ensureBoolean(value: ManagedValue, scope: Scope, result: Express
     return value as boolean
 }
 
+export function ensureNumber(value: ManagedValue, scope: Scope, result: ExpressionResult) {
+    if (typeof value != "number") {
+        evaluateInvocation(value, value, OPERATOR_NUMBER, INTRINSIC, [], scope, result)
+        if (result.label != null) return 0
+
+        if (typeof value != "boolean") {
+            evaluateInvocation(result.value, scope.globalScope.TablePrototype, OPERATOR_NUMBER, INTRINSIC, [], scope, result)
+            if (result.label != null) return 0
+        }
+    }
+
+    return value as number
+}
+
 const _HANDLERS = {
     Table_new(args, scope, result) {
         if (!verifyArguments(args, ["this"], result)) return
@@ -104,7 +152,7 @@ const _HANDLERS = {
         result.value = new ManagedTable(prototype)
     },
     Boolean_not(args, scope, result) {
-        const [self] = ensureArgumentTypes(args, ["this"], ["boolean"], result)
+        const [self] = ensureArgumentTypes(args, ["this"], ["boolean"], scope, result)
         if (result.label != null) return
 
         result.value = !self
@@ -135,13 +183,13 @@ const _HANDLERS = {
         result.value = self == a
     },
     Number_neg(args, scope, result) {
-        const [self] = ensureArgumentTypes(args, ["this"], ["number"], result)
+        const [self] = ensureArgumentTypes(args, ["this"], ["number"], scope, result)
         if (result.label != null) return
 
         result.value = -self
     },
     Number_bitNeg(args, scope, result) {
-        const [self] = ensureArgumentTypes(args, ["this"], ["number"], result)
+        const [self] = ensureArgumentTypes(args, ["this"], ["number"], scope, result)
         if (result.label != null) return
 
         result.value = ~self
@@ -232,6 +280,26 @@ const _HANDLERS = {
             result.value = predicateResult
         }
     },
+    Array_at(args, scope, result) {
+        if (args.length <= 2) {
+            let [self, index] = ensureArgumentTypes<[ManagedArray, number]>(args, ["this", "index"], [ManagedArray, "number"], scope, result)
+            if (result.label != null) return
+
+            index = self.normalizeIndex(index, result)
+            if (result.label != null) return
+
+            result.value = self.elements[index]
+        } else {
+            let [self, index, value] = ensureArgumentTypes<[ManagedArray, number, any]>(args, ["this", "index", "value"], [ManagedArray, "number", null], scope, result)
+            if (result.label != null) return
+
+            index = self.normalizeIndex(index, result)
+            if (result.label != null) return
+
+            self.elements[index] = value
+            result.value = value
+        }
+    },
 } satisfies Record<string, NativeHandler>
 
 
@@ -273,14 +341,14 @@ const _NUMBER_OPERATORS: Record<string, NativeHandler> = {}
 function _makeNumberOperator(name: string, operator: (a: number, b: number) => any) {
     _NUMBER_OPERATORS[name] = function (args, scope, result) {
         if (args.length > 2) {
-            const [_, a, b] = ensureArgumentTypes(args, ["this", "left", "right"], [null, "number", "number"], result)
+            const [_, a, b] = ensureArgumentTypes(args, ["this", "left", "right"], [null, "number", "number"], scope, result)
             if (result.label != null) return
 
             result.value = operator(a, b)
             return
         }
 
-        const [a, b] = ensureArgumentTypes(args, ["this", "right"], ["number", "number"], result)
+        const [a, b] = ensureArgumentTypes(args, ["this", "right"], ["number", "number"], scope, result)
         if (result.label != null) return
 
         result.value = operator(a, b)
@@ -303,11 +371,10 @@ _makeNumberOperator(OPERATOR_BIT_SHR_UNSIGNED, (a, b) => a >>> b)
 
 export class GlobalScope extends Scope {
     public readonly TablePrototype = new ManagedTable(null)
+    public readonly Table = this.declareGlobal("Table", new ManagedTable(this.TablePrototype))
 
     public readonly FunctionPrototype = new ManagedTable(this.TablePrototype)
     public readonly Function = this.declareGlobal("Function", new ManagedTable(this.TablePrototype))
-
-    public readonly Table = this.declareGlobal("Table", new ManagedTable(this.TablePrototype))
 
     public readonly NumberPrototype = new ManagedTable(this.TablePrototype)
     public readonly Number = this.declareGlobal("Number", new ManagedTable(this.TablePrototype))
@@ -317,6 +384,9 @@ export class GlobalScope extends Scope {
 
     public readonly BooleanPrototype = new ManagedTable(this.TablePrototype)
     public readonly Boolean = this.declareGlobal("Boolean", new ManagedTable(this.TablePrototype))
+
+    public readonly ArrayPrototype = new ManagedTable(this.TablePrototype)
+    public readonly Array = this.declareGlobal("Array", new ManagedTable(this.TablePrototype))
 
     public declareGlobal<T extends ManagedValue>(name: string, value: T) {
         const variable = this.declareVariable(name)
@@ -338,6 +408,12 @@ export class GlobalScope extends Scope {
         (this as Readwrite<this>).globalScope = this
 
         this.Table.declareProperty("prototype", this.TablePrototype) || unreachable()
+        this.Function.declareProperty("prototype", this.FunctionPrototype) || unreachable()
+        this.Number.declareProperty("prototype", this.NumberPrototype) || unreachable()
+        this.String.declareProperty("prototype", this.StringPrototype) || unreachable()
+        this.Boolean.declareProperty("prototype", this.BooleanPrototype) || unreachable()
+        this.Array.declareProperty("prototype", this.ArrayPrototype) || unreachable()
+
         this.Table.declareProperty("new", new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Table_new)) || unreachable()
 
         for (const [name, operator] of Object.entries(_OPERATOR_FALLBACKS)) {
@@ -362,6 +438,8 @@ export class GlobalScope extends Scope {
 
         this.NumberPrototype.declareProperty(OPERATOR_NEG, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Number_neg)) || unreachable()
         this.NumberPrototype.declareProperty(OPERATOR_BIT_NEG, new NativeFunction(this.FunctionPrototype, ["this"], _HANDLERS.Number_bitNeg)) || unreachable()
+
+        this.ArrayPrototype.declareProperty(OPERATOR_AT, new NativeFunction(this.FunctionPrototype, ["this", "other"], _HANDLERS.Array_at)) || unreachable()
 
         this.declareGlobal("true", true)
         this.declareGlobal("false", false)

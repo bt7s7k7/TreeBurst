@@ -1,3 +1,4 @@
+import { LogMarker } from "../../prettyPrint/ObjectDescription"
 import { ExpressionResult } from "./ExpressionResult"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedValue } from "./ManagedValue"
@@ -19,4 +20,6 @@ export abstract class ManagedFunction extends ManagedObject {
         prototype: ManagedObject | null,
         public readonly parameters: string[],
     ) { super(prototype) }
+
+    public static readonly [LogMarker.CUSTOM_NAME] = "Function"
 }

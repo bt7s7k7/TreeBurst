@@ -1,9 +1,10 @@
-import { convertCase } from "../../comTypes/util"
+import { convertCase, unreachable } from "../../comTypes/util"
 import { Diagnostic } from "../support/Diagnostic"
 import { Position } from "../support/Position"
 import { Expression } from "../syntax/Expression"
 import { ExpressionResult } from "./ExpressionResult"
 import { VOID } from "./GlobalScope"
+import { ManagedArray } from "./ManagedArray"
 import { ManagedFunction } from "./ManagedFunction"
 import { ManagedObject } from "./ManagedObject"
 import { ManagedTable } from "./ManagedTable"
@@ -130,7 +131,6 @@ export function evaluateInvocation(receiver: ManagedValue, container: ManagedVal
         }
 
         function_1 = result.value
-
     }
 
     if (!(function_1 instanceof ManagedFunction)) {
@@ -284,4 +284,13 @@ export function evaluateExpression(expression: Expression, scope: Scope, result:
         result.value = new ScriptFunction(scope.globalScope.FunctionPrototype, expression.parameters, expression.body, scope)
         return
     }
+
+    if (expression instanceof Expression.ArrayLiteral) {
+        const elements = evaluateExpressions(expression.elements, scope, result)
+        if (elements == null) return null
+        result.value = new ManagedArray(scope.globalScope.ArrayPrototype, elements)
+        return
+    }
+
+    unreachable()
 }

@@ -19,4 +19,6 @@ export abstract class ManagedObject {
     constructor(
         public readonly prototype: ManagedObject | null,
     ) { }
+
+    public static readonly [LogMarker.CUSTOM_NAME]: string = "Object"
 }
