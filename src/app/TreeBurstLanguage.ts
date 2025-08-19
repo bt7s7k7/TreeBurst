@@ -14,6 +14,7 @@ import { Diagnostic } from "../treeBurst/support/Diagnostic"
 import { InputDocument } from "../treeBurst/support/InputDocument"
 import { TreeBurstParser } from "../treeBurst/syntax/TreeBurstParser"
 import "./style.scss"
+import { initTestFunctions } from "./testFunctions"
 
 const _DEFAULT_COLOR: DescriptionFormatter.FormatOptions["color"] = (text, color) => Formatter.adapt(text, color.custom ? "white" : color.name)
 export function inspectToHtml(object: any) {
@@ -77,6 +78,8 @@ export class TreeBurstLanguage extends LanguageServiceState {
             output.push(args.map(inspectToHtml).join(" "))
             result.value = VOID
         }))
+
+        initTestFunctions(scope)
 
         evaluateExpression(root, scope, result)
 

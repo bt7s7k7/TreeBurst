@@ -334,7 +334,7 @@ export class TreeBurstParser extends GenericParser {
 
         const start = this.index
 
-        if (isNumber(this.input, this.index) || this.getCurrent() == "-") {
+        if (isNumber(this.input, this.index) || (this.getCurrent() == "-" && isNumber(this.at(1)))) {
             let numberText = ""
             if (this.consume("-")) numberText += "-"
 

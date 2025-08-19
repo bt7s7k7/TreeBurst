@@ -1,12 +1,16 @@
 import { h } from "vue"
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router"
-import { EditorPage } from "./EditorPage"
 
 const routes: RouteRecordRaw[] = [
     {
         name: "Editor",
         path: "/editor",
-        component: EditorPage,
+        component: () => import("./EditorPage").then(v => v.EditorPage),
+    },
+    {
+        name: "Test",
+        path: "/test",
+        component: () => import("./TestPage").then(v => v.TestPage),
     },
     {
         name: "404",

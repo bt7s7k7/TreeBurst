@@ -1,0 +1,86 @@
+// Test: assert success
+assert(true)
+
+// Test: assert fail, expect fail
+assert(false)
+
+// Test: comparison operators
+assert(true == true)
+assert(false == false)
+assert(true != false)
+assert(1 != "")
+assert(1 == 1)
+assert(1 != 2)
+assert(void != null)
+assert(void == void)
+
+// Test: assert equal
+assertEqual(1, 1)
+
+// Test: assert unequal, expect fail
+assertEqual(1, 2)
+
+// Test: logical operators
+assertEqual(false && false, false)
+assertEqual(true && false, false)
+assertEqual(false && true, false)
+assertEqual(true && true, true)
+
+assertEqual(false || false, false)
+assertEqual(true || false, true)
+assertEqual(false || true, true)
+
+assertEqual(getCounter(), 0)
+
+1 && increment()
+assertEqual(getCounter(), 1)
+
+0 && increment()
+assertEqual(getCounter(), 1)
+
+1 || increment()
+assertEqual(getCounter(), 1)
+
+0 || increment()
+assertEqual(getCounter(), 2)
+
+// Test: coalescing
+assertEqual(false ?? 0, false)
+assertEqual(null ?? 0, 0)
+assertEqual(void ?? 0, 0)
+assertEqual(null else 0, null)
+assertEqual(void else 0, 0)
+
+// Test: numeric operators
+assertEqual(1 + 1.5, 2.5)
+assertEqual(1 - 1.5, -0.5)
+assertEqual(1 * 1.5, 1.5)
+assertEqual(2 / 4, 0.5)
+assertEqual(5 % 2, 1)
+assertEqual(-(1 + 1), -2)
+assertEqual(3 | 4, 7)
+assertEqual(3 & 1, 1)
+assertEqual(3 ^ 1, 2)
+
+// Test: numeric operators typecheck, expect fail
+void + 1
+
+// Test: if
+assertEqual(@if(true 1 0), 1)
+assertEqual(@if(false 1 0), 0)
+assertEqual(@if(false 1), void)
+
+// Test: function declaration
+assertEqual((\4)(), 4)
+assertEqual((\(a) a + 1)(2), 3)
+
+// Test: variable declaration
+$x = 1
+assertEqual(x, 1)
+assertEqual($y = 2, 2)
+assertEqual(x = x + 1, 2)
+assertEqual(x, 2)
+
+// Test: variable declaration duplicate, expect fail
+$x = 1
+$x = 2
