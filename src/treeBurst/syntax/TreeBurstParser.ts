@@ -284,9 +284,9 @@ export class TreeBurstParser extends GenericParser {
     }
 
 
-    public peekToken() {
+    public peekToken(operatorOnly: boolean) {
         if (this._token == null) {
-            return this.nextToken()
+            return this.nextToken(operatorOnly)
         }
 
         return this._token
@@ -297,7 +297,7 @@ export class TreeBurstParser extends GenericParser {
         const result: Expression[] = []
 
         top: while (true) {
-            if (this.peekToken() == null) {
+            if (this.peekToken(false) == null) {
                 this.skipWhitespace()
                 if (this.isDone()) break
 
@@ -322,8 +322,7 @@ export class TreeBurstParser extends GenericParser {
         return result
     }
 
-
-    public nextToken(): Token | null {
+    public nextToken(operatorOnly: boolean): Token | null {
         this.skipWhitespace()
 
         const skippedNewline = this._skippedNewline
@@ -333,6 +332,41 @@ export class TreeBurstParser extends GenericParser {
         }
 
         const start = this.index
+
+        for (const token of _OPERATOR_TOKENS) {
+            if (this.consume(token)) {
+                // Do not handle negative number literals
+                if (token == "-" && isWord(this.getCurrent())) {
+                    this.index--
+                    continue
+                }
+
+                return this._token = new OperatorInstance(this.getPosition(start), token)
+            }
+        }
+
+        if (this.consume("(")) {
+            this._token = new Expression.Group(this.getPosition(start), this.parseBlock(")"))
+            this._skippedNewline = skippedNewline
+            return this._token
+        }
+
+        if (this.consume("[")) {
+            this._token = new Expression.ArrayLiteral(this.getPosition(start), this.parseBlock("]"))
+            this._skippedNewline = skippedNewline
+            return this._token
+        }
+
+        // The `operatorOnly` parameter prevents consumption of tokens that can not act as an
+        // operator. Its purpose is not for filtering, but its to prevent erroneously silently
+        // dropping tokens. For example, take the code `\b a()`: when parsing the expression inside
+        // the lambda, without this parameter, after the token `b` is consumed and an operator is
+        // expected, the token `a` would be consumed, which will terminate the parsing of the lambda
+        // -- this is correct, however, when the parsed lambda is set as the current token, it
+        // **overrides** the consumed token `a`. Following that, upon parsing the `()` token, the
+        // resulting AST will be `Invocation(FunctionDeclaration)`, instead of `FunctionDeclaration,
+        // Invocation(Identifier)`. 
+        if (operatorOnly) return this._token = null
 
         if (isNumber(this.input, this.index) || (this.getCurrent() == "-" && isNumber(this.at(1)))) {
             let numberText = ""
@@ -352,24 +386,6 @@ export class TreeBurstParser extends GenericParser {
             }
 
             return this._token = new Expression.NumberLiteral(this.getPosition(start), number)
-        }
-
-        for (const token of _OPERATOR_TOKENS) {
-            if (this.consume(token)) {
-                return this._token = new OperatorInstance(this.getPosition(start), token)
-            }
-        }
-
-        if (this.consume("(")) {
-            this._token = new Expression.Group(this.getPosition(start), this.parseBlock(")"))
-            this._skippedNewline = skippedNewline
-            return this._token
-        }
-
-        if (this.consume("[")) {
-            this._token = new Expression.ArrayLiteral(this.getPosition(start), this.parseBlock("]"))
-            this._skippedNewline = skippedNewline
-            return this._token
         }
 
         if (this.consume("\"")) return this._token = this.parseString("\"")
@@ -415,17 +431,8 @@ export class TreeBurstParser extends GenericParser {
         return this._token = new Expression.Identifier(this.getPosition(start), variable)
     }
 
-    public ensureTokenIsOperator() {
-        const token = this.peekToken()
-
-        if (token instanceof OperatorInstance) return true
-        if (token instanceof Expression.Group || token instanceof Expression.ArrayLiteral) return true
-
-        return false
-    }
-
     public parseExpression(precedence = 0): Expression | null {
-        let target = this.peekToken()
+        let target = this.peekToken(false)
         if (target == null) {
             this.createDiagnostic(this.isDone() ? _UNEXPECTED_EOF : _INVALID_TOKEN)
             return null
@@ -435,10 +442,10 @@ export class TreeBurstParser extends GenericParser {
             const prefixOperator = _PREFIX_OPERATORS.get(target.token)
             if (prefixOperator == null) {
                 this.createDiagnostic("Unexpected operator", target.position)
-                this.nextToken()
+                this.nextToken(false)
                 return null
             } else {
-                this.nextToken()
+                this.nextToken(false)
                 const operand = this.parseExpression(prefixOperator.resultPrecedence)
                 if (operand == null) return null
                 if (!(operand instanceof Expression)) unreachable()
@@ -451,12 +458,11 @@ export class TreeBurstParser extends GenericParser {
             }
         }
         else {
-            this.nextToken()
+            this.nextToken(true)
         }
 
         while (true) {
-            if (!this.ensureTokenIsOperator()) return target
-            const next = this.peekToken()
+            const next = this.peekToken(true)
 
             if (next instanceof OperatorInstance) {
                 const infixOperator = _INFIX_OPERATORS.get(next.token)
@@ -466,7 +472,7 @@ export class TreeBurstParser extends GenericParser {
                 }
 
                 if (infixOperator.precedence >= precedence) {
-                    this.nextToken()
+                    this.nextToken(false)
                     const operand = this.parseExpression(infixOperator.resultPrecedence)
                     if (operand == null) return target
                     if (!(operand instanceof Expression)) unreachable()
@@ -494,12 +500,12 @@ export class TreeBurstParser extends GenericParser {
             } else if (!this._skippedNewline && next instanceof Expression.Group) {
                 if (precedence > 100) return target
                 target = new Expression.Invocation(target.position, target, next.children)
-                this.nextToken()
+                this.nextToken(true)
             } else if (!this._skippedNewline && next instanceof Expression.ArrayLiteral) {
                 if (precedence > 100) return target
 
                 target = Expression.Invocation.makeMethodCall(target.position, target, "k:at", next.elements)
-                this.nextToken()
+                this.nextToken(true)
             } else {
                 return target
             }
