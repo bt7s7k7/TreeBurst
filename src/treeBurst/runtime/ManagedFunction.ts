@@ -11,6 +11,10 @@ export abstract class ManagedFunction extends ManagedObject {
         return super.getProperty(name, result)
     }
 
+    public override toString() {
+        return `[function ${this.name == null ? "<anon>" : this.name}]`
+    }
+
     constructor(
         prototype: ManagedObject | null,
         public readonly parameters: string[],

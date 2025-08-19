@@ -461,8 +461,7 @@ export class TreeBurstParser extends GenericParser {
             if (next instanceof OperatorInstance) {
                 const infixOperator = _INFIX_OPERATORS.get(next.token)
                 if (infixOperator == null) {
-                    this.createDiagnostic("Unexpected operator", target.position)
-                    this.nextToken()
+                    // The detected operator is a prefix operator, let someone else handle this
                     return target
                 }
 

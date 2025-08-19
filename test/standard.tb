@@ -84,3 +84,46 @@ assertEqual(x, 2)
 // Test: variable declaration duplicate, expect fail
 $x = 1
 $x = 2
+
+// Test: table new
+$table = Table.new()
+$table.name = "foo"
+assertEqual(table.name, "foo")
+
+// Test: table property mutation
+$table = Table.new()
+$table.x = 1
+assertEqual(table.x, 1)
+table.x = 2
+assertEqual(table.x, 2)
+
+// Test: table duplicate property, expect fail
+$table = Table.new()
+$table.name = "foo"
+$table.name = "foo2"
+
+// Test: table method declaration
+$table = Table.new()
+$table.foo = \(this, arg) {
+    assertEqual(this, table)
+    assertEqual(arg, 24)
+    increment()
+}
+
+table.foo(24)
+assertEqual(getCounter(), 1)
+
+$table.bar = \(a, b) {
+    assertEqual(a, "a")
+    assertEqual(b, "b")
+    increment()
+}
+
+table.bar("a", "b")
+assertEqual(getCounter(), 2)
+
+// Test: checking setting properties, expect fail
+"text".x = 5
+
+// Test: checking declaring properties, expect fail
+$"text".x = 5

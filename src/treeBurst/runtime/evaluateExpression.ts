@@ -79,6 +79,28 @@ export function evaluateDeclaration(declaration: Expression, value: ManagedValue
         }
 
         result.value = variable.value = value
+        if (value instanceof ManagedObject && value.name == null) {
+            value.name = declaration.name
+        }
+        return
+    } else if (declaration instanceof Expression.MemberAccess) {
+        evaluateExpression(declaration.receiver, scope, result)
+        if (result.label != null) return null
+        const receiver = result.value
+
+        if (!(receiver instanceof ManagedTable)) {
+            result.value = new Diagnostic(`Cannot declare properties on "${getValueName(receiver)}"`, declaration.position)
+            result.label = LABEL_EXCEPTION
+            return
+        }
+
+        if (!receiver.declareProperty(declaration.member, value)) {
+            result.value = new Diagnostic(`Property "${declaration.member}" is already defined`, declaration.position)
+            result.label = LABEL_EXCEPTION
+            return
+        }
+
+        result.value = value
         return
     } else {
         result.value = new Diagnostic(`Invalid declaration target`, declaration.position)
@@ -92,14 +114,8 @@ export function getValueName(container: ManagedValue) {
         return "void"
     } else if (container == null) {
         return "null"
-    } else if (container instanceof ManagedObject && container.name != null) {
-        return `[${container.name}]`
-    } else if (container instanceof ManagedFunction) {
-        return `Function`
-    } else if (container instanceof ManagedTable) {
-        return `Table`
-    } else if (container instanceof UnmanagedHandle) {
-        return `<unmanaged>`
+    } else if (container instanceof ManagedObject) {
+        return container.toString()
     } else {
         return convertCase(typeof container, "camel", "pascal")
     }
@@ -218,6 +234,25 @@ export function evaluateExpression(expression: Expression, scope: Scope, result:
             return
         } else if (receiver instanceof Expression.VariableDeclaration) {
             evaluateDeclaration(receiver.declaration, valueValue, scope, result)
+            return
+        } else if (receiver instanceof Expression.MemberAccess) {
+            evaluateExpression(receiver.receiver, scope, result)
+            if (result.label != null) return null
+            const receiver_1 = result.value
+
+            if (!(receiver_1 instanceof ManagedTable)) {
+                result.value = new Diagnostic(`Cannot set properties on "${getValueName(receiver_1)}"`, receiver.position)
+                result.label = LABEL_EXCEPTION
+                return
+            }
+
+            if (!receiver_1.setProperty(receiver.member, valueValue)) {
+                result.value = new Diagnostic(`Property "${receiver.member}" is not defined on "${getValueName(receiver_1)}"`, receiver.position)
+                result.label = LABEL_EXCEPTION
+                return
+            }
+
+            result.value = valueValue
             return
         } else {
             result.value = new Diagnostic(`Invalid assignment target`, receiver.position)
