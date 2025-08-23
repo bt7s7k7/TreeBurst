@@ -302,32 +302,42 @@ export class TreeBurstParser extends GenericParser {
         return this._token
     }
 
-    public parseBlock(...terms: string[]) {
+    public parseEnumerated(terms: string[], callback: () => boolean) {
         this._token = null
-        const result: Expression[] = []
+        while (true) {
+            this.skipWhitespace()
+            if (this.isDone()) break
 
-        top: while (true) {
-            if (this.peekToken(false) == null) {
-                this.skipWhitespace()
-                if (this.isDone()) break
+            if (this.consume(",")) continue
 
-                if (this.consume(",")) continue
-
-                if (terms.length > 0) {
-                    for (const term of terms) {
-                        if (this.consume(term)) break top
-                    }
+            if (terms.length > 0) {
+                for (const term of terms) {
+                    if (this.consume(term)) return
                 }
+            }
 
+            if (!callback()) {
                 this.invalidToken()
                 this.index++
                 continue
             }
+        }
+    }
+
+    public parseBlock(...terms: string[]) {
+        const result: Expression[] = []
+        this.parseEnumerated(terms, () => {
+            if (this.peekToken(false) == null) {
+                return false
+            }
 
             const expression = this.parseExpression()
-            if (expression == null) continue
-            result.push(expression)
-        }
+            if (expression != null) {
+                result.push(expression)
+            }
+
+            return true
+        })
 
         return result
     }
@@ -381,12 +391,7 @@ export class TreeBurstParser extends GenericParser {
         if (this.consume("{")) {
             const map = new Expression.MapLiteral(this.getPosition(start))
 
-            while (!this.isDone()) {
-                this.skipWhitespace()
-                if (this.isDone()) break
-                if (this.consume("}")) break
-                if (this.consume(",")) continue
-
+            this.parseEnumerated(["}"], () => {
                 const entryStart = this.index
 
                 let key: Expression | null = null
@@ -397,16 +402,14 @@ export class TreeBurstParser extends GenericParser {
                     const keyExpressionPosition = this.getPosition()
                     const content = this.parseBlock("]")
                     if (content.length == 0) {
-                        this.createDiagnostic("Expected key expression", entryStart)
+                        return false
                     } else {
                         key = content.length == 1 ? content[0] : new Expression.Group(keyExpressionPosition, content)
                     }
                 } else {
                     staticName = this.consumeWord()
                     if (staticName == "") {
-                        this.createDiagnostic("Expected key expression")
-                        key = null
-                        staticName = null
+                        return false
                     } else {
                         key = new Expression.StringLiteral(this.getPosition(entryStart), staticName)
                     }
@@ -419,22 +422,21 @@ export class TreeBurstParser extends GenericParser {
                     this._token = null
                     const parseResult = this.parseExpression()
                     if (parseResult == null) {
-                        this.createDiagnostic("Expected value expression")
-                        continue
+                        return false
                     }
 
                     value = parseResult
                 } else if (staticName != null && key != null) {
                     value = new Expression.Identifier(key.position, staticName)
                 } else {
-                    this.createDiagnostic("Expected value expression")
-                    continue
+                    return false
                 }
 
-                if (key == null) continue
+                if (key == null) return true
 
                 map.entries.push([key, value])
-            }
+                return true
+            })
 
             return this._token = map
         }

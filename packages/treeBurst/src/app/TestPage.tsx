@@ -1,6 +1,5 @@
 import { defineComponent, ref, shallowRef } from "vue"
-import { useRouter } from "vue-router"
-import testFile from "../../test/standard.tb?raw"
+import testFile from "../../../../test/standard.tb?raw"
 import { evaluateExpression } from "../treeBurst/runtime/evaluateExpression"
 import { ExpressionResult } from "../treeBurst/runtime/ExpressionResult"
 import { GlobalScope, INTRINSIC } from "../treeBurst/runtime/GlobalScope"
