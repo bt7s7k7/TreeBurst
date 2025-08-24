@@ -558,6 +558,27 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.VOID;
 		}));
 
+		this.declareGlobal("@while", NativeFunction.simple(globalScope, List.of("predicate", "body"), (args, scope, result) -> {
+			var predicate = ensureExpression(args.get(0), result);
+			if (result.label != null) return;
+			var body = ensureExpression(args.get(1), result);
+			if (result.label != null) return;
+
+			while (true) {
+				evaluateExpression(predicate, scope, result);
+				if (result.label != null) return;
+
+				var predicateValue = ensureBoolean(result.value, scope, result);
+				if (result.label != null) return;
+
+				if (!predicateValue.value) break;
+
+				evaluateExpression(body, scope, result);
+			}
+
+			result.value = Primitive.VOID;
+		}));
+
 		if (!this.Table.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(globalScope, List.of("this", "other"), (args, scope, result) -> {
 			if (!verifyArguments(args, List.of("this", "other"), result)) return;
 			result.value = Primitive.from(args.get(0) == args.get(1));
