@@ -2,7 +2,7 @@ package bt7s7k7.treeburst.runtime;
 
 public class UnmanagedHandle extends ManagedObject {
 
-	private final Object value;
+	public final Object value;
 
 	public UnmanagedHandle(ManagedObject prototype, Object value) {
 		super(prototype);

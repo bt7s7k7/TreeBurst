@@ -42,8 +42,8 @@ public class ExpressionEvaluator {
 	}
 
 	public static boolean findProperty(ManagedValue receiver, ManagedValue container, String name, Scope scope, ExpressionResult result) {
-		if (container == null || container.equals(Primitive.VOID)) {
-			return findProperty(receiver, scope.globalScope.Table, name, scope, result);
+		if (container.equals(Primitive.NULL) || container.equals(Primitive.VOID)) {
+			return findProperty(receiver, scope.globalScope.TablePrototype, name, scope, result);
 		}
 
 		if (container instanceof Primitive.Number) {
@@ -215,7 +215,7 @@ public class ExpressionEvaluator {
 				var mappedArgs = new ArrayList<ManagedValue>();
 
 				for (var v : args) {
-					mappedArgs.add(new UnmanagedHandle(scope.globalScope.Table, v));
+					mappedArgs.add(new UnmanagedHandle(scope.globalScope.TablePrototype, v));
 				}
 
 				evaluateInvocation(receiverValue, receiverValue, functionValue, position, mappedArgs, scope, result);
@@ -300,19 +300,19 @@ public class ExpressionEvaluator {
 		}
 
 		if (expression instanceof Expression.FunctionDeclaration functionDeclaration) {
-			result.value = new ScriptFunction(scope.globalScope.Function, functionDeclaration.parameters(), functionDeclaration.body(), scope);
+			result.value = new ScriptFunction(scope.globalScope.FunctionPrototype, functionDeclaration.parameters(), functionDeclaration.body(), scope);
 			return;
 		}
 
 		if (expression instanceof Expression.ArrayLiteral arrayLiteral) {
 			var elements = evaluateExpressions(arrayLiteral.elements(), scope, result);
 			if (elements == null) return;
-			result.value = new ManagedArray(scope.globalScope.Array, elements);
+			result.value = new ManagedArray(scope.globalScope.ArrayPrototype, elements);
 			return;
 		}
 
 		if (expression instanceof Expression.MapLiteral mapLiteral) {
-			var map = new ManagedMap(scope.globalScope.Map);
+			var map = new ManagedMap(scope.globalScope.MapPrototype);
 
 			for (var entry : mapLiteral.entries) {
 				var keyExpression = entry.getKey();

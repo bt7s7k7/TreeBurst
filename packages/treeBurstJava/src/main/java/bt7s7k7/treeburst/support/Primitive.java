@@ -26,6 +26,11 @@ public abstract class Primitive {
 		}
 
 		@Override
+		public int hashCode() {
+			return Double.hashCode(this.value);
+		}
+
+		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof Number other) return this.value == other.value;
 			return false;
@@ -46,6 +51,11 @@ public abstract class Primitive {
 		}
 
 		@Override
+		public int hashCode() {
+			return this.value.hashCode();
+		}
+
+		@Override
 		public java.lang.String toString() {
 			return "[string " + this.value + "]";
 		}
@@ -62,6 +72,11 @@ public abstract class Primitive {
 		public boolean equals(Object obj) {
 			if (obj instanceof Boolean other) return this.value == other.value;
 			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return java.lang.Boolean.hashCode(this.value);
 		}
 
 		@Override

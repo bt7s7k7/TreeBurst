@@ -213,7 +213,7 @@ const _HANDLERS = {
             if (result.label != null) return
 
             const predicateValue = ensureBoolean(result.value, scope, result)
-            if (result.label != null) return false
+            if (result.label != null) return
 
             if (predicateValue) {
                 evaluateExpression(thenValue, scope, result)
