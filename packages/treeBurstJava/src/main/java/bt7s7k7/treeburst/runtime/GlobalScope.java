@@ -274,6 +274,14 @@ public class GlobalScope extends Scope {
 			}
 		}));
 
+		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(globalScope, List.of("this", "receiver", "arguments"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {
+			var self = (ManagedFunction) args.get(0);
+			var receiver = args.get(1);
+			var arguments = (ManagedArray) args.get(2);
+
+			evaluateInvocation(receiver, Primitive.VOID, self, Position.INTRINSIC, arguments.elements, scope, result);
+		}));
+
 		this.ArrayPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
 			if (args.size() <= 2) {
 				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);

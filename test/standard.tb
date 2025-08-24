@@ -86,6 +86,18 @@ assertEqual(x, 2)
 $x = 1
 $x = 2
 
+// Test: function call method
+$owner = Table.new()
+$owner.method = \(this, arg) {
+    assertEqual(this, other)
+    assertEqual(arg, 5)
+    increment()
+}
+
+$other = Table.new()
+owner.method.call(other, [5])
+assertEqual(getCounter(), 1)
+
 // Test: table new
 $table = Table.new()
 $table.name = "foo"
