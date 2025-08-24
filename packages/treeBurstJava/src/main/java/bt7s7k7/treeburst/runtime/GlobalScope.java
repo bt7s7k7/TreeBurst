@@ -13,6 +13,7 @@ import static bt7s7k7.treeburst.support.ManagedValueUtils.verifyArguments;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -334,6 +335,7 @@ public class GlobalScope extends Scope {
 		this.ArrayPrototype.declareProperty("clear", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			var self = (ManagedArray) args.get(0);
 			self.elements.clear();
+			result.value = Primitive.VOID;
 		}));
 
 		this.ArrayPrototype.declareProperty("slice", NativeFunction.simple(globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
@@ -474,6 +476,38 @@ public class GlobalScope extends Scope {
 
 				result.value = value;
 			}
+		}));
+
+		this.MapPrototype.declareProperty("clone", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			var self = (ManagedMap) args.get(0);
+			result.value = new ManagedMap(self.prototype, new HashMap<>(self.entries));
+		}));
+
+		this.MapPrototype.declareProperty("clear", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			var self = (ManagedMap) args.get(0);
+			self.entries.clear();
+			result.value = Primitive.VOID;
+		}));
+
+		this.MapPrototype.declareProperty("keys", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			var self = (ManagedMap) args.get(0);
+			result.value = new ManagedArray(this.ArrayPrototype, new ArrayList<>(self.entries.keySet()));
+		}));
+
+		this.MapPrototype.declareProperty("values", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			var self = (ManagedMap) args.get(0);
+			result.value = new ManagedArray(this.ArrayPrototype, new ArrayList<>(self.entries.values()));
+		}));
+
+		this.MapPrototype.declareProperty("entries", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			var self = (ManagedMap) args.get(0);
+			var entries = new ManagedArray(this.ArrayPrototype, new ArrayList<>(self.entries.size()));
+
+			for (var kv : self.entries.entrySet()) {
+				entries.elements.add(new ManagedArray(this.ArrayPrototype, List.of(kv.getKey(), kv.getValue())));
+			}
+
+			result.value = entries;
 		}));
 
 		this.declareGlobal("@if", new NativeFunction(this.FunctionPrototype, Collections.emptyList(), (args, scope, result) -> {

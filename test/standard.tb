@@ -280,3 +280,49 @@ assertEqual(map["a"], 6)
 map["a"] = void
 assertEqual(map["a"], void)
 assertEqual(map.length, 2)
+
+// Test: map clear
+$map = {a: 1, b: 2, c: 3}
+map.clear()
+assertEqual(map.length, 0)
+
+// Test: map clone
+$map = {a: 1, b: 2, c: 3}
+$other = map.clone()
+
+assertEqual(map.length, other.length)
+assertEqual(map["a"], other["a"])
+assertEqual(map["b"], other["b"])
+assertEqual(map["c"], other["c"])
+
+// Test: map keys
+$map = {a: 1, b: 2, c: 3}
+$keys = map.keys()
+
+assertEqual(keys.length, 3)
+assertEqual(keys[0], "a")
+assertEqual(keys[1], "b")
+assertEqual(keys[2], "c")
+
+// Test: map values
+$map = {a: 1, b: 2, c: 3}
+$values = map.values()
+
+assertEqual(values.length, 3)
+assertEqual(values[0], 1)
+assertEqual(values[1], 2)
+assertEqual(values[2], 3)
+
+// Test: map entries
+$map = {a: 1, b: 2, c: 3}
+$entries = map.entries()
+
+assertEqual(entries.length, 3)
+assertEqual(entries[0][0], "a")
+assertEqual(entries[0][1], 1)
+
+assertEqual(entries[1][0], "b")
+assertEqual(entries[1][1], 2)
+
+assertEqual(entries[2][0], "c")
+assertEqual(entries[2][1], 3)
