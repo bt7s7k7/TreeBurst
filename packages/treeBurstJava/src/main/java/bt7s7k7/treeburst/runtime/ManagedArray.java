@@ -36,6 +36,20 @@ public class ManagedArray extends ManagedObject {
 		return index;
 	}
 
+	public int normalizeLimit(int limit, ExpressionResult result) {
+		if (limit < 0) {
+			limit = this.elements.size() + limit;
+		}
+
+		if (limit < 0 || limit > this.elements.size()) {
+			result.value = new Diagnostic("Index " + limit + " out of range of array of length " + this.elements.size(), Position.INTRINSIC);
+			result.label = ExpressionResult.LABEL_EXCEPTION;
+			return 0;
+		}
+
+		return limit;
+	}
+
 	@Override
 	public boolean getProperty(String name, ExpressionResult result) {
 		if ("length".equals(name)) {

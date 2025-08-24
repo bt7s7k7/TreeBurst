@@ -153,6 +153,118 @@ x[4]
 $x = [1,2,3]
 x[-4]
 
+// Test: array void check, expect fail
+$x = [1]
+x[0] = void
+
+// Test: array truncate
+$x = []
+x.truncate(2)
+assertEqual(x.length, 2)
+assertEqual(x[0], null)
+assertEqual(x[1], null)
+x.truncate(0)
+assertEqual(x.length, 0)
+
+// Test: array clone
+$x = [1, 2, 3]
+$y = x.clone()
+
+assertEqual(x.length, y.length)
+assertEqual(x[0], y[0])
+assertEqual(x[1], y[1])
+assertEqual(x[2], y[2])
+
+// Test: array clear
+$x = [1, 2, 3]
+x.clear()
+assertEqual(x.length, 0)
+
+// Test: array slice
+$x = [0, 1, 2, 3]
+$y
+
+y = x.slice(2)
+assertEqual(y.length, 2)
+assertEqual(y[0], 2)
+assertEqual(y[1], 3)
+
+y = x.slice(1, 3)
+assertEqual(y.length, 2)
+assertEqual(y[0], 1)
+assertEqual(y[1], 2)
+
+y = x.slice(-2)
+assertEqual(y.length, 2)
+assertEqual(y[0], 2)
+assertEqual(y[1], 3)
+
+y = x.slice(0, -2)
+assertEqual(y.length, 2)
+assertEqual(y[0], 0)
+assertEqual(y[1], 1)
+
+y = x.slice(-2, -1)
+assertEqual(y.length, 1)
+assertEqual(y[0], 2)
+
+// Test: array splice
+$x = [1, 2, 3]
+$y
+
+y = x.clone()
+y.splice(1, 1)
+assertEqual(y.length, 2)
+assertEqual(y[0], 1)
+assertEqual(y[1], 3)
+
+y = x.clone()
+y.splice(1, 1, [5, 6])
+assertEqual(y.length, 4)
+assertEqual(y[0], 1)
+assertEqual(y[1], 5)
+assertEqual(y[2], 6)
+assertEqual(y[3], 3)
+
+y = x.clone()
+y.splice(y.length, 0, [4])
+assertEqual(y.length, 4)
+assertEqual(y[3], 4)
+
+// Test: array push
+$x = [1]
+x.push(2, 3)
+assertEqual(x.length, 3)
+assertEqual(x[1], 2)
+assertEqual(x[2], 3)
+
+// Test: array append
+$x = [1]
+x.append([2, 3])
+assertEqual(x.length, 3)
+assertEqual(x[1], 2)
+assertEqual(x[2], 3)
+
+// Test: array pop
+$x = [1, 2]
+$last = x.pop()
+assertEqual(x.length, 1)
+assertEqual(last, 2)
+
+// Test: array unshift
+$x = [1]
+x.unshift(-1, "pre")
+assertEqual(x.length, 3)
+assertEqual(x[0], -1)
+assertEqual(x[1], "pre")
+
+// Test: array prepend
+$x = [1]
+x.prepend([-1, "pre"])
+assertEqual(x.length, 3)
+assertEqual(x[0], -1)
+assertEqual(x[1], "pre")
+
 // Test: map
 $a = 5
 $map = {a, b: true, [1]: "c"}
