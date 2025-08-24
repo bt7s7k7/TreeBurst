@@ -518,6 +518,12 @@ public class GlobalScope extends Scope {
 			result.value = entries;
 		}));
 
+		this.declareGlobal("unreachable", NativeFunction.simple(globalScope, Collections.emptyList(), (args, scope, result) -> {
+			result.value = new Diagnostic("Reached unreachable code", Position.INTRINSIC);
+			result.label = LABEL_EXCEPTION;
+			return;
+		}));
+
 		this.declareGlobal("@if", new NativeFunction(this.FunctionPrototype, Collections.emptyList(), (args, scope, result) -> {
 			for (int i = 0; i < args.size(); i += 2) {
 				if (args.size() - i < 2) {

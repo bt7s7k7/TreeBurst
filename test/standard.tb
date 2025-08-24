@@ -347,3 +347,6 @@ assertEqual(entries[1][1], 2)
 
 assertEqual(entries[2][0], "c")
 assertEqual(entries[2][1], 3)
+
+// Test: unreachable, expect fail
+unreachable()
