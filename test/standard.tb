@@ -16,6 +16,7 @@ assert(void == void)
 
 // Test: assert equal
 assertEqual(1, 1)
+assertEqual("one", "one")
 
 // Test: assert unequal, expect fail
 assertEqual(1, 2)

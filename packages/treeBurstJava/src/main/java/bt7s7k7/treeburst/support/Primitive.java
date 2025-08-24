@@ -1,5 +1,7 @@
 package bt7s7k7.treeburst.support;
 
+import java.util.Objects;
+
 public abstract class Primitive {
 	public final static ManagedValue VOID = new ManagedValue() {
 		@Override
@@ -23,6 +25,12 @@ public abstract class Primitive {
 			return "[number " + this.value + "]";
 		}
 
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Number other) return this.value == other.value;
+			return false;
+		}
+
 		public Number(double value) {
 			this.value = value;
 		}
@@ -30,6 +38,12 @@ public abstract class Primitive {
 
 	public static class String extends ManagedValue {
 		public final java.lang.String value;
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof String other) return Objects.equals(this.value, other.value);
+			return false;
+		}
 
 		@Override
 		public java.lang.String toString() {
@@ -43,6 +57,12 @@ public abstract class Primitive {
 
 	public static class Boolean extends ManagedValue {
 		public final boolean value;
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Boolean other) return this.value == other.value;
+			return false;
+		}
 
 		@Override
 		public java.lang.String toString() {
@@ -65,4 +85,7 @@ public abstract class Primitive {
 	public static Boolean from(boolean value) {
 		return new Boolean(value);
 	}
+
+	public static final Primitive.Boolean FALSE = Primitive.from(false);
+	public static final Primitive.Boolean TRUE = Primitive.from(true);
 }
