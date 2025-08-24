@@ -1,4 +1,4 @@
-import { Expression } from "../syntax/Expression"
+import { Expression } from "../parsing/Expression"
 import { evaluateExpression, LABEL_RETURN } from "./evaluateExpression"
 import { ExpressionResult } from "./ExpressionResult"
 import { VOID } from "./GlobalScope"

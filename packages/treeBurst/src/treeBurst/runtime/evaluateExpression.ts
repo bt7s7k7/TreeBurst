@@ -1,7 +1,7 @@
 import { convertCase, unreachable } from "../../comTypes/util"
+import { Expression } from "../parsing/Expression"
 import { Diagnostic } from "../support/Diagnostic"
 import { Position } from "../support/Position"
-import { Expression } from "../syntax/Expression"
 import { ExpressionResult } from "./ExpressionResult"
 import { VOID } from "./GlobalScope"
 import { ManagedArray } from "./ManagedArray"
