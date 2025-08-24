@@ -109,6 +109,11 @@ public class GlobalScope extends Scope {
 		makeNumberOperator(OperatorConstants.OPERATOR_MOD, (a, b) -> Primitive.from(a % b));
 		makeNumberOperator(OperatorConstants.OPERATOR_POW, (a, b) -> Primitive.from(Math.pow(a, b)));
 
+		makeNumberOperator(OperatorConstants.OPERATOR_LT, (a, b) -> Primitive.from(a < b));
+		makeNumberOperator(OperatorConstants.OPERATOR_GT, (a, b) -> Primitive.from(a > b));
+		makeNumberOperator(OperatorConstants.OPERATOR_GTE, (a, b) -> Primitive.from(a >= b));
+		makeNumberOperator(OperatorConstants.OPERATOR_LTE, (a, b) -> Primitive.from(a <= b));
+
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_XOR, (a, b) -> Primitive.from((int) a ^ (int) b));
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_AND, (a, b) -> Primitive.from((int) a & (int) b));
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_OR, (a, b) -> Primitive.from((int) a | (int) b));
