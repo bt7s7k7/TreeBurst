@@ -81,11 +81,16 @@ public class ExpressionEvaluator {
 				managedObject.name = identifier.name();
 			}
 			return;
-		} else if (declaration instanceof Expression.MemberAccess) {
-			Expression.MemberAccess memberAccess = (Expression.MemberAccess) declaration;
+		} else if (declaration instanceof Expression.MemberAccess memberAccess) {
+			if (value == Primitive.VOID) {
+				result.value = new Diagnostic("Cannot declare table property of type void", declaration.position());
+				result.label = LABEL_EXCEPTION;
+				return;
+			}
+
 			evaluateExpression(memberAccess.receiver(), scope, result);
 			if (result.label != null) return;
-			ManagedValue receiver = result.value;
+			var receiver = result.value;
 
 			if (!(receiver instanceof ManagedTable managedTable)) {
 				result.value = new Diagnostic("Cannot declare properties on \"" + getValueName(receiver) + "\"", declaration.position());
@@ -252,12 +257,18 @@ public class ExpressionEvaluator {
 				evaluateDeclaration(declaration.declaration(), valueValue, scope, result);
 				return;
 			} else if (receiver instanceof Expression.MemberAccess memberAccess) {
+				if (valueValue == Primitive.VOID) {
+					result.value = new Diagnostic("Cannot set a table property to void", memberAccess.position());
+					result.label = LABEL_EXCEPTION;
+					return;
+				}
+
 				evaluateExpression(memberAccess.receiver(), scope, result);
 				if (result.label != null) {
 					return;
 				}
 
-				ManagedValue receiver_1 = result.value;
+				var receiver_1 = result.value;
 
 				if (!(receiver_1 instanceof ManagedTable managedTable)) {
 					result.value = new Diagnostic("Cannot set properties on \"" + getValueName(receiver_1) + "\"", memberAccess.position());

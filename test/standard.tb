@@ -123,6 +123,15 @@ $table.bar = \(a, b) {
 table.bar("a", "b")
 assertEqual(getCounter(), 2)
 
+// Test: table void prevention 1, expect fail
+$x = Table.new()
+$x.value = void
+
+// Test: table void prevention 2, expect fail
+$x = Table.new()
+$x.value = 5
+x.value = void
+
 // Test: native type extension
 $Number.prototype.plusOne = \(this) this + 1
 
