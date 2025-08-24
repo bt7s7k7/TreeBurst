@@ -69,7 +69,7 @@ class ParsingTest {
 				"                    position=anon:1:1,\n" +
 				"                    value=0.58\n" +
 				"                ],\n" +
-				"                member=k:add\n" +
+				"                member=k_add\n" +
 				"            ],\n" +
 				"            args=[\n" +
 				"                Invocation[\n" +
@@ -80,7 +80,7 @@ class ParsingTest {
 				"                            position=anon:1:8,\n" +
 				"                            value=2.0\n" +
 				"                        ],\n" +
-				"                        member=k:mul\n" +
+				"                        member=k_mul\n" +
 				"                    ],\n" +
 				"                    args=[\n" +
 				"                        NumberLiteral[\n" +

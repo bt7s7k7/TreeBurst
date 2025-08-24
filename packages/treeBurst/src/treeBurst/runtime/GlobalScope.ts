@@ -123,7 +123,7 @@ export function ensureNumber(value: ManagedValue, scope: Scope, result: Expressi
         evaluateInvocation(value, value, OPERATOR_NUMBER, INTRINSIC, [], scope, result)
         if (result.label != null) return 0
 
-        if (typeof value != "boolean") {
+        if (typeof value != "number") {
             evaluateInvocation(result.value, scope.globalScope.TablePrototype, OPERATOR_NUMBER, INTRINSIC, [], scope, result)
             if (result.label != null) return 0
         }

@@ -577,7 +577,7 @@ export class TreeBurstParser extends GenericParser {
             } else if (!this._skippedNewline && next instanceof Expression.ArrayLiteral) {
                 if (precedence > 100) return target
 
-                target = Expression.Invocation.makeMethodCall(target.position, target, "k:at", next.elements)
+                target = Expression.Invocation.makeMethodCall(target.position, target, "k_at", next.elements)
                 this.nextToken(true)
             } else {
                 return target
