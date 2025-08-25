@@ -40,7 +40,7 @@ public class Diagnostic extends ManagedValue {
 
 		for (var additionalError : this.additionalErrors) {
 			target.append("\n"); // Add a newline before the next error
-			additionalError._formatRecursive(target, indent + "    ");
+			additionalError._formatRecursive(target, indent + "  ");
 		}
 	}
 }
