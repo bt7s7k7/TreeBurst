@@ -163,6 +163,13 @@ public class ExpressionEvaluator {
 	}
 
 	public static void evaluateExpression(Expression expression, Scope scope, ExpressionResult result) {
+		if (result.executionLimit != Integer.MAX_VALUE) {
+			result.executionCounter++;
+			if (result.executionCounter > result.executionLimit) {
+				throw new ExecutionLimitReachedException("Script execution reached the limit of " + result.executionLimit + " expressions");
+			}
+		}
+
 		if (expression instanceof Expression.NumberLiteral literal) {
 			result.value = Primitive.from(literal.value());
 			return;

@@ -7,6 +7,9 @@ public class ExpressionResult {
 	public ManagedValue value = Primitive.VOID;
 	public String label = null;
 
+	public int executionLimit = Integer.MAX_VALUE;
+	public int executionCounter = 0;
+
 	public static final String LABEL_RETURN = "!return";
 	public static final String LABEL_EXCEPTION = "!exception";
 }
