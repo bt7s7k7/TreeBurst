@@ -2,22 +2,22 @@ package bt7s7k7.treeburst.support;
 
 import java.util.Objects;
 
-public abstract class Primitive {
-	public final static ManagedValue VOID = new ManagedValue() {
+public abstract class Primitive extends ManagedValue {
+	public final static ManagedValue VOID = new Primitive() {
 		@Override
 		public java.lang.String toString() {
 			return "void";
 		}
 	};
 
-	public final static ManagedValue NULL = new ManagedValue() {
+	public final static ManagedValue NULL = new Primitive() {
 		@Override
 		public java.lang.String toString() {
 			return "null";
 		}
 	};
 
-	public static class Number extends ManagedValue {
+	public static class Number extends Primitive {
 		public final double value;
 
 		@Override
@@ -41,7 +41,7 @@ public abstract class Primitive {
 		}
 	}
 
-	public static class String extends ManagedValue {
+	public static class String extends Primitive {
 		public final java.lang.String value;
 
 		@Override
@@ -65,7 +65,7 @@ public abstract class Primitive {
 		}
 	}
 
-	public static class Boolean extends ManagedValue {
+	public static class Boolean extends Primitive {
 		public final boolean value;
 
 		@Override
