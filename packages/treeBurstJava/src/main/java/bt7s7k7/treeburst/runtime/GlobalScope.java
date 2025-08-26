@@ -574,6 +574,7 @@ public class GlobalScope extends Scope {
 				if (!predicateValue.value) break;
 
 				evaluateExpression(body, scope, result);
+				if (result.label != null) return;
 			}
 
 			result.value = Primitive.VOID;
