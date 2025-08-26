@@ -7,10 +7,15 @@ import bt7s7k7.treeburst.support.ManagedValue;
 
 public class ManagedTable extends ManagedObject {
 	public ManagedTable(ManagedObject prototype) {
-		super(prototype);
+		this(prototype, new HashMap<>());
 	}
 
-	protected final Map<String, ManagedValue> properties = new HashMap<>();
+	public ManagedTable(ManagedObject prototype, Map<String, ManagedValue> properties) {
+		super(prototype);
+		this.properties = properties;
+	}
+
+	public final Map<String, ManagedValue> properties;
 
 	@Override
 	public boolean getProperty(String name, ExpressionResult result) {
