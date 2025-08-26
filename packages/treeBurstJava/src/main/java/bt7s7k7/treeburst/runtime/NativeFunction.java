@@ -27,8 +27,9 @@ public class NativeFunction extends ManagedFunction {
 		this.handler.handle(args, scope, result);
 	}
 
-	private static List<String> getParametersWithoutOptional(List<String> parameters) {
-		var firstOptionalParameter = -1;
+	private static int getParametersWithoutOptional(List<String> parameters) {
+		var firstOptionalParameter = parameters.size();
+
 		for (int i = 0; i < parameters.size(); i++) {
 			var parameter = parameters.get(i);
 			if (parameter.endsWith("?")) {
@@ -37,18 +38,14 @@ public class NativeFunction extends ManagedFunction {
 			}
 		}
 
-		if (firstOptionalParameter != -1) {
-			return parameters.subList(firstOptionalParameter, parameters.size());
-		} else {
-			return parameters;
-		}
+		return firstOptionalParameter;
 	}
 
 	public static NativeFunction simple(GlobalScope globalScope, List<String> parameters, Handler handler) {
 		var parametersWithoutOptional = getParametersWithoutOptional(parameters);
 
 		return new NativeFunction(globalScope.FunctionPrototype, parameters, (args, scope, result) -> {
-			if (!ManagedValueUtils.verifyArguments(args, parametersWithoutOptional, result)) {
+			if (!ManagedValueUtils.verifyArguments(parametersWithoutOptional, args, parameters, result)) {
 				return;
 			}
 
@@ -63,8 +60,10 @@ public class NativeFunction extends ManagedFunction {
 	}
 
 	public static NativeFunction simple(GlobalScope globalScope, List<String> parameters, List<Class<? extends ManagedValue>> types, Handler handler) {
+		var parametersWithoutOptional = getParametersWithoutOptional(parameters);
+
 		return new NativeFunction(globalScope.FunctionPrototype, parameters, (args, scope, result) -> {
-			args = ensureArgumentTypes(args, parameters, types, scope, result);
+			args = ensureArgumentTypes(args, parametersWithoutOptional, parameters, types, scope, result);
 			if (result.label != null) return;
 
 			if (args.size() > parameters.size()) {

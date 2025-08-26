@@ -17,8 +17,13 @@ import bt7s7k7.treeburst.runtime.UnmanagedHandle;
 
 public class ManagedValueUtils {
 	public static boolean verifyArguments(List<ManagedValue> args, List<String> names, ExpressionResult result) {
-		if (args.size() < names.size()) {
+		return verifyArguments(names.size(), args, names, result);
+	}
+
+	public static boolean verifyArguments(int requiredParameterCount, List<ManagedValue> args, List<String> names, ExpressionResult result) {
+		if (args.size() < requiredParameterCount) {
 			var argumentErrors = names.stream()
+					.limit(requiredParameterCount)
 					.skip(args.size())
 					.map(name -> new Diagnostic("Missing argument \"" + name + "\"", Position.INTRINSIC))
 					.toList();
@@ -32,13 +37,19 @@ public class ManagedValueUtils {
 	}
 
 	public static List<ManagedValue> ensureArgumentTypes(List<ManagedValue> args, List<String> names, List<Class<? extends ManagedValue>> types, Scope scope, ExpressionResult result) {
+		return ensureArgumentTypes(args, names.size(), names, types, scope, result);
+	}
+
+	public static List<ManagedValue> ensureArgumentTypes(List<ManagedValue> args, int requiredParameterCount, List<String> names, List<Class<? extends ManagedValue>> types, Scope scope, ExpressionResult result) {
 		if (types.size() != names.size()) throw new IllegalArgumentException("The lists of argument names and types must be of the same length");
 
-		if (!verifyArguments(args, names, result)) return Collections.emptyList();
+		if (!verifyArguments(requiredParameterCount, args, names, result)) return Collections.emptyList();
 
 		var results = new ArrayList<ManagedValue>();
 		var errors = new ArrayList<Diagnostic>();
 		for (int i = 0; i < types.size(); i++) {
+			if (i >= args.size()) break;
+
 			var type = types.get(i);
 			if (type == ManagedValue.class) {
 				results.add(args.get(i));
