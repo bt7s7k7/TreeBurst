@@ -3,6 +3,9 @@ package bt7s7k7.treeburst.parsing;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+
+import com.google.common.collect.Streams;
 
 import bt7s7k7.treeburst.support.Position;
 
@@ -67,6 +70,10 @@ public interface Expression extends Token {
 	public record FunctionDeclaration(Position position, List<String> parameters, Expression body) implements Expression {}
 
 	public record Invocation(Position position, Expression target, List<Expression> args) implements Expression {
+		public Invocation withArgument(Expression argument) {
+			return new Expression.Invocation(this.position(), this.target(), Streams.concat(this.args().stream(), Stream.of(argument)).toList());
+		}
+
 		public static Invocation makeMethodCall(Position position, Expression receiver, String method, List<Expression> args) {
 			return new Invocation(position, new MemberAccess(position, receiver, method), args);
 		}

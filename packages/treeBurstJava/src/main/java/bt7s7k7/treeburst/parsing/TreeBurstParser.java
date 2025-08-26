@@ -377,6 +377,10 @@ public class TreeBurstParser extends GenericParser {
 			return this._token;
 		}
 
+		if (this.consume("\"")) return this._token = this.parseString("\"");
+		if (this.consume("\'")) return this._token = this.parseString("\'");
+		if (this.consume("`")) return this._token = this.parseString("`");
+
 		if (operatorOnly) return this._token = null;
 
 		if (this.consume("{")) {
@@ -449,10 +453,6 @@ public class TreeBurstParser extends GenericParser {
 				return this._token = null;
 			}
 		}
-
-		if (this.consume("\"")) return this._token = this.parseString("\"");
-		if (this.consume("\'")) return this._token = this.parseString("\'");
-		if (this.consume("`")) return this._token = this.parseString("`");
 
 		if (this.consume("\\")) {
 			var parameters = new ArrayList<String>();
@@ -549,7 +549,7 @@ public class TreeBurstParser extends GenericParser {
 						}
 					} else if (infixOperator.type == OperatorType.ASSIGNMENT) {
 						if (target instanceof Expression.Invocation invocation) {
-							invocation.args().add(operand);
+							target = invocation.withArgument(operand);
 							continue;
 						}
 
@@ -565,6 +565,16 @@ public class TreeBurstParser extends GenericParser {
 			} else if (!this._skippedNewline && next instanceof Expression.ArrayLiteral arrayLiteral) {
 				if (precedence > 100) return target;
 				target = Expression.Invocation.makeMethodCall(target.position(), target, OperatorConstants.OPERATOR_AT, arrayLiteral.elements());
+				this.nextToken(true);
+			} else if (!this._skippedNewline && next instanceof Expression.StringLiteral stringLiteral) {
+				if (precedence > 100) return target;
+
+				if (target instanceof Expression.Invocation invocation) {
+					target = invocation.withArgument(stringLiteral);
+				} else {
+					target = new Expression.Invocation(stringLiteral.position(), target, List.of(stringLiteral));
+				}
+
 				this.nextToken(true);
 			} else {
 				return target;

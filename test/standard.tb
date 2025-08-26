@@ -369,3 +369,21 @@ $i = 0
 ))
 
 assertEqual(getCounter(), 3)
+
+// Test: implicit string argument
+$thunk = \(v) {
+    assertEqual(v, "foo")
+    increment()
+}
+
+thunk"foo"
+assertEqual(getCounter(), 1)
+assertEqual("bar")"bar"
+
+$state = { q: 0 }
+$s = \(key, value) {
+    state[key] = value
+}
+
+s"q" = 5
+assertEqual(state["q"], 5)
