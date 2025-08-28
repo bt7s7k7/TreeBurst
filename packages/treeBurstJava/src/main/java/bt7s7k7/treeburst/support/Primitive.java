@@ -103,4 +103,6 @@ public abstract class Primitive extends ManagedValue {
 
 	public static final Primitive.Boolean FALSE = Primitive.from(false);
 	public static final Primitive.Boolean TRUE = Primitive.from(true);
+	public static final Primitive.Number ZERO = Primitive.from(0);
+	public static final Primitive.String EMPTY_STRING = Primitive.from("");
 }

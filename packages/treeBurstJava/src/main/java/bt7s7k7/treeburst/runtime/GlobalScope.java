@@ -160,8 +160,8 @@ public class GlobalScope extends Scope {
 	public GlobalScope() {
 		super();
 
-		this.declareGlobal("true", Primitive.from(true));
-		this.declareGlobal("false", Primitive.from(false));
+		this.declareGlobal("true", Primitive.TRUE);
+		this.declareGlobal("false", Primitive.FALSE);
 		this.declareGlobal("null", Primitive.NULL);
 		this.declareGlobal("void", Primitive.VOID);
 
@@ -268,7 +268,7 @@ public class GlobalScope extends Scope {
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_BOOLEAN, NativeFunction.simple(globalScope, List.of("this"), (args, scope, result) -> {
 			var self = args.get(0);
 
-			if (self.equals(Primitive.FALSE) || self.equals(Primitive.from(0)) || self.equals(Primitive.from("")) || self == Primitive.VOID) {
+			if (self.equals(Primitive.FALSE) || self.equals(Primitive.ZERO) || self.equals(Primitive.EMPTY_STRING) || self == Primitive.VOID) {
 				result.value = Primitive.FALSE;
 			} else {
 				result.value = Primitive.TRUE;
@@ -398,12 +398,12 @@ public class GlobalScope extends Scope {
 
 		this.ArrayPrototype.declareProperty("append", NativeFunction.simple(globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
 			var self = (ManagedArray) args.get(0);
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.from(0), args.get(1)), scope, result);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, args.get(1)), scope, result);
 		}));
 
 		this.ArrayPrototype.declareProperty("prepend", NativeFunction.simple(globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
 			var self = (ManagedArray) args.get(0);
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(0), Primitive.from(0), args.get(1)), scope, result);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, args.get(1)), scope, result);
 		}));
 
 		this.ArrayPrototype.declareProperty("pop", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
@@ -421,7 +421,7 @@ public class GlobalScope extends Scope {
 			var self = (ManagedArray) args.get(0);
 			var removedValue = self.elements.size() > 0 ? self.elements.getFirst() : Primitive.VOID;
 
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(0), Primitive.from(1)), scope, result);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.from(1)), scope, result);
 
 			if (result.label == null) {
 				result.value = removedValue;
@@ -434,7 +434,7 @@ public class GlobalScope extends Scope {
 
 			var self = (ManagedArray) args_1.get(0);
 			var elementsToAdd = new ManagedArray(this.ArrayPrototype, args.subList(1, args.size()));
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.from(0), elementsToAdd), scope, result);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, elementsToAdd), scope, result);
 		}));
 
 		this.ArrayPrototype.declareProperty("unshift", new NativeFunction(this.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
@@ -443,7 +443,7 @@ public class GlobalScope extends Scope {
 
 			var self = (ManagedArray) args_1.get(0);
 			var elementsToAdd = new ManagedArray(this.ArrayPrototype, args.subList(1, args.size()));
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(0), Primitive.from(0), elementsToAdd), scope, result);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, elementsToAdd), scope, result);
 		}));
 
 		this.MapPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
