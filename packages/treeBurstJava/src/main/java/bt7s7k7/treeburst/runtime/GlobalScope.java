@@ -12,11 +12,12 @@ import static bt7s7k7.treeburst.support.ManagedValueUtils.verifyArguments;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
+import bt7s7k7.treeburst.standard.ArrayPrototype;
+import bt7s7k7.treeburst.standard.MapPrototype;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.Position;
@@ -135,10 +136,10 @@ public class GlobalScope extends Scope {
 	public final ManagedTable BooleanPrototype = new ManagedTable(this.TablePrototype);
 	public final ManagedTable Boolean = this.declareGlobal("Boolean", new ManagedTable(this.TablePrototype));
 
-	public final ManagedTable ArrayPrototype = new ManagedTable(this.TablePrototype);
+	public final ManagedTable ArrayPrototype = new ArrayPrototype(this.TablePrototype, this);
 	public final ManagedTable Array = this.declareGlobal("Array", new ManagedTable(this.TablePrototype));
 
-	public final ManagedTable MapPrototype = new ManagedTable(this.TablePrototype);
+	public final ManagedTable MapPrototype = new MapPrototype(this.TablePrototype, this);
 	public final ManagedTable Map = this.declareGlobal("Map", new ManagedTable(this.TablePrototype));
 
 	public <T extends ManagedValue> T declareGlobal(String name, T value) {
@@ -281,238 +282,6 @@ public class GlobalScope extends Scope {
 			var arguments = (ManagedArray) args.get(2);
 
 			evaluateInvocation(receiver, Primitive.VOID, self, Position.INTRINSIC, arguments.elements, scope, result);
-		}));
-
-		this.ArrayPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
-			if (args.size() <= 2) {
-				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);
-				if (result.label != null) return;
-
-				var self = (ManagedArray) args.get(0);
-				var index = (int) ((Primitive.Number) args.get(1)).value;
-
-				index = self.normalizeIndex(index, result);
-				if (result.label != null) return;
-
-				result.value = self.elements.get(index);
-			} else {
-				args = ensureArgumentTypes(args, List.of("this", "index", "value"), List.of(ManagedArray.class, Primitive.Number.class, ManagedValue.class), scope, result);
-				if (result.label != null) return;
-
-				var self = (ManagedArray) args.get(0);
-				var index = (int) ((Primitive.Number) args.get(1)).value;
-				var value = args.get(2);
-
-				if (value == Primitive.VOID) {
-					result.setException(new Diagnostic("Cannot set an array element to void", Position.INTRINSIC));
-					return;
-				}
-
-				index = self.normalizeIndex(index, result);
-				if (result.label != null) return;
-
-				self.elements.set(index, value);
-				result.value = value;
-			}
-		}));
-
-		this.ArrayPrototype.declareProperty("truncate", NativeFunction.simple(globalScope, List.of("this", "length"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			var length = (int) ((Primitive.Number) args.get(1)).value;
-
-			if (length < 0) {
-				result.setException(new Diagnostic("Cannot set array length to be less than zero", Position.INTRINSIC));
-				return;
-			}
-
-			if (length < self.elements.size()) {
-				self.elements.subList(length, self.elements.size()).clear();
-			} else if (length > self.elements.size()) {
-				self.elements.addAll(Collections.nCopies(length - self.elements.size(), Primitive.NULL));
-			}
-
-			return;
-		}));
-
-		this.ArrayPrototype.declareProperty("clone", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			result.value = new ManagedArray(self.prototype, new ArrayList<>(self.elements));
-		}));
-
-		this.ArrayPrototype.declareProperty("clear", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			self.elements.clear();
-			result.value = Primitive.VOID;
-		}));
-
-		this.ArrayPrototype.declareProperty("slice", NativeFunction.simple(globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
-			if (args.size() == 2) {
-				args = ensureArgumentTypes(args, List.of("this", "from"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);
-			} else {
-				args = ensureArgumentTypes(args, List.of("this", "from", "to"), List.of(ManagedArray.class, Primitive.Number.class, Primitive.Number.class), scope, result);
-			}
-
-			if (result.label != null) return;
-			var self = (ManagedArray) args.get(0);
-			var from = (int) ((Primitive.Number) args.get(1)).value;
-			var to = args.size() == 2 ? self.elements.size() : (int) ((Primitive.Number) args.get(2)).value;
-
-			from = self.normalizeIndex(from, result);
-			if (result.label != null) return;
-
-			to = self.normalizeLimit(to, result);
-			if (result.label != null) return;
-
-			result.value = new ManagedArray(self.prototype, new ArrayList<>(self.elements.subList(from, to)));
-		}));
-
-		this.ArrayPrototype.declareProperty("splice", NativeFunction.simple(globalScope, List.of("this", "index", "delete", "insert?"), (args, scope, result) -> {
-			if (args.size() == 3) {
-				args = ensureArgumentTypes(args, List.of("this", "index", "delete"), List.of(ManagedArray.class, Primitive.Number.class, Primitive.Number.class), scope, result);
-			} else {
-				args = ensureArgumentTypes(args, List.of("this", "index", "delete", "insert"), List.of(ManagedArray.class, Primitive.Number.class, Primitive.Number.class, ManagedArray.class), scope, result);
-			}
-
-			if (result.label != null) return;
-			var self = (ManagedArray) args.get(0);
-			var index = (int) ((Primitive.Number) args.get(1)).value;
-			var delete = (int) ((Primitive.Number) args.get(2)).value;
-			var insert = args.size() == 3 ? null : (ManagedArray) args.get(3);
-
-			index = self.normalizeLimit(index, result);
-			if (result.label != null) return;
-
-			if (index + delete > self.elements.size()) {
-				result.setException(new Diagnostic("Too many elements to delete, deleting " + delete + " at index " + index + " in array of size " + self.elements.size(), Position.INTRINSIC));
-				return;
-			}
-
-			var range = self.elements.subList(index, index + delete);
-			range.clear();
-			if (insert != null) {
-				range.addAll(insert.elements);
-			}
-
-			result.value = Primitive.VOID;
-		}));
-
-		this.ArrayPrototype.declareProperty("append", NativeFunction.simple(globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, args.get(1)), scope, result);
-		}));
-
-		this.ArrayPrototype.declareProperty("prepend", NativeFunction.simple(globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, args.get(1)), scope, result);
-		}));
-
-		this.ArrayPrototype.declareProperty("pop", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			var removedValue = self.elements.size() > 0 ? self.elements.getLast() : Primitive.VOID;
-
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(-1), Primitive.from(1)), scope, result);
-
-			if (result.label == null) {
-				result.value = removedValue;
-			}
-		}));
-
-		this.ArrayPrototype.declareProperty("shift", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			var removedValue = self.elements.size() > 0 ? self.elements.getFirst() : Primitive.VOID;
-
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.from(1)), scope, result);
-
-			if (result.label == null) {
-				result.value = removedValue;
-			}
-		}));
-
-		this.ArrayPrototype.declareProperty("push", new NativeFunction(this.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
-			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
-			if (result.label != null) return;
-
-			var self = (ManagedArray) args_1.get(0);
-			var elementsToAdd = new ManagedArray(this.ArrayPrototype, args.subList(1, args.size()));
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, elementsToAdd), scope, result);
-		}));
-
-		this.ArrayPrototype.declareProperty("unshift", new NativeFunction(this.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
-			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
-			if (result.label != null) return;
-
-			var self = (ManagedArray) args_1.get(0);
-			var elementsToAdd = new ManagedArray(this.ArrayPrototype, args.subList(1, args.size()));
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, elementsToAdd), scope, result);
-		}));
-
-		this.MapPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
-			if (args.size() <= 2) {
-				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedMap.class, ManagedValue.class), scope, result);
-				if (result.label != null) return;
-
-				var self = (ManagedMap) args.get(0);
-				var index = args.get(1);
-
-				var content = self.entries.get(index);
-				if (content == null) {
-					result.value = Primitive.VOID;
-				} else {
-					result.value = content;
-				}
-			} else {
-				args = ensureArgumentTypes(args, List.of("this", "index", "value"), List.of(ManagedMap.class, ManagedValue.class, ManagedValue.class), scope, result);
-				if (result.label != null) return;
-
-				var self = (ManagedMap) args.get(0);
-				var index = args.get(1);
-				var value = args.get(2);
-
-				if (index == Primitive.VOID) {
-					result.setException(new Diagnostic("Cannot set a map entry with a void key", Position.INTRINSIC));
-					return;
-				}
-
-				if (value == Primitive.VOID) {
-					self.entries.remove(index);
-				} else {
-					self.entries.put(index, value);
-				}
-
-				result.value = value;
-			}
-		}));
-
-		this.MapPrototype.declareProperty("clone", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
-			result.value = new ManagedMap(self.prototype, new HashMap<>(self.entries));
-		}));
-
-		this.MapPrototype.declareProperty("clear", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
-			self.entries.clear();
-			result.value = Primitive.VOID;
-		}));
-
-		this.MapPrototype.declareProperty("keys", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
-			result.value = new ManagedArray(this.ArrayPrototype, new ArrayList<>(self.entries.keySet()));
-		}));
-
-		this.MapPrototype.declareProperty("values", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
-			result.value = new ManagedArray(this.ArrayPrototype, new ArrayList<>(self.entries.values()));
-		}));
-
-		this.MapPrototype.declareProperty("entries", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
-			var entries = new ManagedArray(this.ArrayPrototype, new ArrayList<>(self.entries.size()));
-
-			for (var kv : self.entries.entrySet()) {
-				entries.elements.add(new ManagedArray(this.ArrayPrototype, List.of(kv.getKey(), kv.getValue())));
-			}
-
-			result.value = entries;
 		}));
 
 		this.declareGlobal("unreachable", NativeFunction.simple(globalScope, Collections.emptyList(), (args, scope, result) -> {
