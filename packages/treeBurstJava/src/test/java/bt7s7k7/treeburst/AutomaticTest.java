@@ -1,7 +1,6 @@
 package bt7s7k7.treeburst;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
-import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_EXCEPTION;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -68,8 +67,7 @@ class AutomaticTest {
 				if (result.label != null) return;
 
 				if (predicate.equals(Primitive.FALSE)) {
-					result.value = new Diagnostic("Assertion failed", Position.INTRINSIC);
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Assertion failed", Position.INTRINSIC));
 					return;
 				}
 
@@ -87,8 +85,7 @@ class AutomaticTest {
 				if (result.label != null) return;
 
 				if (predicate.equals(Primitive.FALSE)) {
-					result.value = new Diagnostic("Assertion failed, " + value + " != " + pattern, Position.INTRINSIC);
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Assertion failed, " + value + " != " + pattern, Position.INTRINSIC));
 					return;
 				}
 

@@ -1,10 +1,7 @@
 package bt7s7k7.treeburst.runtime;
 
-import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_EXCEPTION;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
@@ -70,8 +67,7 @@ public class ExpressionEvaluator {
 			Expression.Identifier identifier = (Expression.Identifier) declaration;
 			Variable variable = scope.declareVariable(identifier.name());
 			if (variable == null) {
-				result.value = new Diagnostic("Duplicate declaration of variable \"" + identifier.name() + "\"", identifier.position());
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Duplicate declaration of variable \"" + identifier.name() + "\"", identifier.position()));
 				return;
 			}
 
@@ -83,8 +79,7 @@ public class ExpressionEvaluator {
 			return;
 		} else if (declaration instanceof Expression.MemberAccess memberAccess) {
 			if (value == Primitive.VOID) {
-				result.value = new Diagnostic("Cannot declare table property of type void", declaration.position());
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Cannot declare table property of type void", declaration.position()));
 				return;
 			}
 
@@ -93,22 +88,19 @@ public class ExpressionEvaluator {
 			var receiver = result.value;
 
 			if (!(receiver instanceof ManagedTable managedTable)) {
-				result.value = new Diagnostic("Cannot declare properties on \"" + getValueName(receiver) + "\"", declaration.position());
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Cannot declare properties on \"" + getValueName(receiver) + "\"", declaration.position()));
 				return;
 			}
 
 			if (!managedTable.declareProperty(memberAccess.member(), value)) {
-				result.value = new Diagnostic("Property \"" + memberAccess.member() + "\" is already defined", declaration.position());
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is already defined", declaration.position()));
 				return;
 			}
 
 			result.value = value;
 			return;
 		} else {
-			result.value = new Diagnostic("Invalid declaration target", declaration.position());
-			result.label = LABEL_EXCEPTION;
+			result.setException(new Diagnostic("Invalid declaration target", declaration.position()));
 			return;
 		}
 	}
@@ -133,8 +125,7 @@ public class ExpressionEvaluator {
 		if (function_1 instanceof Primitive.String primitiveString) {
 			var functionName = primitiveString.value;
 			if (!findProperty(container, container, functionName, scope, result)) {
-				result.value = new Diagnostic("Cannot find method \"" + getValueName(container) + "." + functionName + "\"", position);
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Cannot find method \"" + getValueName(container) + "." + functionName + "\"", position));
 				return;
 			}
 
@@ -142,8 +133,7 @@ public class ExpressionEvaluator {
 		}
 
 		if (!(function_1 instanceof ManagedFunction managedFunction)) {
-			result.value = new Diagnostic("Target \"" + getValueName(container) + "\" is not callable", position);
-			result.label = LABEL_EXCEPTION;
+			result.setException(new Diagnostic("Target \"" + getValueName(container) + "\" is not callable", position));
 			return;
 		}
 
@@ -157,8 +147,9 @@ public class ExpressionEvaluator {
 
 		managedFunction.invoke(args, scope, result);
 
-		if (Objects.equals(result.label, LABEL_EXCEPTION) && result.value instanceof Diagnostic diagnostic) {
-			result.value = new Diagnostic("Cannot invoke " + managedFunction.toString() + "(" + String.join(", ", managedFunction.parameters) + ")", position, List.of(diagnostic));
+		var invocationException = result.getExceptionIfPresent();
+		if (invocationException != null) {
+			result.value = new Diagnostic("While invoking " + managedFunction.toString() + "(" + String.join(", ", managedFunction.parameters) + ")", position, List.of(invocationException));
 		}
 	}
 
@@ -184,8 +175,7 @@ public class ExpressionEvaluator {
 			var variable = scope.findVariable(identifier.name());
 
 			if (variable == null) {
-				result.value = new Diagnostic("Cannot find variable \"" + identifier.name() + "\"", identifier.position());
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Cannot find variable \"" + identifier.name() + "\"", identifier.position()));
 				return;
 			}
 
@@ -253,8 +243,7 @@ public class ExpressionEvaluator {
 			if (receiver instanceof Expression.Identifier identifier) {
 				var variable = scope.findVariable(identifier.name());
 				if (variable == null) {
-					result.value = new Diagnostic("Cannot find variable \"" + identifier.name() + "\"", position);
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Cannot find variable \"" + identifier.name() + "\"", position));
 					return;
 				}
 
@@ -265,8 +254,7 @@ public class ExpressionEvaluator {
 				return;
 			} else if (receiver instanceof Expression.MemberAccess memberAccess) {
 				if (valueValue == Primitive.VOID) {
-					result.value = new Diagnostic("Cannot set a table property to void", memberAccess.position());
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Cannot set a table property to void", memberAccess.position()));
 					return;
 				}
 
@@ -278,22 +266,19 @@ public class ExpressionEvaluator {
 				var receiver_1 = result.value;
 
 				if (!(receiver_1 instanceof ManagedTable managedTable)) {
-					result.value = new Diagnostic("Cannot set properties on \"" + getValueName(receiver_1) + "\"", memberAccess.position());
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Cannot set properties on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return;
 				}
 
 				if (!managedTable.setProperty(memberAccess.member(), valueValue)) {
-					result.value = new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position());
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return;
 				}
 
 				result.value = valueValue;
 				return;
 			} else {
-				result.value = new Diagnostic("Invalid assignment target", receiver.position());
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Invalid assignment target", receiver.position()));
 				return;
 			}
 		}
@@ -309,8 +294,7 @@ public class ExpressionEvaluator {
 
 			var receiverValue = result.value;
 			if (!findProperty(receiverValue, receiverValue, memberAccess.member(), scope, result)) {
-				result.value = new Diagnostic("Cannot find property \"" + getValueName(receiverValue) + "." + memberAccess.member() + "\"", memberAccess.position());
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Cannot find property \"" + getValueName(receiverValue) + "." + memberAccess.member() + "\"", memberAccess.position()));
 				return;
 			}
 

@@ -28,8 +28,7 @@ public class ManagedArray extends ManagedObject {
 		}
 
 		if (index < 0 || index >= this.elements.size()) {
-			result.value = new Diagnostic("Index " + index + " out of range of array of length " + this.elements.size(), Position.INTRINSIC);
-			result.label = ExpressionResult.LABEL_EXCEPTION;
+			result.setException(new Diagnostic("Index " + index + " out of range of array of length " + this.elements.size(), Position.INTRINSIC));
 			return 0;
 		}
 
@@ -42,8 +41,7 @@ public class ManagedArray extends ManagedObject {
 		}
 
 		if (limit < 0 || limit > this.elements.size()) {
-			result.value = new Diagnostic("Index " + limit + " out of range of array of length " + this.elements.size(), Position.INTRINSIC);
-			result.label = ExpressionResult.LABEL_EXCEPTION;
+			result.setException(new Diagnostic("Index " + limit + " out of range of array of length " + this.elements.size(), Position.INTRINSIC));
 			return 0;
 		}
 

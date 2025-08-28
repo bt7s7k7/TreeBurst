@@ -1,12 +1,10 @@
 package bt7s7k7.treeburst.support;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
-import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_EXCEPTION;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
@@ -28,8 +26,7 @@ public class ManagedValueUtils {
 					.map(name -> new Diagnostic("Missing argument \"" + name + "\"", Position.INTRINSIC))
 					.toList();
 
-			result.value = new Diagnostic("Expected " + names.size() + " arguments, but got " + args.size(), Position.INTRINSIC, argumentErrors);
-			result.label = LABEL_EXCEPTION;
+			result.setException(new Diagnostic("Expected " + names.size() + " arguments, but got " + args.size(), Position.INTRINSIC, argumentErrors));
 			return false;
 		}
 
@@ -69,7 +66,8 @@ public class ManagedValueUtils {
 						continue;
 					}
 
-					if (!Objects.equals(result.label, LABEL_EXCEPTION) || !(result.value instanceof Diagnostic diagnostic)) return results;
+					var diagnostic = result.getExceptionIfPresent();
+					if (diagnostic == null) return results;
 					conversionError = diagnostic;
 				}
 
@@ -80,7 +78,8 @@ public class ManagedValueUtils {
 						continue;
 					}
 
-					if (!Objects.equals(result.label, LABEL_EXCEPTION) || !(result.value instanceof Diagnostic diagnostic)) return results;
+					var diagnostic = result.getExceptionIfPresent();
+					if (diagnostic == null) return results;
 					conversionError = diagnostic;
 				}
 
@@ -94,8 +93,7 @@ public class ManagedValueUtils {
 		}
 
 		if (!errors.isEmpty()) {
-			result.value = new Diagnostic("Cannot invoke", Position.INTRINSIC, errors);
-			result.label = LABEL_EXCEPTION;
+			result.setException(new Diagnostic("Cannot invoke", Position.INTRINSIC, errors));
 		}
 
 		return results;
@@ -126,8 +124,7 @@ public class ManagedValueUtils {
 
 	public static Expression ensureExpression(ManagedValue value, ExpressionResult result) {
 		if (value instanceof UnmanagedHandle handle && handle.value instanceof Expression expression) return expression;
-		result.value = new Diagnostic("Expected expression arguments", Position.INTRINSIC);
-		result.label = LABEL_EXCEPTION;
+		result.setException(new Diagnostic("Expected expression arguments", Position.INTRINSIC));
 		return null;
 	}
 }

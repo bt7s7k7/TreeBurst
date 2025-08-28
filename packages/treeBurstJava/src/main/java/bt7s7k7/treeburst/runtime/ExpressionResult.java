@@ -12,6 +12,11 @@ public class ExpressionResult {
 	public int executionLimit = Integer.MAX_VALUE;
 	public int executionCounter = 0;
 
+	public void setException(Diagnostic exception) {
+		this.value = exception;
+		this.label = LABEL_EXCEPTION;
+	}
+
 	public Diagnostic terminate() {
 		if (this.label == null) return null;
 
@@ -24,6 +29,14 @@ public class ExpressionResult {
 			this.label = null;
 			return diagnostic;
 		}
+	}
+
+	public Diagnostic getExceptionIfPresent() {
+		if (LABEL_EXCEPTION.equals(this.label) && this.value instanceof Diagnostic diagnostic) {
+			return diagnostic;
+		}
+
+		return null;
 	}
 
 	public static final String LABEL_RETURN = "!return";

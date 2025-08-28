@@ -50,8 +50,7 @@ public class NativeFunction extends ManagedFunction {
 			}
 
 			if (args.size() > parameters.size()) {
-				result.value = new Diagnostic("Too many arguments, expected " + parameters.size() + ", but got " + args.size(), Position.INTRINSIC);
-				result.label = ExpressionResult.LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Too many arguments, expected " + parameters.size() + ", but got " + args.size(), Position.INTRINSIC));
 				return;
 			}
 
@@ -67,8 +66,7 @@ public class NativeFunction extends ManagedFunction {
 			if (result.label != null) return;
 
 			if (args.size() > parameters.size()) {
-				result.value = new Diagnostic("Too many arguments, expected " + parameters.size() + ", but got " + args.size(), Position.INTRINSIC);
-				result.label = ExpressionResult.LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Too many arguments, expected " + parameters.size() + ", but got " + args.size(), Position.INTRINSIC));
 				return;
 			}
 

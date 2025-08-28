@@ -4,7 +4,6 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.findProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
-import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_EXCEPTION;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
@@ -48,8 +47,7 @@ public class GlobalScope extends Scope {
 	}
 
 	private static final OperatorFallbackImpl defaultFallback = (name, a, b, scope, result) -> {
-		result.value = new Diagnostic("Operands \"" + getValueName(a) + "\" and \"" + getValueName(b) + "\" do not support operator \"" + name + "\"", Position.INTRINSIC);
-		result.label = LABEL_EXCEPTION;
+		result.setException(new Diagnostic("Operands \"" + getValueName(a) + "\" and \"" + getValueName(b) + "\" do not support operator \"" + name + "\"", Position.INTRINSIC));
 	};
 
 	private static void makeOperatorFallback(String name) {
@@ -180,15 +178,13 @@ public class GlobalScope extends Scope {
 			var self = args.get(0);
 
 			if (!findProperty(self, self, "prototype", scope, result)) {
-				result.value = new Diagnostic("Cannot find a prototype on receiver", Position.INTRINSIC);
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Cannot find a prototype on receiver", Position.INTRINSIC));
 				return;
 			}
 
 			var prototype = result.value;
 			if (!(prototype instanceof ManagedTable prototype_1)) {
-				result.value = new Diagnostic("Prototype must be a Table", Position.INTRINSIC);
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Prototype must be a Table", Position.INTRINSIC));
 				return;
 			}
 
@@ -308,8 +304,7 @@ public class GlobalScope extends Scope {
 				var value = args.get(2);
 
 				if (value == Primitive.VOID) {
-					result.value = new Diagnostic("Cannot set an array element to void", Position.INTRINSIC);
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Cannot set an array element to void", Position.INTRINSIC));
 					return;
 				}
 
@@ -326,8 +321,7 @@ public class GlobalScope extends Scope {
 			var length = (int) ((Primitive.Number) args.get(1)).value;
 
 			if (length < 0) {
-				result.value = new Diagnostic("Cannot set array length to be less than zero", Position.INTRINSIC);
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Cannot set array length to be less than zero", Position.INTRINSIC));
 				return;
 			}
 
@@ -389,8 +383,7 @@ public class GlobalScope extends Scope {
 			if (result.label != null) return;
 
 			if (index + delete > self.elements.size()) {
-				result.value = new Diagnostic("Too many elements to delete, deleting " + delete + " at index " + index + " in array of size " + self.elements.size(), Position.INTRINSIC);
-				result.label = LABEL_EXCEPTION;
+				result.setException(new Diagnostic("Too many elements to delete, deleting " + delete + " at index " + index + " in array of size " + self.elements.size(), Position.INTRINSIC));
 				return;
 			}
 
@@ -476,8 +469,7 @@ public class GlobalScope extends Scope {
 				var value = args.get(2);
 
 				if (index == Primitive.VOID) {
-					result.value = new Diagnostic("Cannot set a map entry with a void key", Position.INTRINSIC);
-					result.label = LABEL_EXCEPTION;
+					result.setException(new Diagnostic("Cannot set a map entry with a void key", Position.INTRINSIC));
 					return;
 				}
 
@@ -524,8 +516,7 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.declareGlobal("unreachable", NativeFunction.simple(globalScope, Collections.emptyList(), (args, scope, result) -> {
-			result.value = new Diagnostic("Reached unreachable code", Position.INTRINSIC);
-			result.label = LABEL_EXCEPTION;
+			result.setException(new Diagnostic("Reached unreachable code", Position.INTRINSIC));
 			return;
 		}));
 
