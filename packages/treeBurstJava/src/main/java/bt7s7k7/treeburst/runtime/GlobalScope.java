@@ -4,6 +4,7 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.findProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
+import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
@@ -338,6 +339,11 @@ public class GlobalScope extends Scope {
 			}
 
 			result.value = Primitive.VOID;
+		}));
+
+		this.declareGlobal("return", NativeFunction.simple(globalScope, List.of("value?"), (args, scope, result) -> {
+			result.value = args.isEmpty() ? Primitive.VOID : args.get(0);
+			result.label = LABEL_RETURN;
 		}));
 
 		if (!this.Table.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(globalScope, List.of("this", "other"), (args, scope, result) -> {

@@ -1,6 +1,7 @@
 package bt7s7k7.treeburst;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
+import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -104,6 +105,10 @@ class AutomaticTest {
 			{
 				var result = new ExpressionResult();
 				evaluateExpression(root, globalScope, result);
+
+				if (result.label == LABEL_RETURN) {
+					result.label = null;
+				}
 
 				var diagnostic = result.terminate();
 				if (diagnostic != null) {

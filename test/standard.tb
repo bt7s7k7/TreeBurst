@@ -387,3 +387,29 @@ $s = \(key, value) {
 
 s"q" = 5
 assertEqual(state["q"], 5)
+
+// Test: return statement
+$thunk = \{
+    increment()
+    return(5)
+    increment()
+}
+
+assertEqual(thunk(), 5)
+assertEqual(getCounter(), 1)
+
+// Test: return statement 2
+$thunk = \{
+    $i = 0
+    @while(true, (
+        @if(i > 10, (
+            return(i)
+        ))
+
+        i = i + 1
+    ))
+}
+
+// Test: return statement 3
+return()
+assertEqual(false, true)
