@@ -108,13 +108,9 @@ class AutomaticTest {
 				var result = new ExpressionResult();
 				evaluateExpression(root, globalScope, result);
 
-				if (result.label != null) {
-					var value = result.value;
-					if (value instanceof Diagnostic diagnostic) {
-						this.errors.add(diagnostic);
-					} else {
-						this.errors.add(new Diagnostic("Unexpected termination with label \"" + result.label + "\"", Position.INTRINSIC));
-					}
+				var diagnostic = result.terminate();
+				if (diagnostic != null) {
+					this.errors.add(diagnostic);
 				}
 			}
 		}
