@@ -71,6 +71,8 @@ public interface Expression extends Token {
 
 	public record Label(Position position, String name, Expression target) implements Expression {}
 
+	public record AdvancedAssignment(Position position, String operator, Expression receiver, Expression value) implements Expression {}
+
 	public record Invocation(Position position, Expression target, List<Expression> args) implements Expression {
 		public Invocation withArgument(Expression argument) {
 			return new Expression.Invocation(this.position(), this.target(), Streams.concat(this.args().stream(), Stream.of(argument)).toList());

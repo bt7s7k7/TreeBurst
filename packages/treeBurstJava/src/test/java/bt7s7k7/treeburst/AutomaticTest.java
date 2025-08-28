@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -125,6 +124,8 @@ class AutomaticTest {
 
 			if (!matcher.find()) return tests;
 
+			Test onlyTest = null;
+
 			var isFinal = false;
 			while (!isFinal) {
 				var textStart = matcher.end() + 1;
@@ -137,13 +138,21 @@ class AutomaticTest {
 				var startLine = rootDocument.getCursorAtIndex(textStart).line;
 				var test = new Test(name, new InputDocument(path.toString(), testFile.substring(textStart, textEnd), startLine));
 
-				if (Objects.equals(modifier, "expect fail")) {
-					test.expectFail = true;
+				if (modifier != null) {
+					if (modifier.contains("expect fail")) {
+						test.expectFail = true;
+					}
+
+					if (modifier.contains("solo")) {
+						onlyTest = test;
+					}
+
 				}
 
 				tests.add(test);
 			}
 
+			if (onlyTest != null) return List.of(onlyTest);
 			return tests;
 		}
 	}

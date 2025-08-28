@@ -48,10 +48,22 @@ public class TreeBurstParser extends GenericParser {
 	public static class OperatorInstance implements Token {
 		public final Position position;
 		public final String token;
+		public final boolean isAdvancedAssignment;
 
 		public OperatorInstance(Position position, String token) {
 			this.position = position;
 			this.token = token;
+			this.isAdvancedAssignment = false;
+		}
+
+		protected OperatorInstance(Position position, String token, boolean isAdvancedAssignment) {
+			this.position = position;
+			this.token = token;
+			this.isAdvancedAssignment = isAdvancedAssignment;
+		}
+
+		public static OperatorInstance makeAdvancedAssignment(Position position, String token) {
+			return new OperatorInstance(position, token, true);
 		}
 	}
 
@@ -361,6 +373,11 @@ public class TreeBurstParser extends GenericParser {
 					this.index--;
 					continue;
 				}
+
+				if (this.consume("=")) {
+					return this._token = OperatorInstance.makeAdvancedAssignment(this.getPosition(start), token);
+				}
+
 				return this._token = new OperatorInstance(this.getPosition(start), token);
 			}
 		}
@@ -552,6 +569,16 @@ public class TreeBurstParser extends GenericParser {
 
 					var operand = this.parseExpression(infixOperator.resultPrecedence);
 					if (operand == null) return target;
+
+					if (nextOpInstance.isAdvancedAssignment) {
+						if (infixOperator.type != OperatorType.INVOCATION) {
+							this.createDiagnostic("Invalid use of operator in assignment", nextOpInstance.position);
+							return null;
+						}
+
+						target = new Expression.AdvancedAssignment(nextOpInstance.position, infixOperator.name, target, operand);
+						continue;
+					}
 
 					if (infixOperator.type == OperatorType.INVOCATION) {
 						target = Expression.Invocation.makeMethodCall(nextOpInstance.position, target, infixOperator.name, Collections.singletonList(operand));

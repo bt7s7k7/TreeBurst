@@ -429,3 +429,32 @@ start:
     i = i + 1
     goto("start")
 end:
+
+// Test: advanced assignment
+$i = 5
+i += 10
+assertEqual(i, 15)
+
+$table = Table.new()
+$table.q = 5
+table.q += 10
+assertEqual(table.q, 15)
+
+$map = {q: 5}
+map["q"] += 10
+assertEqual(map["q"], 15)
+
+// Test: advanced assignment short-circuit
+$a = false
+a ||= (increment(), true)
+assertEqual(a, true)
+assertEqual(getCounter(), 1)
+
+a ||= (increment(), true)
+assertEqual(a, true)
+assertEqual(getCounter(), 1)
+
+$b = void
+b else= (increment(), 10)
+assertEqual(b, 10)
+assertEqual(getCounter(), 2)
