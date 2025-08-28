@@ -487,9 +487,24 @@ public class TreeBurstParser extends GenericParser {
 			return this._token = new Expression.FunctionDeclaration(this.getPosition(start), parameters, body);
 		}
 
-		var variable = this.consumeWord();
-		if (variable.isEmpty()) return this._token = null;
-		return this._token = new Expression.Identifier(this.getPosition(start), variable);
+		var identifierName = this.consumeWord();
+		if (identifierName.isEmpty()) return this._token = null;
+
+		if (this.consume(":")) {
+			var labelPosition = this.getPosition(start);
+			this.skipWhitespace();
+			this._token = null;
+
+			Expression target = null;
+			if (!this.isDone() && this.matches(List.of(")", "}", "]")) == null) {
+				target = this.parseExpression();
+				if (target == null) return null;
+			}
+
+			return this._token = new Expression.Label(labelPosition, identifierName, target);
+		}
+
+		return this._token = new Expression.Identifier(this.getPosition(start), identifierName);
 	}
 
 	public Expression parseExpression() {

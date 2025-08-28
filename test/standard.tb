@@ -413,3 +413,19 @@ $thunk = \{
 // Test: return statement 3
 return()
 assertEqual(false, true)
+
+// Test: goto statement
+
+goto("skip")
+
+assertEqual(true, false)
+
+skip:
+
+// Test: goto statement 2
+    $i = 0
+start:
+    @if(i > 10, goto("end"))
+    i = i + 1
+    goto("start")
+end:

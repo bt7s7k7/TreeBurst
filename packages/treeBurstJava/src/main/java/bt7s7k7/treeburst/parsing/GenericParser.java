@@ -1,5 +1,7 @@
 package bt7s7k7.treeburst.parsing;
 
+import java.util.List;
+
 public class GenericParser {
 	@FunctionalInterface
 	public interface TokenPredicate {
@@ -99,7 +101,7 @@ public class GenericParser {
 		return this.input.startsWith(token, this.index);
 	}
 
-	public String matches(String[] tokens) {
+	public String matches(List<String> tokens) {
 		for (var element : tokens) {
 			if (this.matches(element)) {
 				return element;

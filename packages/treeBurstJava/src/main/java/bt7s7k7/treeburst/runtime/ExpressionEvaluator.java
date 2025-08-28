@@ -31,10 +31,33 @@ public class ExpressionEvaluator {
 	}
 
 	public static void evaluateExpressionBlock(List<Expression> children, Scope scope, ExpressionResult result) {
-		for (Expression child : children) {
+		outer: for (int i = 0; i < children.size(); i++) {
+			var child = children.get(i);
+
 			evaluateExpression(child, scope, result);
 
-			if (result.label != null) return;
+			if (result.label != null) {
+				if (result.label.startsWith("!")) {
+					return;
+				} else {
+					// Try to find the target label, if not found propagate the labelled result upwards
+					for (i = 0; i < children.size(); i++) {
+						var child_1 = children.get(i);
+
+						if (!(child_1 instanceof Expression.Label label)) continue;
+						if (!label.name().equals(result.label)) continue;
+
+						result.label = null;
+						// No need to set the index of the found expression because we are mutating
+						// the outer loop's i, but we need to decrement it because it will be
+						// incremented by the outer loop
+						i--;
+						continue outer;
+					}
+
+					return;
+				}
+			}
 		}
 	}
 
@@ -336,6 +359,13 @@ public class ExpressionEvaluator {
 			}
 
 			result.value = map;
+			return;
+		}
+
+		if (expression instanceof Expression.Label label) {
+			var target = label.target();
+			if (target == null) return;
+			evaluateExpression(target, scope, result);
 			return;
 		}
 

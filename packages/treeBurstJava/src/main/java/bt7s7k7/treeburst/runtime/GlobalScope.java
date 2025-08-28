@@ -346,6 +346,11 @@ public class GlobalScope extends Scope {
 			result.label = LABEL_RETURN;
 		}));
 
+		this.declareGlobal("goto", NativeFunction.simple(globalScope, List.of("label"), List.of(Primitive.String.class), (args, scope, result) -> {
+			result.value = Primitive.VOID;
+			result.label = ((Primitive.String) args.get(0)).value;
+		}));
+
 		if (!this.Table.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(globalScope, List.of("this", "other"), (args, scope, result) -> {
 			if (!verifyArguments(args, List.of("this", "other"), result)) return;
 			result.value = Primitive.from(args.get(0) == args.get(1));

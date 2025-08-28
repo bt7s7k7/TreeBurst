@@ -4,10 +4,11 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 
 import java.util.List;
-import java.util.Objects;
 
 import bt7s7k7.treeburst.parsing.Expression;
+import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
 public class ScriptFunction extends ManagedFunction {
@@ -26,8 +27,12 @@ public class ScriptFunction extends ManagedFunction {
 		}
 
 		evaluateExpression(this.body, functionScope, result);
-		if (Objects.equals(result.label, LABEL_RETURN)) {
+		if (result.label == null) return;
+
+		if (LABEL_RETURN.equals(result.label)) {
 			result.label = null;
+		} else {
+			result.setException(new Diagnostic("Did not resolve label '" + result.label + "' during function execution", Position.INTRINSIC));
 		}
 	}
 
