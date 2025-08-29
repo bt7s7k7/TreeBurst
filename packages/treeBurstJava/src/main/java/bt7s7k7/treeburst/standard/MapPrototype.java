@@ -30,7 +30,7 @@ public class MapPrototype extends LazyTable {
 				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedMap.class, ManagedValue.class), scope, result);
 				if (result.label != null) return;
 
-				var self = (ManagedMap) args.get(0);
+				var self = args.get(0).getMapValue();
 				var index = args.get(1);
 
 				var content = self.entries.get(index);
@@ -43,7 +43,7 @@ public class MapPrototype extends LazyTable {
 				args = ensureArgumentTypes(args, List.of("this", "index", "value"), List.of(ManagedMap.class, ManagedValue.class, ManagedValue.class), scope, result);
 				if (result.label != null) return;
 
-				var self = (ManagedMap) args.get(0);
+				var self = args.get(0).getMapValue();
 				var index = args.get(1);
 				var value = args.get(2);
 
@@ -63,28 +63,28 @@ public class MapPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("clone", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
+			var self = args.get(0).getMapValue();
 			result.value = new ManagedMap(self.prototype, new HashMap<>(self.entries));
 		}));
 
 		this.declareProperty("clear", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
+			var self = args.get(0).getMapValue();
 			self.entries.clear();
 			result.value = Primitive.VOID;
 		}));
 
 		this.declareProperty("keys", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
+			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.keySet()));
 		}));
 
 		this.declareProperty("values", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
+			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.values()));
 		}));
 
 		this.declareProperty("entries", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			var self = (ManagedMap) args.get(0);
+			var self = args.get(0).getMapValue();
 			var entries = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.size()));
 
 			for (var kv : self.entries.entrySet()) {

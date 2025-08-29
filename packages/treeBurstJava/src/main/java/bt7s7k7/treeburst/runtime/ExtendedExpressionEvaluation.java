@@ -124,7 +124,7 @@ public class ExtendedExpressionEvaluation {
 			var mappedArgs = new ArrayList<ManagedValue>();
 
 			for (var v : this.argumentExpressions) {
-				mappedArgs.add(new UnmanagedHandle(scope.globalScope.TablePrototype, v));
+				mappedArgs.add(new NativeHandle(scope.globalScope.TablePrototype, v));
 			}
 
 			this.argumentValues = mappedArgs;
@@ -237,7 +237,7 @@ public class ExtendedExpressionEvaluation {
 	/** Dataflow: (functionName, operandExpression) -> (operandValue) */
 	public boolean prepareOperand() {
 		if (this.functionName != null && this.functionName.startsWith("@")) {
-			this.operandValue = new UnmanagedHandle(scope.globalScope.TablePrototype, this.operandExpression);
+			this.operandValue = new NativeHandle(scope.globalScope.TablePrototype, this.operandExpression);
 			return true;
 		}
 

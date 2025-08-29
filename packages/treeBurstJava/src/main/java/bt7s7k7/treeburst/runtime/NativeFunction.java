@@ -58,7 +58,7 @@ public class NativeFunction extends ManagedFunction {
 		});
 	}
 
-	public static NativeFunction simple(GlobalScope globalScope, List<String> parameters, List<Class<? extends ManagedValue>> types, Handler handler) {
+	public static NativeFunction simple(GlobalScope globalScope, List<String> parameters, List<Class<?>> types, Handler handler) {
 		var parametersWithoutOptional = getParametersWithoutOptional(parameters);
 
 		return new NativeFunction(globalScope.FunctionPrototype, parameters, (args, scope, result) -> {

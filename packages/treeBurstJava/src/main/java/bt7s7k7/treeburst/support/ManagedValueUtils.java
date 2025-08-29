@@ -10,8 +10,8 @@ import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
+import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.runtime.Scope;
-import bt7s7k7.treeburst.runtime.UnmanagedHandle;
 
 public class ManagedValueUtils {
 	public static boolean verifyArguments(List<ManagedValue> args, List<String> names, ExpressionResult result) {
@@ -33,11 +33,11 @@ public class ManagedValueUtils {
 		return true;
 	}
 
-	public static List<ManagedValue> ensureArgumentTypes(List<ManagedValue> args, List<String> names, List<Class<? extends ManagedValue>> types, Scope scope, ExpressionResult result) {
+	public static List<ManagedValue> ensureArgumentTypes(List<ManagedValue> args, List<String> names, List<Class<?>> types, Scope scope, ExpressionResult result) {
 		return ensureArgumentTypes(args, names.size(), names, types, scope, result);
 	}
 
-	public static List<ManagedValue> ensureArgumentTypes(List<ManagedValue> args, int requiredParameterCount, List<String> names, List<Class<? extends ManagedValue>> types, Scope scope, ExpressionResult result) {
+	public static List<ManagedValue> ensureArgumentTypes(List<ManagedValue> args, int requiredParameterCount, List<String> names, List<Class<?>> types, Scope scope, ExpressionResult result) {
 		if (types.size() != names.size()) throw new IllegalArgumentException("The lists of argument names and types must be of the same length");
 
 		if (!verifyArguments(requiredParameterCount, args, names, result)) return Collections.emptyList();
@@ -56,7 +56,20 @@ public class ManagedValueUtils {
 			var value = args.get(i);
 			var name = names.get(i);
 
-			if (!type.isInstance(value)) {
+			// Test if the type is correct. If the requested type is not a subclass of ManagedValue
+			// it should be included as a value of a NativeHandle object.
+			boolean isInstance;
+			if (ManagedValue.class.isAssignableFrom(type)) {
+				isInstance = type.isInstance(value);
+			} else {
+				if (value instanceof NativeHandle nativeHandle) {
+					isInstance = type.isInstance(nativeHandle.value);
+				} else {
+					isInstance = false;
+				}
+			}
+
+			if (!isInstance) {
 				Diagnostic conversionError = null;
 
 				if (type == Primitive.Boolean.class) {
@@ -123,7 +136,7 @@ public class ManagedValueUtils {
 	}
 
 	public static Expression ensureExpression(ManagedValue value, ExpressionResult result) {
-		if (value instanceof UnmanagedHandle handle && handle.value instanceof Expression expression) return expression;
+		if (value instanceof NativeHandle handle && handle.value instanceof Expression expression) return expression;
 		result.setException(new Diagnostic("Expected expression arguments", Position.INTRINSIC));
 		return null;
 	}

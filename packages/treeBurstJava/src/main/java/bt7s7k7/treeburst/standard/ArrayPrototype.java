@@ -30,8 +30,8 @@ public class ArrayPrototype extends LazyTable {
 				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);
 				if (result.label != null) return;
 
-				var self = (ManagedArray) args.get(0);
-				var index = (int) ((Primitive.Number) args.get(1)).value;
+				var self = args.get(0).getArrayValue();
+				var index = (int) args.get(1).getNumberValue();
 
 				index = self.normalizeIndex(index, result);
 				if (result.label != null) return;
@@ -41,8 +41,8 @@ public class ArrayPrototype extends LazyTable {
 				args = ensureArgumentTypes(args, List.of("this", "index", "value"), List.of(ManagedArray.class, Primitive.Number.class, ManagedValue.class), scope, result);
 				if (result.label != null) return;
 
-				var self = (ManagedArray) args.get(0);
-				var index = (int) ((Primitive.Number) args.get(1)).value;
+				var self = args.get(0).getArrayValue();
+				var index = (int) args.get(1).getNumberValue();
 				var value = args.get(2);
 
 				if (value == Primitive.VOID) {
@@ -59,8 +59,8 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("truncate", NativeFunction.simple(globalScope, List.of("this", "length"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
-			var length = (int) ((Primitive.Number) args.get(1)).value;
+			var self = args.get(0).getArrayValue();
+			var length = (int) args.get(1).getNumberValue();
 
 			if (length < 0) {
 				result.setException(new Diagnostic("Cannot set array length to be less than zero", Position.INTRINSIC));
@@ -77,12 +77,12 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("clone", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
+			var self = args.get(0).getArrayValue();
 			result.value = new ManagedArray(self.prototype, new ArrayList<>(self.elements));
 		}));
 
 		this.declareProperty("clear", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
+			var self = args.get(0).getArrayValue();
 			self.elements.clear();
 			result.value = Primitive.VOID;
 		}));
@@ -95,9 +95,9 @@ public class ArrayPrototype extends LazyTable {
 			}
 
 			if (result.label != null) return;
-			var self = (ManagedArray) args.get(0);
-			var from = (int) ((Primitive.Number) args.get(1)).value;
-			var to = args.size() == 2 ? self.elements.size() : (int) ((Primitive.Number) args.get(2)).value;
+			var self = args.get(0).getArrayValue();
+			var from = (int) args.get(1).getNumberValue();
+			var to = args.size() == 2 ? self.elements.size() : (int) args.get(2).getNumberValue();
 
 			from = self.normalizeIndex(from, result);
 			if (result.label != null) return;
@@ -116,10 +116,10 @@ public class ArrayPrototype extends LazyTable {
 			}
 
 			if (result.label != null) return;
-			var self = (ManagedArray) args.get(0);
-			var index = (int) ((Primitive.Number) args.get(1)).value;
-			var delete = (int) ((Primitive.Number) args.get(2)).value;
-			var insert = args.size() == 3 ? null : (ManagedArray) args.get(3);
+			var self = args.get(0).getArrayValue();
+			var index = (int) args.get(1).getNumberValue();
+			var delete = (int) args.get(2).getNumberValue();
+			var insert = args.size() == 3 ? null : args.get(3).getArrayValue();
 
 			index = self.normalizeLimit(index, result);
 			if (result.label != null) return;
@@ -139,17 +139,17 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("append", NativeFunction.simple(globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
+			var self = args.get(0).getArrayValue();
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, args.get(1)), scope, result);
 		}));
 
 		this.declareProperty("prepend", NativeFunction.simple(globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
+			var self = args.get(0).getArrayValue();
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, args.get(1)), scope, result);
 		}));
 
 		this.declareProperty("pop", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
+			var self = args.get(0).getArrayValue();
 			var removedValue = self.elements.size() > 0 ? self.elements.getLast() : Primitive.VOID;
 
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(-1), Primitive.from(1)), scope, result);
@@ -160,7 +160,7 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("shift", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
-			var self = (ManagedArray) args.get(0);
+			var self = args.get(0).getArrayValue();
 			var removedValue = self.elements.size() > 0 ? self.elements.getFirst() : Primitive.VOID;
 
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.from(1)), scope, result);
@@ -174,7 +174,7 @@ public class ArrayPrototype extends LazyTable {
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
 
-			var self = (ManagedArray) args_1.get(0);
+			var self = args_1.get(0).getArrayValue();
 			var elementsToAdd = new ManagedArray(this, args.subList(1, args.size()));
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, elementsToAdd), scope, result);
 		}));
@@ -183,7 +183,7 @@ public class ArrayPrototype extends LazyTable {
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
 
-			var self = (ManagedArray) args_1.get(0);
+			var self = args_1.get(0).getArrayValue();
 			var elementsToAdd = new ManagedArray(this, args.subList(1, args.size()));
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, elementsToAdd), scope, result);
 		}));
