@@ -106,7 +106,20 @@ public class ManagedValueUtils {
 		}
 
 		if (!errors.isEmpty()) {
-			result.setException(new Diagnostic("Cannot invoke", Position.INTRINSIC, errors));
+			result.label = null;
+			var signature = new StringBuilder();
+			for (int i = 0; i < names.size(); i++) {
+				if (i != 0) signature.append(", ");
+				signature.append(names.get(i));
+				signature.append(": ");
+				var type = types.get(i);
+				if (type == ManagedValue.class) {
+					signature.append("any");
+				} else {
+					signature.append(type.getSimpleName());
+				}
+			}
+			result.setException(new Diagnostic("Expected arguments: (" + signature.toString() + ")", Position.INTRINSIC, errors));
 		}
 
 		return results;
