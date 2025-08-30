@@ -6,19 +6,6 @@ import java.util.Map;
 import bt7s7k7.treeburst.support.ManagedValue;
 
 public class ManagedTable extends ManagedObject {
-	protected boolean hasGetters = false;
-	protected boolean hasSetters;
-
-	@Override
-	public boolean hasGetters() {
-		return hasGetters;
-	}
-
-	@Override
-	public boolean hasSetters() {
-		return hasSetters;
-	}
-
 	public ManagedTable(ManagedObject prototype) {
 		this(prototype, new HashMap<>());
 	}
@@ -26,7 +13,6 @@ public class ManagedTable extends ManagedObject {
 	public ManagedTable(ManagedObject prototype, Map<String, ManagedValue> properties) {
 		super(prototype);
 		this.properties = properties;
-		this.hasSetters = prototype != null && prototype instanceof ManagedTable parentTable ? parentTable.hasSetters : false;
 	}
 
 	public final Map<String, ManagedValue> properties;

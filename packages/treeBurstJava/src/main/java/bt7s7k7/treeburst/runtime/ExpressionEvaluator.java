@@ -93,7 +93,7 @@ public class ExpressionEvaluator {
 			return true;
 		}
 
-		if (container.hasGetters()) {
+		if (container.hasGetters) {
 			var getter = container.getOwnProperty("get_" + name);
 
 			if (getter != null) {
@@ -115,14 +115,16 @@ public class ExpressionEvaluator {
 		return false;
 	}
 
-	public static boolean setProperty(ManagedTable container, String name, ManagedValue value, Scope scope, ExpressionResult result) {
-		var success = container.setOwnProperty(name, value);
-		if (success) {
-			result.value = value;
-			return true;
+	public static boolean setProperty(ManagedObject container, String name, ManagedValue value, Scope scope, ExpressionResult result) {
+		if (container instanceof ManagedTable table) {
+			var success = table.setOwnProperty(name, value);
+			if (success) {
+				result.value = value;
+				return true;
+			}
 		}
 
-		if (container.hasSetters()) {
+		if (container.hasSetters) {
 			if (getProperty(container, container, "set_" + name, scope, result)) {
 				var setter = result.value;
 

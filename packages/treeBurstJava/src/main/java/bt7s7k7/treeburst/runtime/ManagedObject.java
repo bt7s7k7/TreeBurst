@@ -3,15 +3,10 @@ package bt7s7k7.treeburst.runtime;
 import bt7s7k7.treeburst.support.ManagedValue;
 
 public abstract class ManagedObject extends ManagedValue {
+	public boolean hasGetters;
+	public boolean hasSetters;
+
 	public String name = null;
-
-	public boolean hasGetters() {
-		return false;
-	}
-
-	public boolean hasSetters() {
-		return false;
-	}
 
 	public final ManagedObject prototype;
 
@@ -26,5 +21,6 @@ public abstract class ManagedObject extends ManagedValue {
 
 	public ManagedObject(ManagedObject prototype) {
 		this.prototype = prototype;
+		this.hasSetters = prototype != null && prototype instanceof ManagedTable parentTable ? parentTable.hasSetters : false;
 	}
 }

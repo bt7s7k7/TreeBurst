@@ -25,12 +25,24 @@ import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.NativeFunction;
+import bt7s7k7.treeburst.runtime.NativeHandle;
+import bt7s7k7.treeburst.standard.NativeHandleWrapper;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.InputDocument;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
 class AutomaticTest {
+	private static class DummyObject {
+		public double a;
+		public double b;
+
+		public static final NativeHandleWrapper<DummyObject> WRAPPER = new NativeHandleWrapper<>(DummyObject.class)
+				.addProperty("a", Primitive.Number.class, v -> Primitive.from(v.a), (v, a) -> v.a = a.value)
+				.addProperty("b", Primitive.Number.class, v -> Primitive.from(v.b), (v, b) -> v.b = b.value)
+				.addGetter("sum", v -> Primitive.from(v.a + v.b));
+	}
+
 	private static class Test {
 		public final String name;
 		public boolean expectFail = false;
@@ -100,6 +112,8 @@ class AutomaticTest {
 			globalScope.declareGlobal("getCounter", NativeFunction.simple(globalScope, Collections.emptyList(), (args, scope, result) -> {
 				result.value = Primitive.from(counter.count);
 			}));
+
+			globalScope.declareGlobal("dummy", new NativeHandle(DummyObject.WRAPPER.buildPrototype(globalScope), new DummyObject()));
 
 			{
 				var result = new ExpressionResult();

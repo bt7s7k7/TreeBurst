@@ -38,4 +38,12 @@ public abstract class ManagedValue {
 	public <T> T getNativeValue(Class<T> type) {
 		return type.cast(((NativeHandle) this).value);
 	}
+
+	public <T> T cast(Class<T> type) {
+		if (ManagedValue.class.isAssignableFrom(type)) {
+			return type.cast(this);
+		} else {
+			return this.getNativeValue(type);
+		}
+	}
 }

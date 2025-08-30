@@ -531,3 +531,15 @@ assertEqual(value, 20)
 $foo.value = 25
 assertEqual(value, 20)
 assertEqual(foo.value, 25)
+
+// Test: native wrapper
+
+assertEqual(dummy.a, 0)
+assertEqual(dummy.b, 0)
+
+dummy.a = 5
+dummy.b = 10
+
+assertEqual(dummy.a, 5)
+assertEqual(dummy.b, 10)
+assertEqual(dummy.sum, 15)

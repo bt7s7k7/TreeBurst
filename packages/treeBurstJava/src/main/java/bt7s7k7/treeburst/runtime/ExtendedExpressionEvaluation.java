@@ -201,13 +201,13 @@ public class ExtendedExpressionEvaluation {
 
 			var receiver_1 = result.value;
 
-			if (!(receiver_1 instanceof ManagedTable managedTable)) {
+			if (!(receiver_1 instanceof ManagedObject container)) {
 				result.setException(new Diagnostic("Cannot set properties on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 				return false;
 			}
 
 			if (loadTarget) {
-				if (!getProperty(managedTable, managedTable, memberAccess.member(), scope, result)) {
+				if (!getProperty(container, container, memberAccess.member(), scope, result)) {
 					result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return false;
 				}
@@ -221,7 +221,7 @@ public class ExtendedExpressionEvaluation {
 					return false;
 				}
 
-				if (!setProperty(managedTable, memberAccess.member(), valueValue, scope, result)) {
+				if (!setProperty(container, memberAccess.member(), valueValue, scope, result)) {
 					result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return false;
 				}
