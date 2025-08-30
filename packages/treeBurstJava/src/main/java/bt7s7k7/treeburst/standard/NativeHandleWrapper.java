@@ -3,17 +3,22 @@ package bt7s7k7.treeburst.standard;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.GlobalScope;
+import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.runtime.Scope;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.Primitive;
 
 public class NativeHandleWrapper<T> {
 	public final Class<T> type;
@@ -73,6 +78,87 @@ public class NativeHandleWrapper<T> {
 			setter.accept(self, newValue.cast(valueType));
 			result.value = newValue;
 		});
+	}
+
+	public <TKey, TValue> NativeHandleWrapper<T> addMapAccess(Function<T, Map<TKey, TValue>> mapGetter,
+			Class<?> keyType, Class<?> valueType,
+			Function<TKey, ManagedValue> importKey, Function<ManagedValue, TKey> exportKey,
+			Function<TValue, ManagedValue> importValue, Function<ManagedValue, TValue> exportValue) {
+
+		this.addGetter("length", self -> Primitive.from(mapGetter.apply(self).size()));
+
+		if (exportKey != null && importValue != null) {
+			if (exportValue != null) {
+				this.addMethod("clear", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+					var map = mapGetter.apply(self);
+					map.clear();
+					result.value = Primitive.VOID;
+				});
+
+				this.addMethod(OperatorConstants.OPERATOR_AT, List.of("key", "value?"), List.of(keyType, valueType), (self, args, scope, result) -> {
+					var map = mapGetter.apply(self);
+					var key = exportKey.apply(args.get(0));
+
+					if (args.size() == 1) {
+						var value = map.get(key);
+
+						if (value == null) {
+							result.value = Primitive.VOID;
+						} else {
+							result.value = importValue.apply(value);
+						}
+					} else {
+						var value = exportValue.apply(args.get(1));
+
+						if (value == Primitive.VOID) {
+							map.remove(key);
+						} else {
+							map.put(key, value);
+						}
+
+						result.value = args.get(1);
+					}
+				});
+			} else {
+				this.addMethod(OperatorConstants.OPERATOR_AT, List.of("key"), List.of(keyType), (self, args, scope, result) -> {
+					var map = mapGetter.apply(self);
+					var key = exportKey.apply(args.get(0));
+					var value = map.get(key);
+
+					if (value == null) {
+						result.value = Primitive.VOID;
+					} else {
+						result.value = importValue.apply(value);
+					}
+				});
+			}
+
+			if (importKey != null) {
+				this.addMethod("keys", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+					var map = mapGetter.apply(self);
+					result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.keySet().stream().map(importKey).collect(Collectors.toCollection(ArrayList::new)));
+				});
+			}
+
+			if (importValue != null) {
+				this.addMethod("values", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+					var map = mapGetter.apply(self);
+					result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.values().stream().map(importValue).collect(Collectors.toCollection(ArrayList::new)));
+				});
+			}
+
+			if (importValue != null && importKey != null) {
+				this.addMethod("entries", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+					var map = mapGetter.apply(self);
+					result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.entrySet().stream()
+							.map(kv -> new ManagedArray(scope.globalScope.ArrayPrototype, List.of(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()))))
+							.collect(Collectors.toCollection(ArrayList::new)));
+				});
+			}
+		}
+
+		return this;
+
 	}
 
 	public void initializePrototype(ManagedTable table, GlobalScope globalScope) {
