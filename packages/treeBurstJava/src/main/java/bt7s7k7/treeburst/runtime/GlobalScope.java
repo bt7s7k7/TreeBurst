@@ -2,7 +2,6 @@ package bt7s7k7.treeburst.runtime;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.findProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
@@ -20,6 +19,7 @@ import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.standard.ArrayPrototype;
 import bt7s7k7.treeburst.standard.MapPrototype;
+import bt7s7k7.treeburst.standard.TableApi;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.Position;
@@ -124,7 +124,7 @@ public class GlobalScope extends Scope {
 	}
 
 	public final ManagedTable TablePrototype = new ManagedTable(null);
-	public final ManagedTable Table = this.declareGlobal("Table", new ManagedTable(this.TablePrototype));
+	public final ManagedTable Table = this.declareGlobal("Table", new TableApi(this.TablePrototype, this));
 
 	public final ManagedTable FunctionPrototype = new ManagedTable(this.TablePrototype);
 	public final ManagedTable Function = this.declareGlobal("Function", new ManagedTable(this.TablePrototype));
@@ -168,31 +168,12 @@ public class GlobalScope extends Scope {
 		this.declareGlobal("null", Primitive.NULL);
 		this.declareGlobal("void", Primitive.VOID);
 
-		if (!this.Table.declareProperty("prototype", this.TablePrototype)) throw new IllegalStateException();
 		if (!this.Function.declareProperty("prototype", this.FunctionPrototype)) throw new IllegalStateException();
 		if (!this.Number.declareProperty("prototype", this.NumberPrototype)) throw new IllegalStateException();
 		if (!this.String.declareProperty("prototype", this.StringPrototype)) throw new IllegalStateException();
 		if (!this.Boolean.declareProperty("prototype", this.BooleanPrototype)) throw new IllegalStateException();
 		if (!this.Array.declareProperty("prototype", this.ArrayPrototype)) throw new IllegalStateException();
 		if (!this.Map.declareProperty("prototype", this.MapPrototype)) throw new IllegalStateException();
-
-		if (!this.Table.declareProperty("new", NativeFunction.simple(globalScope, List.of("this"), (args, scope, result) -> {
-			if (!verifyArguments(args, List.of("this"), result)) return;
-			var self = args.get(0);
-
-			if (!findProperty(self, self, "prototype", scope, result)) {
-				result.setException(new Diagnostic("Cannot find a prototype on receiver", Position.INTRINSIC));
-				return;
-			}
-
-			var prototype = result.value;
-			if (!(prototype instanceof ManagedTable prototype_1)) {
-				result.setException(new Diagnostic("Prototype must be a Table", Position.INTRINSIC));
-				return;
-			}
-
-			result.value = new ManagedTable(prototype_1);
-		})));
 
 		for (var kv : OPERATOR_FALLBACKS) {
 			this.TablePrototype.declareProperty(kv.getKey(), NativeFunction.simple(globalScope, List.of("this", "a", "b?"), kv.getValue()));
@@ -274,6 +255,10 @@ public class GlobalScope extends Scope {
 			}
 		}));
 
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(globalScope, List.of("this", "other"), (args, scope, result) -> {
+			result.value = Primitive.from(args.get(0) == args.get(1));
+		}));
+
 		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(globalScope, List.of("this", "receiver", "arguments"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {
 			var self = args.get(0).getFunctionValue();
 			var receiver = args.get(1);
@@ -346,9 +331,5 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.VOID;
 			result.label = args.get(0).getStringValue();
 		}));
-
-		if (!this.Table.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(globalScope, List.of("this", "other"), (args, scope, result) -> {
-			result.value = Primitive.from(args.get(0) == args.get(1));
-		})));
 	}
 }
