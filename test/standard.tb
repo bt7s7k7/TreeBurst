@@ -21,6 +21,9 @@ assertEqual("one", "one")
 // Test: assert unequal, expect fail
 assertEqual(1, 2)
 
+// Test: parsing rollback
+assertEqual((1 0), 0)
+
 // Test: logical operators
 assertEqual(false && false, false)
 assertEqual(true && false, false)

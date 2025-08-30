@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,9 +71,8 @@ public class TreeBurstParser extends GenericParser {
 
 	protected boolean _skippedNewline = false;
 	protected int _lastSkippedIndex = -1;
+	protected int _tokenStart = 0;
 	protected Token _token = null;
-
-	protected Stack<Token> _pendingTokens = new Stack<>();
 
 	private static final String _UNEXPECTED_EOF = "Unexpected end of input";
 	private static final String _INVALID_TOKEN = "Invalid token";
@@ -308,9 +306,9 @@ public class TreeBurstParser extends GenericParser {
 		return new Expression.StringLiteral(this.getPosition(start), value.toString());
 	}
 
-	public Token peekToken(boolean operatorOnly) {
+	public Token peekToken() {
 		if (this._token == null) {
-			return this.nextToken(operatorOnly);
+			return this.nextToken();
 		}
 		return this._token;
 	}
@@ -346,11 +344,11 @@ public class TreeBurstParser extends GenericParser {
 		var result = new ArrayList<Expression>();
 
 		parseEnumerated(terms, () -> {
-			if (this.peekToken(false) == null) {
+			if (this.peekToken() == null) {
 				return false;
 			}
 
-			Expression expression = this.parseExpression();
+			Expression expression = this.consumeExpression();
 			if (expression != null) {
 				result.add(expression);
 			}
@@ -361,11 +359,7 @@ public class TreeBurstParser extends GenericParser {
 		return result;
 	}
 
-	public Token nextToken(boolean operatorOnly) {
-		if (!this._pendingTokens.empty()) {
-			return this._token = this._pendingTokens.pop();
-		}
-
+	public Token nextToken() {
 		this.skipWhitespace();
 		var skippedNewline = this._skippedNewline;
 
@@ -382,30 +376,41 @@ public class TreeBurstParser extends GenericParser {
 				}
 
 				if (this.consume("=")) {
+					this._tokenStart = start;
 					return this._token = OperatorInstance.makeAdvancedAssignment(this.getPosition(start), token);
 				}
 
+				this._tokenStart = start;
 				return this._token = new OperatorInstance(this.getPosition(start), token);
 			}
 		}
 
 		if (this.consume("(")) {
+			this._tokenStart = start;
 			this._token = new Expression.Group(this.getPosition(start), this.parseBlock(")"));
 			this._skippedNewline = skippedNewline;
 			return this._token;
 		}
 
 		if (this.consume("[")) {
+			this._tokenStart = start;
 			this._token = new Expression.ArrayLiteral(this.getPosition(start), this.parseBlock("]"));
 			this._skippedNewline = skippedNewline;
 			return this._token;
 		}
 
-		if (this.consume("\"")) return this._token = this.parseString("\"");
-		if (this.consume("\'")) return this._token = this.parseString("\'");
-		if (this.consume("`")) return this._token = this.parseString("`");
-
-		if (operatorOnly) return this._token = null;
+		if (this.consume("\"")) {
+			this._tokenStart = start;
+			return this._token = this.parseString("\"");
+		}
+		if (this.consume("'")) {
+			this._tokenStart = start;
+			return this._token = this.parseString("'");
+		}
+		if (this.consume("`")) {
+			this._tokenStart = start;
+			return this._token = this.parseString("`");
+		}
 
 		if (this.consume("{")) {
 			var map = new Expression.MapLiteral(this.getPosition(start));
@@ -456,6 +461,8 @@ public class TreeBurstParser extends GenericParser {
 				map.entries.add(new AbstractMap.SimpleEntry<>(key, value));
 				return true;
 			});
+
+			this._tokenStart = start;
 			return this._token = map;
 		}
 
@@ -471,9 +478,11 @@ public class TreeBurstParser extends GenericParser {
 
 			try {
 				double number = Double.parseDouble(numberText.toString());
+				this._tokenStart = start;
 				return this._token = new Expression.NumberLiteral(this.getPosition(start), number);
 			} catch (NumberFormatException e) {
 				this.createDiagnostic("Invalid number", start);
+				this._tokenStart = start;
 				return this._token = null;
 			}
 		}
@@ -503,18 +512,10 @@ public class TreeBurstParser extends GenericParser {
 				body = new Expression.Group(this.getPosition(bodyStart), this.parseBlock("}"));
 			} else {
 				this._token = null;
-				var expression = this.parseExpression();
-				if (expression == null) return null;
-
-				if (this._token != null) {
-					// The parsing has terminated on an incompatible token, save it so it can be accessed on the next call to nextToken
-					this._pendingTokens.push(this._token);
-					this._token = null;
-				}
-
-				body = expression;
+				body = this.consumeExpression();
 			}
 
+			this._tokenStart = start;
 			return this._token = new Expression.FunctionDeclaration(this.getPosition(start), parameters, body);
 		}
 
@@ -527,15 +528,30 @@ public class TreeBurstParser extends GenericParser {
 			this._token = null;
 
 			Expression target = null;
-			if (!this.isDone() && this.matches(List.of(")", "}", "]")) == null) {
-				target = this.parseExpression();
+			if (!this.isDone()) {
+				target = this.consumeExpression();
 				if (target == null) return null;
 			}
 
+			this._tokenStart = start;
 			return this._token = new Expression.Label(labelPosition, identifierName, target);
 		}
 
+		this._tokenStart = start;
 		return this._token = new Expression.Identifier(this.getPosition(start), identifierName);
+	}
+
+	public Expression consumeExpression() {
+		var expression = this.parseExpression();
+		if (expression == null) return null;
+
+		if (this._token != null) {
+			// The parsing has terminated on an incompatible token, rollback the parsing so it can be consumed next time
+			this.index = this._tokenStart;
+			this._token = null;
+		}
+
+		return expression;
 	}
 
 	public Expression parseExpression() {
@@ -543,7 +559,7 @@ public class TreeBurstParser extends GenericParser {
 	}
 
 	public Expression parseExpression(int precedence) {
-		Token targetToken = this.peekToken(false);
+		Token targetToken = this.peekToken();
 		if (targetToken == null) {
 			this.createDiagnostic(this.isDone() ? _UNEXPECTED_EOF : _INVALID_TOKEN);
 			return null;
@@ -554,10 +570,10 @@ public class TreeBurstParser extends GenericParser {
 			var prefixOperator = _PREFIX_OPERATORS.get(opInstance.token);
 			if (prefixOperator == null) {
 				this.createDiagnostic("Unexpected operator", opInstance.position);
-				this.nextToken(false);
+				this.nextToken();
 				return null;
 			} else {
-				this.nextToken(false);
+				this.nextToken();
 				var operand = this.parseExpression(prefixOperator.resultPrecedence);
 				if (operand == null) return null;
 
@@ -568,18 +584,18 @@ public class TreeBurstParser extends GenericParser {
 				}
 			}
 		} else {
-			this.nextToken(true);
+			this.nextToken();
 			target = (Expression) targetToken;
 		}
 
 		while (true) {
-			var next = this.peekToken(true);
+			var next = this.peekToken();
 			if (next instanceof OperatorInstance nextOpInstance) {
 				var infixOperator = _INFIX_OPERATORS.get(nextOpInstance.token);
 				if (infixOperator == null) return target;
 
 				if (infixOperator.precedence >= precedence) {
-					this.nextToken(false);
+					this.nextToken();
 
 					var operand = this.parseExpression(infixOperator.resultPrecedence);
 					if (operand == null) return target;
@@ -617,11 +633,11 @@ public class TreeBurstParser extends GenericParser {
 			} else if (!this._skippedNewline && next instanceof Expression.Group group) {
 				if (precedence > 100) return target;
 				target = new Expression.Invocation(target.position(), target, group.children());
-				this.nextToken(true);
+				this.nextToken();
 			} else if (!this._skippedNewline && next instanceof Expression.ArrayLiteral arrayLiteral) {
 				if (precedence > 100) return target;
 				target = Expression.Invocation.makeMethodCall(target.position(), target, OperatorConstants.OPERATOR_AT, arrayLiteral.elements());
-				this.nextToken(true);
+				this.nextToken();
 			} else if (!this._skippedNewline && next instanceof Expression.StringLiteral stringLiteral) {
 				if (precedence > 100) return target;
 
@@ -631,7 +647,7 @@ public class TreeBurstParser extends GenericParser {
 					target = new Expression.Invocation(stringLiteral.position(), target, List.of(stringLiteral));
 				}
 
-				this.nextToken(true);
+				this.nextToken();
 			} else {
 				return target;
 			}
