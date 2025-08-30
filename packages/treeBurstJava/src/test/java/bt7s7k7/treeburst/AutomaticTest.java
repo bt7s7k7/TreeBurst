@@ -160,7 +160,7 @@ class AutomaticTest {
 	@TestFactory
 	public Stream<DynamicNode> runCommonTests() {
 		try {
-			var testFilePath = Path.of("../../test/standard.tb").toAbsolutePath();
+			var testFilePath = Path.of("../../test/standard.tb").toAbsolutePath().normalize();
 			var testFile = Files.readString(testFilePath);
 			var tests = Test.parseTests(testFilePath, testFile);
 
