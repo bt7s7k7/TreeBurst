@@ -49,12 +49,11 @@ public class ManagedArray extends ManagedObject {
 	}
 
 	@Override
-	public boolean getProperty(String name, ExpressionResult result) {
+	public ManagedValue getOwnProperty(String name) {
 		if ("length".equals(name)) {
-			result.value = Primitive.from(this.elements.size());
-			return true;
+			return Primitive.from(this.elements.size());
 		}
 
-		return super.getProperty(name, result);
+		return super.getOwnProperty(name);
 	}
 }

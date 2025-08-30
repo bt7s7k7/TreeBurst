@@ -1,6 +1,5 @@
 package bt7s7k7.treeburst.standard;
 
-import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
@@ -18,13 +17,13 @@ public abstract class LazyTable extends ManagedTable {
 	protected abstract void initialize();
 
 	@Override
-	public boolean getProperty(String name, ExpressionResult result) {
+	public ManagedValue getOwnProperty(String name) {
 		if (!this.initialized) {
 			this.initialized = true;
 			this.initialize();
 		}
 
-		return super.getProperty(name, result);
+		return super.getOwnProperty(name);
 	}
 
 	@Override
@@ -38,12 +37,12 @@ public abstract class LazyTable extends ManagedTable {
 	}
 
 	@Override
-	public boolean setProperty(String name, ManagedValue value) {
+	public boolean setOwnProperty(String name, ManagedValue value) {
 		if (!this.initialized) {
 			this.initialized = true;
 			this.initialize();
 		}
 
-		return super.setProperty(name, value);
+		return super.setOwnProperty(name, value);
 	}
 }

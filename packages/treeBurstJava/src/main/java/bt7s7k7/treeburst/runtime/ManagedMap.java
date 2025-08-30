@@ -24,12 +24,11 @@ public class ManagedMap extends ManagedObject {
 	}
 
 	@Override
-	public boolean getProperty(String name, ExpressionResult result) {
+	public ManagedValue getOwnProperty(String name) {
 		if (name.equals("length")) {
-			result.value = Primitive.from(this.entries.size());
-			return true;
+			return Primitive.from(this.entries.size());
 		}
 
-		return super.getProperty(name, result);
+		return super.getOwnProperty(name);
 	}
 }

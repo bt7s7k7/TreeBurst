@@ -1,6 +1,7 @@
 package bt7s7k7.treeburst.runtime;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
+import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_EXCEPTION;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 
 import java.util.List;
@@ -31,9 +32,15 @@ public class ScriptFunction extends ManagedFunction {
 
 		if (LABEL_RETURN.equals(result.label)) {
 			result.label = null;
-		} else {
-			result.setException(new Diagnostic("Did not resolve label '" + result.label + "' during function execution", Position.INTRINSIC));
+			return;
 		}
+
+		if (LABEL_EXCEPTION.equals(result.label)) {
+			return;
+		}
+
+		result.label = null;
+		result.setException(new Diagnostic("Did not resolve label '" + result.label + "' during function execution", Position.INTRINSIC));
 	}
 
 	public ScriptFunction(ManagedObject prototype, List<String> parameters, Expression body, Scope scope) {

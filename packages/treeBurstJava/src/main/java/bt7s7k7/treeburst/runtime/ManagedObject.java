@@ -5,14 +5,18 @@ import bt7s7k7.treeburst.support.ManagedValue;
 public abstract class ManagedObject extends ManagedValue {
 	public String name = null;
 
+	public boolean hasGetters() {
+		return false;
+	}
+
+	public boolean hasSetters() {
+		return false;
+	}
+
 	public final ManagedObject prototype;
 
-	public boolean getProperty(String name, ExpressionResult result) {
-		if (this.prototype != null) {
-			return this.prototype.getProperty(name, result);
-		}
-
-		return false;
+	public ManagedValue getOwnProperty(String name) {
+		return null;
 	}
 
 	@Override

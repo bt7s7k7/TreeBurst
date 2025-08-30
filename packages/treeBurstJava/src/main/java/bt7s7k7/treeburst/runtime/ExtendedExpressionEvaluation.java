@@ -4,7 +4,9 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateDeclaration;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpressions;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.setProperty;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -205,7 +207,7 @@ public class ExtendedExpressionEvaluation {
 			}
 
 			if (loadTarget) {
-				if (!managedTable.getProperty(memberAccess.member(), result)) {
+				if (!getProperty(managedTable, managedTable, memberAccess.member(), scope, result)) {
 					result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return false;
 				}
@@ -219,7 +221,7 @@ public class ExtendedExpressionEvaluation {
 					return false;
 				}
 
-				if (!managedTable.setProperty(memberAccess.member(), valueValue)) {
+				if (!setProperty(managedTable, memberAccess.member(), valueValue, scope, result)) {
 					result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return false;
 				}

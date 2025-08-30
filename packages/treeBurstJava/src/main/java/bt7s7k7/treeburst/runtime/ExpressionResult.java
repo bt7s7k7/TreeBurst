@@ -1,5 +1,7 @@
 package bt7s7k7.treeburst.runtime;
 
+import java.util.stream.Stream;
+
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.Position;
@@ -13,6 +15,10 @@ public class ExpressionResult {
 	public int executionCounter = 0;
 
 	public void setException(Diagnostic exception) {
+		if (LABEL_EXCEPTION.equals(this.label)) {
+			exception = new Diagnostic(exception.message, exception.position, Stream.concat(exception.additionalErrors.stream(), Stream.of(this.terminate())).toList());
+		}
+
 		this.value = exception;
 		this.label = LABEL_EXCEPTION;
 	}

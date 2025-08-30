@@ -9,12 +9,12 @@ public abstract class ManagedFunction extends ManagedObject {
 	public abstract void invoke(List<ManagedValue> args, Scope scope, ExpressionResult result);
 
 	@Override
-	public boolean getProperty(String name, ExpressionResult result) {
+	public ManagedValue getOwnProperty(String name) {
 		if (name.equals("name")) {
-			result.value = Primitive.from(this.name);
-			return true;
+			return Primitive.from(this.name);
 		}
-		return super.getProperty(name, result);
+
+		return super.getOwnProperty(name);
 	}
 
 	@Override

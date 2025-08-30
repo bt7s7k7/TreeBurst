@@ -1,6 +1,7 @@
 package bt7s7k7.treeburst.runtime;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -63,23 +64,76 @@ public class ExpressionEvaluator {
 
 	public static boolean findProperty(ManagedValue receiver, ManagedValue container, String name, Scope scope, ExpressionResult result) {
 		if (container.equals(Primitive.NULL) || container.equals(Primitive.VOID)) {
-			return findProperty(receiver, scope.globalScope.TablePrototype, name, scope, result);
+			return getProperty(receiver, scope.globalScope.TablePrototype, name, scope, result);
 		}
 
 		if (container instanceof Primitive.Number) {
-			return findProperty(receiver, scope.globalScope.NumberPrototype, name, scope, result);
+			return getProperty(receiver, scope.globalScope.NumberPrototype, name, scope, result);
 		}
 
 		if (container instanceof Primitive.String) {
-			return findProperty(receiver, scope.globalScope.StringPrototype, name, scope, result);
+			return getProperty(receiver, scope.globalScope.StringPrototype, name, scope, result);
 		}
 
 		if (container instanceof Primitive.Boolean) {
-			return findProperty(receiver, scope.globalScope.BooleanPrototype, name, scope, result);
+			return getProperty(receiver, scope.globalScope.BooleanPrototype, name, scope, result);
 		}
 
 		if (container instanceof ManagedObject managedObject) {
-			return managedObject.getProperty(name, result);
+			return getProperty(receiver, managedObject, name, scope, result);
+		}
+
+		return false;
+	}
+
+	public static boolean getProperty(ManagedValue receiver, ManagedObject container, String name, Scope scope, ExpressionResult result) {
+		var property = container.getOwnProperty(name);
+		if (property != null) {
+			result.value = property;
+			return true;
+		}
+
+		if (container.hasGetters()) {
+			var getter = container.getOwnProperty("get_" + name);
+
+			if (getter != null) {
+				if (getter instanceof ManagedFunction getterFunction) {
+					evaluateInvocation(receiver, container, getterFunction, Position.INTRINSIC, Collections.emptyList(), scope, result);
+					return result.label == null;
+				} else {
+					result.setException(new Diagnostic("Getter for property '" + name + "' is not a function", Position.INTRINSIC));
+					return false;
+				}
+			}
+		}
+
+		var prototype = container.prototype;
+		if (prototype != null) {
+			return getProperty(receiver, prototype, name, scope, result);
+		}
+
+		return false;
+	}
+
+	public static boolean setProperty(ManagedTable container, String name, ManagedValue value, Scope scope, ExpressionResult result) {
+		var success = container.setOwnProperty(name, value);
+		if (success) {
+			result.value = value;
+			return true;
+		}
+
+		if (container.hasSetters()) {
+			if (getProperty(container, container, "set_" + name, scope, result)) {
+				var setter = result.value;
+
+				if (setter instanceof ManagedFunction setterFunction) {
+					evaluateInvocation(container, container, setterFunction, Position.INTRINSIC, List.of(value), scope, result);
+					return result.label == null;
+				} else {
+					result.setException(new Diagnostic("Setter for property '" + name + "' is not a function", Position.INTRINSIC));
+					return false;
+				}
+			}
 		}
 
 		return false;
