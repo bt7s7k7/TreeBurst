@@ -111,6 +111,13 @@ $table = Table.new()
 $table.name = "foo"
 assertEqual(table.name, "foo")
 
+// Test: nested tables
+$a = Table.new()
+$a.b = Table.new()
+$a.b.c = 5
+
+assertEqual(a.b.c, 5)
+
 // Test: table property mutation
 $table = Table.new()
 $table.x = 1
@@ -142,6 +149,24 @@ $table.bar = \(a, b) {
 
 table.bar("a", "b")
 assertEqual(getCounter(), 2)
+
+// Test: table method declaration 2
+$Foo = Table.new()
+$Foo.prototype = Table.new()
+$value = 0
+
+$Foo.prototype.getValue = \value
+$Foo.prototype.setValue = \(new) value = new
+
+// Test: inheritance
+$Foo = Table.new()
+$Foo.prototype = Table.new()
+$Foo.new = Table.new
+
+$Foo.prototype.method = \(this) assertEqual(this, foo)
+
+$foo = Foo.new()
+foo.method()
 
 // Test: table void prevention 1, expect fail
 $x = Table.new()
@@ -458,3 +483,48 @@ $b = void
 b else= (increment(), 10)
 assertEqual(b, 10)
 assertEqual(getCounter(), 2)
+
+// Test: getters
+$foo = Table.new()
+$value = 0
+$foo.get_value = \value
+
+assertEqual(foo.value, value)
+value = 15
+assertEqual(foo.value, value)
+
+// Test: setters
+$foo = Table.new()
+$value = 0
+$foo.set_value = \(newValue) value = newValue
+
+foo.value = 15
+assertEqual(value, 15)
+
+// Test: get/setter inheritance
+$Foo = Table.new()
+$Foo.new = Table.new
+$Foo.prototype = Table.new()
+
+$value = 0
+
+$Foo.prototype.get_value = \(this){
+    assertEqual(this, foo)
+    value
+}
+
+$Foo.prototype.set_value = \(this, new) {
+    assertEqual(this, foo)
+    value = new
+}
+
+$foo = Foo.new()
+
+assertEqual(foo.value, value)
+value = 15
+assertEqual(foo.value, value)
+foo.value = 20
+assertEqual(value, 20)
+$foo.value = 25
+assertEqual(value, 20)
+assertEqual(foo.value, 25)

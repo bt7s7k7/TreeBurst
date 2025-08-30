@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,6 +73,8 @@ public class TreeBurstParser extends GenericParser {
 	protected boolean _skippedNewline = false;
 	protected int _lastSkippedIndex = -1;
 	protected Token _token = null;
+
+	protected Stack<Token> _pendingTokens = new Stack<>();
 
 	private static final String _UNEXPECTED_EOF = "Unexpected end of input";
 	private static final String _INVALID_TOKEN = "Invalid token";
@@ -359,6 +362,10 @@ public class TreeBurstParser extends GenericParser {
 	}
 
 	public Token nextToken(boolean operatorOnly) {
+		if (!this._pendingTokens.empty()) {
+			return this._token = this._pendingTokens.pop();
+		}
+
 		this.skipWhitespace();
 		var skippedNewline = this._skippedNewline;
 
@@ -496,8 +503,15 @@ public class TreeBurstParser extends GenericParser {
 				body = new Expression.Group(this.getPosition(bodyStart), this.parseBlock("}"));
 			} else {
 				this._token = null;
-				Expression expression = this.parseExpression();
+				var expression = this.parseExpression();
 				if (expression == null) return null;
+
+				if (this._token != null) {
+					// The parsing has terminated on an incompatible token, save it so it can be accessed on the next call to nextToken
+					this._pendingTokens.push(this._token);
+					this._token = null;
+				}
+
 				body = expression;
 			}
 
