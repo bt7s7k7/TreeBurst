@@ -1,5 +1,7 @@
 package bt7s7k7.treeburst.standard;
 
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,11 +15,13 @@ import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
+import bt7s7k7.treeburst.runtime.ManagedMap;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.runtime.Scope;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
 public class NativeHandleWrapper<T> {
@@ -153,6 +157,27 @@ public class NativeHandleWrapper<T> {
 					result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.entrySet().stream()
 							.map(kv -> new ManagedArray(scope.globalScope.ArrayPrototype, List.of(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()))))
 							.collect(Collectors.toCollection(ArrayList::new)));
+				});
+
+				this.addMethod("map", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+					var map = mapGetter.apply(self);
+					var managedMap = new ManagedMap(scope.globalScope.MapPrototype);
+
+					for (var kv : map.entrySet()) {
+						managedMap.entries.put(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()));
+					}
+
+					result.value = managedMap;
+				});
+
+				this.capabilities.add((handle, globalScope) -> {
+					handle.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(this.type, Primitive.Number.class), (args, scope, result) -> {
+						var self = args.get(0);
+						evaluateInvocation(self, self, "map", Position.INTRINSIC, Collections.emptyList(), scope, result);
+						if (result.label != null) return;
+						var map = result.value;
+						evaluateInvocation(map, map, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, args.subList(1, args.size()), scope, result);
+					}));
 				});
 			}
 		}
