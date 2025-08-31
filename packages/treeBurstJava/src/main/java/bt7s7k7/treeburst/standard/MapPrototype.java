@@ -1,10 +1,13 @@
 package bt7s7k7.treeburst.standard;
 
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.GlobalScope;
@@ -22,6 +25,8 @@ public class MapPrototype extends LazyTable {
 	public MapPrototype(ManagedObject prototype, GlobalScope globalScope) {
 		super(prototype, globalScope);
 	}
+
+	private static Pattern SIMPLE_KEY = Pattern.compile("^[a-zA-Z_]\\w*$");
 
 	@Override
 	protected void initialize() {
@@ -92,6 +97,69 @@ public class MapPrototype extends LazyTable {
 			}
 
 			result.value = entries;
+		}));
+
+		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(ManagedMap.class, Primitive.Number.class), (args, scope, result) -> {
+			var self = args.get(0).getMapValue();
+			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
+
+			if (depth > 0) {
+				var childArgs = List.<ManagedValue>of(Primitive.from(depth - 1));
+
+				var builder = new StringBuilder();
+				var name = self.getNameOrInheritedName();
+
+				if (name != null) {
+					builder.append(name);
+					builder.append(' ');
+				}
+
+				builder.append("{");
+				var first = true;
+				for (var kv : self.entries.entrySet()) {
+					if (first) {
+						first = false;
+					} else {
+						builder.append(", ");
+					}
+
+					var key = kv.getKey();
+					if (key instanceof Primitive.String simpleKey && SIMPLE_KEY.matcher(simpleKey.value).matches()) {
+						builder.append(simpleKey.value);
+					} else {
+						evaluateInvocation(key, key, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
+						if (result.label != null) return;
+
+						var keyString = result.value;
+						keyString = ensureString(keyString, scope, result);
+						if (result.label != null) return;
+
+						builder.append('[');
+						builder.append(keyString.getStringValue());
+						builder.append(']');
+					}
+
+					builder.append(": ");
+
+					var value = kv.getValue();
+					evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
+					if (result.label != null) return;
+
+					var valueString = result.value;
+					valueString = ensureString(valueString, scope, result);
+					if (result.label != null) return;
+
+					builder.append(valueString.getStringValue());
+				}
+
+				builder.append("}");
+
+				result.value = Primitive.from(builder.toString());
+				return;
+			}
+
+			var header = self.toString();
+			result.value = Primitive.from(header);
 		}));
 	}
 

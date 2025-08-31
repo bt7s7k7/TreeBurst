@@ -72,8 +72,20 @@ public class ManagedValueUtils {
 			if (!isInstance) {
 				Diagnostic conversionError = null;
 
-				if (type == Primitive.Boolean.class) {
-					var convertedValue = ensureBoolean(value, scope, result);
+				conversion: do {
+					ManagedValue convertedValue;
+
+					if (type == Primitive.Boolean.class) {
+						convertedValue = ensureBoolean(value, scope, result);
+					} else if (type == Primitive.Number.class) {
+						convertedValue = ensureNumber(value, scope, result);
+					} else if (type == Primitive.String.class) {
+						convertedValue = ensureString(value, scope, result);
+					} else {
+						// No conversion possible
+						break conversion;
+					}
+
 					if (result.label == null) {
 						results.add(convertedValue);
 						continue;
@@ -82,19 +94,7 @@ public class ManagedValueUtils {
 					var diagnostic = result.getExceptionIfPresent();
 					if (diagnostic == null) return results;
 					conversionError = diagnostic;
-				}
-
-				if (type == Primitive.Number.class) {
-					var convertedValue = ensureNumber(value, scope, result);
-					if (result.label == null) {
-						results.add(convertedValue);
-						continue;
-					}
-
-					var diagnostic = result.getExceptionIfPresent();
-					if (diagnostic == null) return results;
-					conversionError = diagnostic;
-				}
+				} while (false);
 
 				errors.add(new Diagnostic(
 						"Wrong type for argument \"" + name + "\", expected \"" + type.getSimpleName() + "\", but got \"" + ExpressionEvaluator.getValueName(value) + "\"",
@@ -146,6 +146,10 @@ public class ManagedValueUtils {
 
 	public static Primitive.Number ensureNumber(ManagedValue value, Scope scope, ExpressionResult result) {
 		return ensureType(value, OperatorConstants.OPERATOR_NUMBER, Primitive.Number.class, scope, result);
+	}
+
+	public static Primitive.String ensureString(ManagedValue value, Scope scope, ExpressionResult result) {
+		return ensureType(value, OperatorConstants.OPERATOR_STRING, Primitive.String.class, scope, result);
 	}
 
 	public static Expression ensureExpression(ManagedValue value, ExpressionResult result) {

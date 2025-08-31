@@ -2,6 +2,7 @@ package bt7s7k7.treeburst.standard;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -186,6 +187,44 @@ public class ArrayPrototype extends LazyTable {
 			var self = args_1.get(0).getArrayValue();
 			var elementsToAdd = new ManagedArray(this, args.subList(1, args.size()));
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, elementsToAdd), scope, result);
+		}));
+
+		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
+			var self = args.get(0).getArrayValue();
+			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
+
+			if (depth > 0) {
+				var childArgs = List.<ManagedValue>of(Primitive.from(depth - 1));
+
+				var builder = new StringBuilder();
+				var name = self.getNameOrInheritedName();
+
+				if (name != null) {
+					builder.append(name);
+					builder.append(' ');
+				}
+
+				builder.append("[");
+				for (int i = 0; i < self.elements.size(); i++) {
+					if (i != 0) builder.append(", ");
+					var element = self.elements.get(i);
+					evaluateInvocation(element, element, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
+					if (result.label != null) return;
+
+					var elementString = result.value;
+					elementString = ensureString(elementString, scope, result);
+					if (result.label != null) return;
+
+					builder.append(elementString.getStringValue());
+				}
+				builder.append("]");
+
+				result.value = Primitive.from(builder.toString());
+				return;
+			}
+
+			var header = self.toString();
+			result.value = Primitive.from(header);
 		}));
 	}
 

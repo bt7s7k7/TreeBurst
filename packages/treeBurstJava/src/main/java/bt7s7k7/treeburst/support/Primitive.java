@@ -1,6 +1,8 @@
 package bt7s7k7.treeburst.support;
 
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class Primitive extends ManagedValue {
 	public final static ManagedValue VOID = new Primitive() {
@@ -55,9 +57,35 @@ public abstract class Primitive extends ManagedValue {
 			return this.value.hashCode();
 		}
 
+		private static final Pattern STRING_ESCAPE_CHARACTERS = Pattern.compile("[\\\\\\t" + Pattern.quote("\b") + "\\n\\r\\f\"]");
+
+		public static java.lang.String escapeString(java.lang.String input) {
+			return STRING_ESCAPE_CHARACTERS.matcher(input).replaceAll(match -> {
+				var c = match.group().charAt(0);
+				switch (c) {
+					case '\t':
+						return Matcher.quoteReplacement("\\t");
+					case '\b':
+						return Matcher.quoteReplacement("\\b");
+					case '\r':
+						return Matcher.quoteReplacement("\\r");
+					case '\n':
+						return Matcher.quoteReplacement("\\n");
+					case '\f':
+						return Matcher.quoteReplacement("\\f");
+					case '"':
+						return Matcher.quoteReplacement("\\\"");
+					case '\\':
+						return Matcher.quoteReplacement("\\\\");
+					default:
+						throw new IllegalArgumentException("Unexpected argument in from string escape function: " + (int) c);
+				}
+			});
+		}
+
 		@Override
 		public java.lang.String toString() {
-			return "[string " + this.value + "]";
+			return "[string \"" + escapeString(this.value) + "\"]";
 		}
 
 		public String(java.lang.String value) {

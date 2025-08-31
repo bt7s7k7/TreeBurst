@@ -7,6 +7,7 @@ import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.verifyArguments;
 
 import java.util.AbstractMap;
@@ -160,6 +161,23 @@ public class GlobalScope extends Scope {
 		return value;
 	}
 
+	public String inspect(ManagedValue value) {
+		var result = new ExpressionResult();
+
+		do {
+			evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(5)), this, result);
+			if (result.label != null) break;
+
+			var output = ensureString(result.value, this, result);
+			if (result.label != null) break;
+
+			return output.value;
+		} while (false);
+
+		var diagnostic = result.terminate();
+		return diagnostic.format();
+	}
+
 	public GlobalScope() {
 		super();
 
@@ -187,8 +205,33 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(-((Primitive.Number) args.get(0)).value);
 		}));
 
-		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_NOT, NativeFunction.simple(globalScope, List.of("this"), List.of(Primitive.Boolean.class), (args, scope, result) -> {
+		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(Primitive.Number.class, Primitive.Number.class), (args, scope, result) -> {
+			var self = args.get(0).getNumberValue();
+
+			var string = Double.toString(self);
+			if (string.endsWith(".0")) {
+				string = string.substring(0, string.length() - 2);
+			}
+
+			result.value = Primitive.from(string);
+		}));
+
+		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_NOT, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(Primitive.Boolean.class, Primitive.Number.class), (args, scope, result) -> {
 			result.value = Primitive.from(!((Primitive.Boolean) args.get(0)).value);
+		}));
+
+		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this"), List.of(Primitive.Boolean.class), (args, scope, result) -> {
+			var self = args.get(0).getBooleanValue();
+			result.value = Primitive.from(java.lang.Boolean.toString(self));
+		}));
+
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(globalScope, List.of("this"), List.of(Primitive.String.class), (args, scope, result) -> {
+			result.value = args.get(0);
+		}));
+
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
+			var self = args.get(0).getStringValue();
+			result.value = Primitive.from("\"" + Primitive.String.escapeString(self) + "\"");
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
@@ -257,6 +300,58 @@ public class GlobalScope extends Scope {
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(globalScope, List.of("this", "other"), (args, scope, result) -> {
 			result.value = Primitive.from(args.get(0) == args.get(1));
+		}));
+
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(ManagedValue.class, Primitive.Number.class), (args, scope, result) -> {
+			var self = args.get(0);
+			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
+
+			if (self instanceof ManagedTable table && depth > 0) {
+				var childArgs = List.<ManagedValue>of(Primitive.from(depth - 1));
+
+				var builder = new StringBuilder();
+				var name = table.getNameOrInheritedName();
+
+				if (name != null) {
+					builder.append(name);
+				}
+
+				builder.append("(");
+				var first = true;
+				for (var kv : table.properties.entrySet()) {
+					if (first) {
+						first = false;
+					} else {
+						builder.append(", ");
+					}
+
+					var key = kv.getKey();
+					builder.append(key);
+					builder.append(": ");
+
+					var value = kv.getValue();
+					evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
+					if (result.label != null) return;
+
+					var valueString = result.value;
+					valueString = ensureString(valueString, scope, result);
+					if (result.label != null) return;
+
+					builder.append(valueString.getStringValue());
+				}
+
+				builder.append(")");
+
+				result.value = Primitive.from(builder.toString());
+				return;
+			}
+
+			result.value = Primitive.from(self.toString());
+		}));
+
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(globalScope, List.of("this"), (args, scope, result) -> {
+			var self = args.get(0);
+			evaluateInvocation(self, self, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(1)), scope, result);
 		}));
 
 		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(globalScope, List.of("this", "receiver", "arguments"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {

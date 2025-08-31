@@ -14,9 +14,37 @@ public abstract class ManagedObject extends ManagedValue {
 		return null;
 	}
 
+	public String kind() {
+		return "object";
+	}
+
+	public String getNameOrInheritedName() {
+		String name = null;
+
+		if (this.name != null) {
+			name = "::" + this.name;
+		} else {
+			if (this.prototype == null) {
+				name = "null";
+			} else if (this.prototype.name != null) {
+				name = this.prototype.name;
+				if (name.endsWith(".prototype")) {
+					name = name.substring(0, name.length() - 10);
+				}
+			}
+		}
+
+		return name;
+	}
+
 	@Override
 	public String toString() {
-		return this.name != null ? "[" + this.name + "]" : "[object " + (this.prototype == null ? "null" : (this.prototype.name == null ? "<anon>" : this.prototype.name)) + "]";
+		var name = this.getNameOrInheritedName();
+		if (name == null) {
+			return this.kind();
+		} else {
+			return "::" + this.kind() + (name == null ? "" : " " + name);
+		}
 	}
 
 	public ManagedObject(ManagedObject prototype) {

@@ -49,6 +49,18 @@ public class ManagedArray extends ManagedObject {
 	}
 
 	@Override
+	public String kind() {
+		return "array(" + this.elements.size() + ")";
+	}
+
+	@Override
+	public String getNameOrInheritedName() {
+		var result = super.getNameOrInheritedName();
+		if ("Array".equals(result)) return null;
+		return result;
+	}
+
+	@Override
 	public ManagedValue getOwnProperty(String name) {
 		if ("length".equals(name)) {
 			return Primitive.from(this.elements.size());

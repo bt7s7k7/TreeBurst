@@ -19,7 +19,7 @@ public abstract class ManagedFunction extends ManagedObject {
 
 	@Override
 	public String toString() {
-		return "[function " + (this.name == null ? "<anon>" : this.name) + "]";
+		return "function " + (this.name == null ? "" : this.name) + "(" + String.join(", ", this.parameters) + ")";
 	}
 
 	public final List<String> parameters;

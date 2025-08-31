@@ -1,13 +1,15 @@
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
+
 import java.io.IOException;
 
 import org.jline.reader.EndOfFileException;
+import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.TerminalBuilder;
 
 import bt7s7k7.treeburst.parsing.TreeBurstParser;
-import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.support.InputDocument;
@@ -22,6 +24,7 @@ public class Main {
 			var history = new DefaultHistory();
 
 			var reader = LineReaderBuilder.builder()
+					.option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
 					.terminal(terminal)
 					.history(history)
 					.build();
@@ -40,21 +43,21 @@ public class Main {
 					var root = parser.parse();
 					if (!parser.diagnostics.isEmpty()) {
 						for (var diagnostic : parser.diagnostics) {
-							System.out.println(diagnostic.format());
+							terminal.writer().println(diagnostic.format());
 						}
 
 						continue;
 					}
 
 					var result = new ExpressionResult();
-					ExpressionEvaluator.evaluateExpression(root, scope, result);
+					evaluateExpression(root, scope, result);
 					var diagnostic = result.terminate();
 					if (diagnostic != null) {
 						terminal.writer().println(diagnostic.format());
 					}
 
 					if (result.value != null) {
-						terminal.writer().println(result.value.toString());
+						terminal.writer().println(scope.inspect(result.value));
 					}
 				} catch (UserInterruptException __) {
 					continue;

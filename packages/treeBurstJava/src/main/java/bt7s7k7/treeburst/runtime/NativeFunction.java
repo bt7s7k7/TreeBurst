@@ -60,6 +60,7 @@ public class NativeFunction extends ManagedFunction {
 
 	public static NativeFunction simple(GlobalScope globalScope, List<String> parameters, List<Class<?>> types, Handler handler) {
 		var parametersWithoutOptional = getParametersWithoutOptional(parameters);
+		if (parameters.size() != types.size()) throw new IllegalArgumentException("The lists of argument names and types must be of the same length");
 
 		return new NativeFunction(globalScope.FunctionPrototype, parameters, (args, scope, result) -> {
 			args = ensureArgumentTypes(args, parametersWithoutOptional, parameters, types, scope, result);

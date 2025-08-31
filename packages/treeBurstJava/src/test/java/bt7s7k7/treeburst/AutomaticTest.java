@@ -101,7 +101,7 @@ class AutomaticTest {
 				if (result.label != null) return;
 
 				if (predicate.equals(Primitive.FALSE)) {
-					result.setException(new Diagnostic("Assertion failed, " + value + " != " + pattern, Position.INTRINSIC));
+					result.setException(new Diagnostic("Assertion failed, " + scope.globalScope.inspect(value) + " != " + scope.globalScope.inspect(pattern), Position.INTRINSIC));
 					return;
 				}
 

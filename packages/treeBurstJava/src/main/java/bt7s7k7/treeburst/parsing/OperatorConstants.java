@@ -4,6 +4,8 @@ public class OperatorConstants {
 	public static final String OPERATOR_NEG = "k_neg";
 	public static final String OPERATOR_BIT_NEG = "k_bitNeg";
 	public static final String OPERATOR_NOT = "k_not";
+	public static final String OPERATOR_STRING = "k_string";
+	public static final String OPERATOR_DUMP = "k_dump";
 	public static final String OPERATOR_NUMBER = "k_number";
 	public static final String OPERATOR_BOOLEAN = "k_boolean";
 	public static final String OPERATOR_AND = "@k_and";

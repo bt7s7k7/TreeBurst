@@ -24,6 +24,18 @@ public class ManagedMap extends ManagedObject {
 	}
 
 	@Override
+	public String getNameOrInheritedName() {
+		var result = super.getNameOrInheritedName();
+		if ("Map".equals(result)) return null;
+		return result;
+	}
+
+	@Override
+	public String kind() {
+		return "map(" + this.entries.size() + ")";
+	}
+
+	@Override
 	public ManagedValue getOwnProperty(String name) {
 		if (name.equals("length")) {
 			return Primitive.from(this.entries.size());
