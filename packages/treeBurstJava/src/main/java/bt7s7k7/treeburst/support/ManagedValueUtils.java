@@ -44,7 +44,7 @@ public class ManagedValueUtils {
 
 		var results = new ArrayList<ManagedValue>();
 		var errors = new ArrayList<Diagnostic>();
-		for (int i = 0; i < types.size(); i++) {
+		argumentLoop: for (int i = 0; i < types.size(); i++) {
 			if (i >= args.size()) break;
 
 			var type = types.get(i);
@@ -87,8 +87,9 @@ public class ManagedValueUtils {
 					}
 
 					if (result.label == null) {
+						// Conversion was successful and we can continue to the next argument
 						results.add(convertedValue);
-						continue;
+						continue argumentLoop;
 					}
 
 					var diagnostic = result.getExceptionIfPresent();
@@ -132,9 +133,10 @@ public class ManagedValueUtils {
 		evaluateInvocation(value, value, operator, Position.INTRINSIC, Collections.emptyList(), scope, result);
 		if (result.label != null) return null;
 
+		value = result.value;
 		if (requestedType.isInstance(value)) return (T) value;
 
-		evaluateInvocation(result.value, scope.globalScope.TablePrototype, operator, Position.INTRINSIC, Collections.emptyList(), scope, result);
+		evaluateInvocation(value, scope.globalScope.TablePrototype, operator, Position.INTRINSIC, Collections.emptyList(), scope, result);
 		if (result.label != null) return null;
 
 		return requestedType.cast(result.value);

@@ -93,7 +93,15 @@ public class GlobalScope extends Scope {
 				return;
 			} else {
 				args = ensureArgumentTypes(args, List.of("this", "right"), List.of(Primitive.Number.class, Primitive.Number.class), scope, result);
-				if (result.label != null) return;
+				if (result.label != null) {
+					// Failed to cast arguments, which means this overload does not match and we
+					// should try to execute this operator using the right operand's handler.
+					result.label = null;
+					var self = args.get(0);
+					var right = args.get(1);
+					evaluateInvocation(right, right, name, Position.INTRINSIC, List.of(self, right), scope, result);
+					return;
+				}
 
 				var a = args.get(0).getNumberValue();
 				var b = args.get(1).getNumberValue();
@@ -225,6 +233,26 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(java.lang.Boolean.toString(self));
 		}));
 
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(globalScope, List.of("this", "left", "right?"), (args, scope, result) -> {
+			String left, right;
+
+			if (args.size() == 2) {
+				args = ensureArgumentTypes(args, List.of("this", "other"), List.of(Primitive.String.class, Primitive.String.class), scope, result);
+				if (result.label != null) return;
+
+				left = args.get(0).getStringValue();
+				right = args.get(1).getStringValue();
+			} else {
+				args = ensureArgumentTypes(args, List.of("this", "left", "right"), List.of(ManagedValue.class, Primitive.String.class, Primitive.String.class), scope, result);
+				if (result.label != null) return;
+
+				left = args.get(1).getStringValue();
+				right = args.get(2).getStringValue();
+			}
+
+			result.value = Primitive.from(left + right);
+		}));
+
 		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(globalScope, List.of("this"), List.of(Primitive.String.class), (args, scope, result) -> {
 			result.value = args.get(0);
 		}));
@@ -351,6 +379,12 @@ public class GlobalScope extends Scope {
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(globalScope, List.of("this"), (args, scope, result) -> {
 			var self = args.get(0);
+
+			if (self == Primitive.VOID) {
+				result.value = Primitive.EMPTY_STRING;
+				return;
+			}
+
 			evaluateInvocation(self, self, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(1)), scope, result);
 		}));
 

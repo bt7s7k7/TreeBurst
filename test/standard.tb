@@ -582,3 +582,15 @@ assertEqual((Table.new()).k_string(), "Table()")
 // Test: string escape
 assertEqual("\n".k_dump(), `"\\n"`)
 assertEqual('"'.k_dump(), `"\\""`)
+
+// Test: string concatenation
+assertEqual("a," + "b", "a,b")
+
+assertEqual("a," + 1, "a,1")
+assertEqual(1 + ",a", "1,a")
+
+assertEqual("a," + null, "a,null")
+assertEqual(null + ",a", "null,a")
+
+assertEqual("a" + void, "a")
+assertEqual(void + "a", "a")
