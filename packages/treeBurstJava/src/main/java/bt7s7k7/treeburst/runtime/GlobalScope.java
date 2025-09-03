@@ -153,20 +153,29 @@ public class GlobalScope extends Scope {
 	}
 
 	public String inspect(ManagedValue value) {
+		return this.inspect(value, 5);
+	}
+
+	public String inspect(ManagedValue value, int depth) {
 		var result = new ExpressionResult();
 
-		do {
-			evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(5)), this, result);
-			if (result.label != null) break;
+		var output = tryInspect(value, depth, result);
+		if (output == null) {
+			var diagnostic = result.terminate();
+			return diagnostic.format();
+		}
 
-			var output = ensureString(result.value, this, result);
-			if (result.label != null) break;
+		return output;
+	}
 
-			return output.value;
-		} while (false);
+	public String tryInspect(ManagedValue value, int depth, ExpressionResult result) {
+		evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(depth)), this, result);
+		if (result.label != null) return null;
 
-		var diagnostic = result.terminate();
-		return diagnostic.format();
+		var output = ensureString(result.value, this, result);
+		if (result.label != null) return null;
+
+		return output.value;
 	}
 
 	public GlobalScope() {
