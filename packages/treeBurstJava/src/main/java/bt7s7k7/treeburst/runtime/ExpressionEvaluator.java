@@ -228,7 +228,7 @@ public class ExpressionEvaluator {
 
 		var invocationException = result.getExceptionIfPresent();
 		if (invocationException != null) {
-			result.value = new Diagnostic("While invoking " + managedFunction.toString() + "(" + String.join(", ", managedFunction.parameters) + ")", position, List.of(invocationException));
+			result.value = new Diagnostic("While invoking " + managedFunction.toString(), position, List.of(invocationException));
 		}
 	}
 
