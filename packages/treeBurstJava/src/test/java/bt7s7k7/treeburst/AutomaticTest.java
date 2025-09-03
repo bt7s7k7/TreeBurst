@@ -30,6 +30,7 @@ import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.standard.NativeHandleWrapper;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.InputDocument;
+import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
@@ -41,10 +42,11 @@ class AutomaticTest {
 		public final HashMap<String, Double> numbers = new HashMap<>();
 
 		public static final NativeHandleWrapper<DummyObject> WRAPPER = new NativeHandleWrapper<>(DummyObject.class)
+				.addName("DummyObject")
 				.addProperty("a", Primitive.Number.class, v -> Primitive.from(v.a), (v, a) -> v.a = a.value)
 				.addProperty("b", Primitive.Number.class, v -> Primitive.from(v.b), (v, b) -> v.b = b.value)
 				.addGetter("sum", v -> Primitive.from(v.a + v.b))
-				.addMapAccess(v -> v.numbers, Primitive.String.class, Primitive.Number.class, k -> Primitive.from(k), k -> k.getStringValue(), v -> Primitive.from(v), v -> v.getNumberValue());
+				.addMapAccess(v -> v.numbers, Primitive.String.class, Primitive.Number.class, Primitive::from, ManagedValue::getStringValue, Primitive::from, ManagedValue::getNumberValue);
 	}
 
 	private static class Test {

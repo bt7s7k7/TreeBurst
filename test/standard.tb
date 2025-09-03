@@ -579,6 +579,13 @@ assertEqual(({}).k_string(), "{}")
 assertEqual((Table.new).k_string(), "function Table.new(this)")
 assertEqual((Table.new()).k_string(), "Table()")
 
+// Test: native object dump
+dummy["a"] = 1
+dummy["b"] = 2
+dummy["c"] = 3
+
+assertEqual(dummy.k_string(), "DummyObject {a: 1, b: 2, c: 3}")
+
 // Test: string escape
 assertEqual("\n".k_dump(), `"\\n"`)
 assertEqual('"'.k_dump(), `"\\""`)
