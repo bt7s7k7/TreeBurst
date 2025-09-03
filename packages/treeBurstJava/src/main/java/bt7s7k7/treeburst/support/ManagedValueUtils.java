@@ -5,6 +5,8 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
@@ -159,6 +161,80 @@ public class ManagedValueUtils {
 		result.setException(new Diagnostic("Expected expression arguments", Position.INTRINSIC));
 		return null;
 	}
+
+	private static Pattern SIMPLE_KEY = Pattern.compile("^[a-zA-Z_]\\w*$");
+
+	public static <T> String dumpCollection(String name, boolean spaceAfterName, String openingToken, String closingToken,
+			Iterable<T> elements, Function<T, ManagedValue> keyGetter, Function<T, String> simpleKeyGetter, Function<T, ManagedValue> valueGetter,
+			int childDepth, Scope scope, ExpressionResult result) {
+
+		var childArgs = List.<ManagedValue>of(Primitive.from(childDepth));
+
+		var builder = new StringBuilder();
+
+		if (name != null) {
+			builder.append(name);
+			if (spaceAfterName) builder.append(' ');
+		}
+
+		builder.append(openingToken);
+		var first = true;
+		for (var kv : elements) {
+			if (first) {
+				first = false;
+			} else {
+				builder.append(", ");
+			}
+
+			if (keyGetter != null) {
+				var key = keyGetter.apply(kv);
+				if (key instanceof Primitive.String simpleKey && SIMPLE_KEY.matcher(simpleKey.value).matches()) {
+					builder.append(simpleKey.value);
+				} else {
+					evaluateInvocation(key, key, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
+					if (result.label != null) return null;
+
+					var keyString = result.value;
+					keyString = ensureString(keyString, scope, result);
+					if (result.label != null) return null;
+
+					builder.append('[');
+					builder.append(keyString.getStringValue());
+					builder.append(']');
+				}
+
+				builder.append(": ");
+			}
+
+			if (simpleKeyGetter != null) {
+				var key = simpleKeyGetter.apply(kv);
+				if (SIMPLE_KEY.matcher(key).matches()) {
+					builder.append(key);
+				} else {
+					builder.append('[');
+					builder.append(Primitive.String.escapeString(key));
+					builder.append(']');
+				}
+			}
+
+			if (valueGetter != null) {
+				var value = valueGetter.apply(kv);
+
+				evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
+				if (result.label != null) return null;
+
+				var valueString = result.value;
+				valueString = ensureString(valueString, scope, result);
+				if (result.label != null) return null;
+
+				builder.append(valueString.getStringValue());
+			}
+		}
+
+		builder.append(closingToken);
+		return builder.toString();
+	}
+
 	public static record BinaryOperatorOperands(ManagedValue left, ManagedValue right) {}
 
 	public static final List<String> BINARY_OPERATOR_PARAMETERS = List.of("this", "left", "right?");

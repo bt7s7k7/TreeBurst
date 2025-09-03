@@ -327,42 +327,12 @@ public class GlobalScope extends Scope {
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
 
 			if (self instanceof ManagedTable table && depth > 0) {
-				var childArgs = List.<ManagedValue>of(Primitive.from(depth - 1));
+				var dump = ManagedValueUtils.dumpCollection(
+						table.getNameOrInheritedName(), false, "(", ")",
+						table.properties.entrySet(), null, java.util.Map.Entry::getKey, java.util.Map.Entry::getValue, (int) depth - 1, scope, result);
+				if (dump == null) return;
 
-				var builder = new StringBuilder();
-				var name = table.getNameOrInheritedName();
-
-				if (name != null) {
-					builder.append(name);
-				}
-
-				builder.append("(");
-				var first = true;
-				for (var kv : table.properties.entrySet()) {
-					if (first) {
-						first = false;
-					} else {
-						builder.append(", ");
-					}
-
-					var key = kv.getKey();
-					builder.append(key);
-					builder.append(": ");
-
-					var value = kv.getValue();
-					evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
-					if (result.label != null) return;
-
-					var valueString = result.value;
-					valueString = ensureString(valueString, scope, result);
-					if (result.label != null) return;
-
-					builder.append(valueString.getStringValue());
-				}
-
-				builder.append(")");
-
-				result.value = Primitive.from(builder.toString());
+				result.value = Primitive.from(dump);
 				return;
 			}
 

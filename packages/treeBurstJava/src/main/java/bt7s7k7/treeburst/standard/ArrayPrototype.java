@@ -2,11 +2,11 @@ package bt7s7k7.treeburst.standard;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
-import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.GlobalScope;
@@ -15,6 +15,7 @@ import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.ManagedValueUtils;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
@@ -194,32 +195,12 @@ public class ArrayPrototype extends LazyTable {
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
 
 			if (depth > 0) {
-				var childArgs = List.<ManagedValue>of(Primitive.from(depth - 1));
+				var dump = ManagedValueUtils.<ManagedValue>dumpCollection(
+						self.getNameOrInheritedName(), true, "[", "]",
+						self.elements, null, null, Function.identity(), (int) depth - 1, scope, result);
+				if (dump == null) return;
 
-				var builder = new StringBuilder();
-				var name = self.getNameOrInheritedName();
-
-				if (name != null) {
-					builder.append(name);
-					builder.append(' ');
-				}
-
-				builder.append("[");
-				for (int i = 0; i < self.elements.size(); i++) {
-					if (i != 0) builder.append(", ");
-					var element = self.elements.get(i);
-					evaluateInvocation(element, element, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
-					if (result.label != null) return;
-
-					var elementString = result.value;
-					elementString = ensureString(elementString, scope, result);
-					if (result.label != null) return;
-
-					builder.append(elementString.getStringValue());
-				}
-				builder.append("]");
-
-				result.value = Primitive.from(builder.toString());
+				result.value = Primitive.from(dump);
 				return;
 			}
 

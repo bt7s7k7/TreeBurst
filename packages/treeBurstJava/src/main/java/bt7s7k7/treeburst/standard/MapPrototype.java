@@ -1,13 +1,11 @@
 package bt7s7k7.treeburst.standard;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
-import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.GlobalScope;
@@ -17,6 +15,7 @@ import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.ManagedValueUtils;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
@@ -25,8 +24,6 @@ public class MapPrototype extends LazyTable {
 	public MapPrototype(ManagedObject prototype, GlobalScope globalScope) {
 		super(prototype, globalScope);
 	}
-
-	private static Pattern SIMPLE_KEY = Pattern.compile("^[a-zA-Z_]\\w*$");
 
 	@Override
 	protected void initialize() {
@@ -104,57 +101,11 @@ public class MapPrototype extends LazyTable {
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
 
 			if (depth > 0) {
-				var childArgs = List.<ManagedValue>of(Primitive.from(depth - 1));
-
-				var builder = new StringBuilder();
-				var name = self.getNameOrInheritedName();
-
-				if (name != null) {
-					builder.append(name);
-					builder.append(' ');
-				}
-
-				builder.append("{");
-				var first = true;
-				for (var kv : self.entries.entrySet()) {
-					if (first) {
-						first = false;
-					} else {
-						builder.append(", ");
-					}
-
-					var key = kv.getKey();
-					if (key instanceof Primitive.String simpleKey && SIMPLE_KEY.matcher(simpleKey.value).matches()) {
-						builder.append(simpleKey.value);
-					} else {
-						evaluateInvocation(key, key, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
-						if (result.label != null) return;
-
-						var keyString = result.value;
-						keyString = ensureString(keyString, scope, result);
-						if (result.label != null) return;
-
-						builder.append('[');
-						builder.append(keyString.getStringValue());
-						builder.append(']');
-					}
-
-					builder.append(": ");
-
-					var value = kv.getValue();
-					evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, childArgs, scope, result);
-					if (result.label != null) return;
-
-					var valueString = result.value;
-					valueString = ensureString(valueString, scope, result);
-					if (result.label != null) return;
-
-					builder.append(valueString.getStringValue());
-				}
-
-				builder.append("}");
-
-				result.value = Primitive.from(builder.toString());
+				var dump = ManagedValueUtils.dumpCollection(
+						self.getNameOrInheritedName(), true, "{", "}",
+						self.entries.entrySet(), Map.Entry::getKey, null, Map.Entry::getValue, (int) depth - 1, scope, result);
+				if (dump == null) return;
+				result.value = Primitive.from(dump);
 				return;
 			}
 
