@@ -184,14 +184,12 @@ class AutomaticTest {
 			var testFile = Files.readString(testFilePath);
 			var tests = Test.parseTests(testFilePath, testFile);
 
-			return tests.stream().map(test -> {
-				return DynamicTest.dynamicTest(test.name, () -> {
-					test.evaluate();
-					if (test.isFailed()) {
-						fail(String.join("\n", test.errors.stream().map(Diagnostic::format).toList()));
-					}
-				});
-			});
+			return tests.stream().map(test -> DynamicTest.dynamicTest(test.name, () -> {
+				test.evaluate();
+				if (test.isFailed()) {
+					fail(String.join("\n", test.errors.stream().map(Diagnostic::format).toList()));
+				}
+			}));
 		} catch (IOException exception) {
 			throw new AssertionFailedError("Failed to load test file", exception);
 		}

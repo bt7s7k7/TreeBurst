@@ -64,24 +64,16 @@ public abstract class Primitive extends ManagedValue {
 		public static java.lang.String escapeString(java.lang.String input) {
 			return STRING_ESCAPE_CHARACTERS.matcher(input).replaceAll(match -> {
 				var c = match.group().charAt(0);
-				switch (c) {
-					case '\t':
-						return Matcher.quoteReplacement("\\t");
-					case '\b':
-						return Matcher.quoteReplacement("\\b");
-					case '\r':
-						return Matcher.quoteReplacement("\\r");
-					case '\n':
-						return Matcher.quoteReplacement("\\n");
-					case '\f':
-						return Matcher.quoteReplacement("\\f");
-					case '"':
-						return Matcher.quoteReplacement("\\\"");
-					case '\\':
-						return Matcher.quoteReplacement("\\\\");
-					default:
-						throw new IllegalArgumentException("Unexpected argument in from string escape function: " + (int) c);
-				}
+				return switch (c) {
+					case '\t' -> Matcher.quoteReplacement("\\t");
+					case '\b' -> Matcher.quoteReplacement("\\b");
+					case '\r' -> Matcher.quoteReplacement("\\r");
+					case '\n' -> Matcher.quoteReplacement("\\n");
+					case '\f' -> Matcher.quoteReplacement("\\f");
+					case '"' -> Matcher.quoteReplacement("\\\"");
+					case '\\' -> Matcher.quoteReplacement("\\\\");
+					default -> throw new IllegalArgumentException("Unexpected argument in from string escape function: " + (int) c);
+				};
 			});
 		}
 

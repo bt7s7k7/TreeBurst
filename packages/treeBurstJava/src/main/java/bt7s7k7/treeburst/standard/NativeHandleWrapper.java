@@ -48,7 +48,7 @@ public class NativeHandleWrapper<T> {
 
 		@Override
 		protected void initialize() {
-			initializePrototype(this, globalScope);
+			NativeHandleWrapper.this.initializePrototype(this, this.globalScope);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class NativeHandleWrapper<T> {
 			Class<?> keyType, Class<?> valueType,
 			Function<TKey, ManagedValue> importKey, Function<ManagedValue, TKey> exportKey,
 			Function<TValue, ManagedValue> importValue, Function<ManagedValue, TValue> exportValue) {
-		return addMapAccess(mapGetter, keyType, valueType, (key, __) -> importKey.apply(key), exportKey, (value, __) -> importValue.apply(value), exportValue);
+		return this.addMapAccess(mapGetter, keyType, valueType, (key, __) -> importKey.apply(key), exportKey, (value, __) -> importValue.apply(value), exportValue);
 	}
 
 	public <TKey, TValue> NativeHandleWrapper<T> addMapAccess(Function<T, Map<TKey, TValue>> mapGetter,
@@ -246,7 +246,7 @@ public class NativeHandleWrapper<T> {
 	}
 
 	public void initializePrototype(ManagedTable table, GlobalScope globalScope) {
-		for (var capability : capabilities) {
+		for (var capability : this.capabilities) {
 			capability.accept(table, globalScope);
 		}
 	}

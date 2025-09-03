@@ -58,41 +58,42 @@ class ParsingTest {
 		var parser = new TreeBurstParser(document);
 
 		var root = parser.parse();
-		assertEquals("Group[\n" +
-				"    position=anon:1:1,\n" +
-				"    children=[\n" +
-				"        Invocation[\n" +
-				"            position=anon:1:6,\n" +
-				"            target=MemberAccess[\n" +
-				"                position=anon:1:6,\n" +
-				"                receiver=NumberLiteral[\n" +
-				"                    position=anon:1:1,\n" +
-				"                    value=0.58\n" +
-				"                ],\n" +
-				"                member=k_add\n" +
-				"            ],\n" +
-				"            args=[\n" +
-				"                Invocation[\n" +
-				"                    position=anon:1:10,\n" +
-				"                    target=MemberAccess[\n" +
-				"                        position=anon:1:10,\n" +
-				"                        receiver=NumberLiteral[\n" +
-				"                            position=anon:1:8,\n" +
-				"                            value=2.0\n" +
-				"                        ],\n" +
-				"                        member=k_mul\n" +
-				"                    ],\n" +
-				"                    args=[\n" +
-				"                        NumberLiteral[\n" +
-				"                            position=anon:1:12,\n" +
-				"                            value=3.0\n" +
-				"                        ]\n" +
-				"                    ]\n" +
-				"                ]\n" +
-				"            ]\n" +
-				"        ]\n" +
-				"    ]\n" +
-				"]",
+		assertEquals("""
+				Group[
+				    position=anon:1:1,
+				    children=[
+				        Invocation[
+				            position=anon:1:6,
+				            target=MemberAccess[
+				                position=anon:1:6,
+				                receiver=NumberLiteral[
+				                    position=anon:1:1,
+				                    value=0.58
+				                ],
+				                member=k_add
+				            ],
+				            args=[
+				                Invocation[
+				                    position=anon:1:10,
+				                    target=MemberAccess[
+				                        position=anon:1:10,
+				                        receiver=NumberLiteral[
+				                            position=anon:1:8,
+				                            value=2.0
+				                        ],
+				                        member=k_mul
+				                    ],
+				                    args=[
+				                        NumberLiteral[
+				                            position=anon:1:12,
+				                            value=3.0
+				                        ]
+				                    ]
+				                ]
+				            ]
+				        ]
+				    ]
+				]""",
 				root.toFormattedString());
 	}
 }

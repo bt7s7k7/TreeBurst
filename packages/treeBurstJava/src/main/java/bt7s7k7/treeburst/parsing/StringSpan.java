@@ -20,11 +20,11 @@ public final class StringSpan {
 	}
 
 	public int length() {
-		return length;
+		return this.length;
 	}
 
 	public int index() {
-		return index;
+		return this.index;
 	}
 
 	public char at(int index) {
@@ -54,7 +54,7 @@ public final class StringSpan {
 	}
 
 	public StringSpan substring(int start, int length) {
-		return new StringSpan(data, this.index + start, length);
+		return new StringSpan(this.data, this.index + start, length);
 	}
 
 	@Override

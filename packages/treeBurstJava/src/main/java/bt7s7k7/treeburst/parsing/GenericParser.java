@@ -38,7 +38,7 @@ public class GenericParser {
 	}
 
 	public boolean skipUntil(String token) {
-		return skipUntil((input, index) -> input.startsWith(token, index));
+		return this.skipUntil((input, index) -> input.startsWith(token, index));
 	}
 
 	public boolean skipUntil(TokenPredicate predicate) {
@@ -52,7 +52,7 @@ public class GenericParser {
 	}
 
 	public StringSpan readUntil(String token) {
-		return readUntil((input, index) -> input.startsWith(token, index));
+		return this.readUntil((input, index) -> input.startsWith(token, index));
 	}
 
 	public StringSpan readUntil(TokenPredicate predicate) {

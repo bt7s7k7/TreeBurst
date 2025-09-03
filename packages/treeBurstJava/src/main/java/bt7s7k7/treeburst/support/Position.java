@@ -23,15 +23,15 @@ public class Position {
 	}
 
 	public InputDocument getDocument() {
-		return document;
+		return this.document;
 	}
 
 	public int getIndex() {
-		return index;
+		return this.index;
 	}
 
 	public int getLength() {
-		return length;
+		return this.length;
 	}
 
 	public void setLength(int length) {
@@ -43,14 +43,14 @@ public class Position {
 
 	public Integer getLine() {
 		if (this.line == null) {
-			resolve();
+			this.resolve();
 		}
 		return this.line;
 	}
 
 	public Integer getChar() {
 		if (this.charPosition == null) {
-			resolve();
+			this.resolve();
 		}
 		return this.charPosition;
 	}

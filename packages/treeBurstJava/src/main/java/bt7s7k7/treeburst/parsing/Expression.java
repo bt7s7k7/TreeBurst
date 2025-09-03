@@ -86,8 +86,9 @@ public interface Expression extends Token {
 	public class MapLiteral implements Expression {
 		private final Position position;
 
+		@Override
 		public Position position() {
-			return position;
+			return this.position;
 		}
 
 		public final ArrayList<Map.Entry<Expression, Expression>> entries = new ArrayList<>();

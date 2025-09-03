@@ -139,11 +139,11 @@ public class TreeBurstParser extends GenericParser {
 	}
 
 	public void createDiagnostic(String message) {
-		createDiagnostic(message, getPosition());
+		this.createDiagnostic(message, this.getPosition());
 	}
 
 	public void createDiagnostic(String message, int index) {
-		createDiagnostic(message, getPosition(index));
+		this.createDiagnostic(message, this.getPosition(index));
 	}
 
 	public void createDiagnostic(String message, Position position) {
@@ -152,12 +152,12 @@ public class TreeBurstParser extends GenericParser {
 	}
 
 	public void invalidToken() {
-		if (diagnostics.isEmpty()) {
-			createDiagnostic(_INVALID_TOKEN);
+		if (this.diagnostics.isEmpty()) {
+			this.createDiagnostic(_INVALID_TOKEN);
 			return;
 		}
 
-		var lastDiagnostic = diagnostics.get(diagnostics.size() - 1);
+		var lastDiagnostic = this.diagnostics.get(this.diagnostics.size() - 1);
 		if (lastDiagnostic.message.equals(_INVALID_TOKEN) && lastDiagnostic.position.getIndex() + lastDiagnostic.position.getLength() == this.index) {
 			lastDiagnostic.position.setLength(lastDiagnostic.position.getLength() + 1);
 		}
@@ -264,27 +264,20 @@ public class TreeBurstParser extends GenericParser {
 			}
 		}
 
-		switch (e) {
-			case 'n':
-				return "\n";
-			case 'r':
-				return "\r";
-			case 't':
-				return "\t";
-			case '\'':
-				return "'";
-			case '\"':
-				return "\"";
-			case '`':
-				return "`";
-			case '\\':
-				return "\\";
-			case '$':
-				return "$";
-			default:
+		return switch (e) {
+			case 'n' -> "\n";
+			case 'r' -> "\r";
+			case 't' -> "\t";
+			case '\'' -> "'";
+			case '\"' -> "\"";
+			case '`' -> "`";
+			case '\\' -> "\\";
+			case '$' -> "$";
+			default -> {
 				this.createDiagnostic("Invalid escape sequence");
-				return "\\" + e;
-		}
+				yield "\\" + e;
+			}
+		};
 	}
 
 	public Expression.StringLiteral parseString(String term) {
@@ -343,7 +336,7 @@ public class TreeBurstParser extends GenericParser {
 	public List<Expression> parseBlock(String... terms) {
 		var result = new ArrayList<Expression>();
 
-		parseEnumerated(terms, () -> {
+		this.parseEnumerated(terms, () -> {
 			if (this.peekToken() == null) {
 				return false;
 			}

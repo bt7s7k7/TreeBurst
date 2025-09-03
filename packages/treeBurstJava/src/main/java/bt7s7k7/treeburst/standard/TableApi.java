@@ -19,9 +19,9 @@ public class TableApi extends LazyTable {
 
 	@Override
 	protected void initialize() {
-		this.declareProperty("prototype", globalScope.TablePrototype);
+		this.declareProperty("prototype", this.globalScope.TablePrototype);
 
-		this.declareProperty("new", NativeFunction.simple(globalScope, List.of("this"), (args, scope, result) -> {
+		this.declareProperty("new", NativeFunction.simple(this.globalScope, List.of("this"), (args, scope, result) -> {
 			var self = args.get(0);
 
 			if (!findProperty(self, self, "prototype", scope, result)) {

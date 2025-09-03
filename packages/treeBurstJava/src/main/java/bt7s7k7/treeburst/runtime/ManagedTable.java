@@ -25,10 +25,10 @@ public class ManagedTable extends ManagedObject {
 	}
 
 	public boolean declareProperty(String name, ManagedValue value) {
-		if (properties.containsKey(name)) {
+		if (this.properties.containsKey(name)) {
 			return false;
 		}
-		properties.put(name, value);
+		this.properties.put(name, value);
 
 		if (this.name != null && value instanceof ManagedObject managedObject && managedObject.name == null) {
 			managedObject.name = this.name + "." + name;
@@ -44,11 +44,11 @@ public class ManagedTable extends ManagedObject {
 	}
 
 	public boolean setOwnProperty(String name, ManagedValue value) {
-		if (!properties.containsKey(name)) {
+		if (!this.properties.containsKey(name)) {
 			return false;
 		}
 
-		properties.put(name, value);
+		this.properties.put(name, value);
 		return true;
 	}
 }

@@ -27,7 +27,7 @@ public class MapPrototype extends LazyTable {
 
 	@Override
 	protected void initialize() {
-		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
 			if (args.size() <= 2) {
 				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedMap.class, ManagedValue.class), scope, result);
 				if (result.label != null) return;
@@ -64,28 +64,28 @@ public class MapPrototype extends LazyTable {
 			}
 		}));
 
-		this.declareProperty("clone", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedMap(self.prototype, new HashMap<>(self.entries));
 		}));
 
-		this.declareProperty("clear", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			var self = args.get(0).getMapValue();
 			self.entries.clear();
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareProperty("keys", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("keys", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.keySet()));
 		}));
 
-		this.declareProperty("values", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("values", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.values()));
 		}));
 
-		this.declareProperty("entries", NativeFunction.simple(globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("entries", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			var self = args.get(0).getMapValue();
 			var entries = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.size()));
 
@@ -96,7 +96,7 @@ public class MapPrototype extends LazyTable {
 			result.value = entries;
 		}));
 
-		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(ManagedMap.class, Primitive.Number.class), (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedMap.class, Primitive.Number.class), (args, scope, result) -> {
 			var self = args.get(0).getMapValue();
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
 

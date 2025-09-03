@@ -78,7 +78,7 @@ public class ExtendedExpressionEvaluation {
 
 				if (!this.prepareOperand()) return false;
 
-				evaluateInvocation(oldValue, oldValue, advancedAssignment.operator(), position, List.of(this.operandValue), scope, result);
+				evaluateInvocation(oldValue, oldValue, advancedAssignment.operator(), this.position, List.of(this.operandValue), scope, result);
 				if (result.label != null) return false;
 
 				this.argumentValues = Stream.concat(this.argumentValues.stream(), Stream.of(result.value)).toList();
@@ -87,7 +87,7 @@ public class ExtendedExpressionEvaluation {
 
 			if (!(this.prepareAssignmentTo(target, true) && this.prepareOperand())) return false;
 
-			evaluateInvocation(this.targetValue, this.targetValue, advancedAssignment.operator(), position, List.of(this.operandValue), scope, result);
+			evaluateInvocation(this.targetValue, this.targetValue, advancedAssignment.operator(), this.position, List.of(this.operandValue), scope, result);
 			if (result.label != null) return false;
 
 			return this.operandCallback.test(result.value);
@@ -103,17 +103,17 @@ public class ExtendedExpressionEvaluation {
 		var target = invocation.target();
 
 		if (target instanceof Expression.MemberAccess memberAccess) {
-			evaluateExpression(memberAccess.receiver(), scope, result);
-			if (result.label != null) return false;
+			evaluateExpression(memberAccess.receiver(), this.scope, this.result);
+			if (this.result.label != null) return false;
 
-			this.targetValue = result.value;
+			this.targetValue = this.result.value;
 			this.functionName = memberAccess.member();
 		} else {
-			evaluateExpression(target, scope, result);
-			if (result.label != null) return false;
+			evaluateExpression(target, this.scope, this.result);
+			if (this.result.label != null) return false;
 
 			this.targetValue = Primitive.VOID;
-			this.functionValue = result.value;
+			this.functionValue = this.result.value;
 			this.functionName = target instanceof Expression.Identifier identifier ? identifier.name() : "";
 		}
 
@@ -126,12 +126,12 @@ public class ExtendedExpressionEvaluation {
 			var mappedArgs = new ArrayList<ManagedValue>();
 
 			for (var v : this.argumentExpressions) {
-				mappedArgs.add(new NativeHandle(scope.globalScope.TablePrototype, v));
+				mappedArgs.add(new NativeHandle(this.scope.globalScope.TablePrototype, v));
 			}
 
 			this.argumentValues = mappedArgs;
 		} else {
-			var argValues = evaluateExpressions(this.argumentExpressions, scope, result);
+			var argValues = evaluateExpressions(this.argumentExpressions, this.scope, this.result);
 			if (argValues == null) return false;
 
 			this.argumentValues = argValues;
@@ -147,7 +147,7 @@ public class ExtendedExpressionEvaluation {
 		}
 
 		evaluateInvocation(this.targetValue, this.targetValue, this.functionValue, this.position, this.argumentValues, this.scope, this.result);
-		if (result.value == null) return false;
+		if (this.result.value == null) return false;
 		return true;
 	}
 
@@ -161,9 +161,9 @@ public class ExtendedExpressionEvaluation {
 	/** Dataflow: () -> (targetValue?, operatorCallback) */
 	public boolean prepareAssignmentTo(Expression receiver, boolean loadTarget) {
 		if (receiver instanceof Expression.Identifier identifier) {
-			var variable = scope.findVariable(identifier.name());
+			var variable = this.scope.findVariable(identifier.name());
 			if (variable == null) {
-				result.setException(new Diagnostic("Cannot find variable \"" + identifier.name() + "\"", position));
+				this.result.setException(new Diagnostic("Cannot find variable \"" + identifier.name() + "\"", this.position));
 				return false;
 			}
 
@@ -181,48 +181,48 @@ public class ExtendedExpressionEvaluation {
 
 		if (receiver instanceof Expression.VariableDeclaration declaration) {
 			if (loadTarget) {
-				result.setException(new Diagnostic("Invalid target for assignment", declaration.position()));
+				this.result.setException(new Diagnostic("Invalid target for assignment", declaration.position()));
 				return false;
 			}
 
 			this.operandCallback = v -> {
-				evaluateDeclaration(declaration.declaration(), v, scope, result);
-				return result.value != null;
+				evaluateDeclaration(declaration.declaration(), v, this.scope, this.result);
+				return this.result.value != null;
 			};
 
 			return true;
 		}
 
 		if (receiver instanceof Expression.MemberAccess memberAccess) {
-			evaluateExpression(memberAccess.receiver(), scope, result);
-			if (result.label != null) {
+			evaluateExpression(memberAccess.receiver(), this.scope, this.result);
+			if (this.result.label != null) {
 				return false;
 			}
 
-			var receiver_1 = result.value;
+			var receiver_1 = this.result.value;
 
 			if (!(receiver_1 instanceof ManagedObject container)) {
-				result.setException(new Diagnostic("Cannot set properties on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
+				this.result.setException(new Diagnostic("Cannot set properties on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 				return false;
 			}
 
 			if (loadTarget) {
-				if (!getProperty(container, container, memberAccess.member(), scope, result)) {
-					result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
+				if (!getProperty(container, container, memberAccess.member(), this.scope, this.result)) {
+					this.result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return false;
 				}
 
-				this.targetValue = result.value;
+				this.targetValue = this.result.value;
 			}
 
 			this.operandCallback = valueValue -> {
 				if (valueValue == Primitive.VOID) {
-					result.setException(new Diagnostic("Cannot set a table property to void", memberAccess.position()));
+					this.result.setException(new Diagnostic("Cannot set a table property to void", memberAccess.position()));
 					return false;
 				}
 
-				if (!setProperty(container, memberAccess.member(), valueValue, scope, result)) {
-					result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
+				if (!setProperty(container, memberAccess.member(), valueValue, this.scope, this.result)) {
+					this.result.setException(new Diagnostic("Property \"" + memberAccess.member() + "\" is not defined on \"" + getValueName(receiver_1) + "\"", memberAccess.position()));
 					return false;
 				}
 
@@ -232,21 +232,21 @@ public class ExtendedExpressionEvaluation {
 			return true;
 		}
 
-		result.setException(new Diagnostic("Invalid assignment target", receiver.position()));
+		this.result.setException(new Diagnostic("Invalid assignment target", receiver.position()));
 		return false;
 	}
 
 	/** Dataflow: (functionName, operandExpression) -> (operandValue) */
 	public boolean prepareOperand() {
 		if (this.functionName != null && this.functionName.startsWith("@")) {
-			this.operandValue = new NativeHandle(scope.globalScope.TablePrototype, this.operandExpression);
+			this.operandValue = new NativeHandle(this.scope.globalScope.TablePrototype, this.operandExpression);
 			return true;
 		}
 
-		evaluateExpression(this.operandExpression, scope, result);
-		if (result.label != null) return false;
+		evaluateExpression(this.operandExpression, this.scope, this.result);
+		if (this.result.label != null) return false;
 
-		this.operandValue = result.value;
+		this.operandValue = this.result.value;
 
 		return true;
 	}

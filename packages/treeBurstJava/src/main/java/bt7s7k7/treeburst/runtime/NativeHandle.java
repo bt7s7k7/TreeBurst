@@ -17,7 +17,7 @@ public class NativeHandle extends ManagedObject {
 	}
 
 	public Object getValue() {
-		return value;
+		return this.value;
 	}
 
 	@Override

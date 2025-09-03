@@ -133,7 +133,6 @@ public class ExpressionEvaluator {
 					return result.label == null;
 				} else {
 					result.setException(new Diagnostic("Setter for property '" + name + "' is not a function", Position.INTRINSIC));
-					return false;
 				}
 			}
 		}
@@ -142,8 +141,7 @@ public class ExpressionEvaluator {
 	}
 
 	public static void evaluateDeclaration(Expression declaration, ManagedValue value, Scope scope, ExpressionResult result) {
-		if (declaration instanceof Expression.Identifier) {
-			Expression.Identifier identifier = (Expression.Identifier) declaration;
+		if (declaration instanceof Expression.Identifier identifier) {
 			Variable variable = scope.declareVariable(identifier.name());
 			if (variable == null) {
 				result.setException(new Diagnostic("Duplicate declaration of variable \"" + identifier.name() + "\"", identifier.position()));
@@ -284,7 +282,6 @@ public class ExpressionEvaluator {
 			var receiverValue = result.value;
 			if (!findProperty(receiverValue, receiverValue, memberAccess.member(), scope, result)) {
 				result.setException(new Diagnostic("Cannot find property \"" + getValueName(receiverValue) + "." + memberAccess.member() + "\"", memberAccess.position()));
-				return;
 			}
 
 			return;
