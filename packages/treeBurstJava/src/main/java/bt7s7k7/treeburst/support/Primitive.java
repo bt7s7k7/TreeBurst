@@ -34,6 +34,7 @@ public abstract class Primitive extends ManagedValue {
 
 		@Override
 		public boolean equals(Object obj) {
+			if (obj == this) return true;
 			if (obj instanceof Number other) return this.value == other.value;
 			return false;
 		}
@@ -48,6 +49,7 @@ public abstract class Primitive extends ManagedValue {
 
 		@Override
 		public boolean equals(Object obj) {
+			if (obj == this) return true;
 			if (obj instanceof String other) return Objects.equals(this.value, other.value);
 			return false;
 		}
@@ -98,6 +100,7 @@ public abstract class Primitive extends ManagedValue {
 
 		@Override
 		public boolean equals(Object obj) {
+			if (obj == this) return true;
 			if (obj instanceof Boolean other) return this.value == other.value;
 			return false;
 		}
@@ -118,19 +121,21 @@ public abstract class Primitive extends ManagedValue {
 	}
 
 	public static Number from(double value) {
+		if (value == 0) return ZERO;
 		return new Number(value);
 	}
 
 	public static String from(java.lang.String value) {
+		if (value.isEmpty()) return EMPTY_STRING;
 		return new String(value);
 	}
 
 	public static Boolean from(boolean value) {
-		return new Boolean(value);
+		return value ? TRUE : FALSE;
 	}
 
-	public static final Primitive.Boolean FALSE = Primitive.from(false);
-	public static final Primitive.Boolean TRUE = Primitive.from(true);
-	public static final Primitive.Number ZERO = Primitive.from(0);
-	public static final Primitive.String EMPTY_STRING = Primitive.from("");
+	public static final Primitive.Boolean FALSE = new Boolean(false);
+	public static final Primitive.Boolean TRUE = new Boolean(true);
+	public static final Primitive.Number ZERO = new Number(0);
+	public static final Primitive.String EMPTY_STRING = new String("");
 }
