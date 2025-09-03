@@ -636,7 +636,7 @@ public class TreeBurstParser extends GenericParser {
 				this.nextToken();
 			} else if (!this._skippedNewline && next instanceof Expression.ArrayLiteral arrayLiteral) {
 				if (precedence > 100) return target;
-				target = Expression.Invocation.makeMethodCall(target.position(), target, OperatorConstants.OPERATOR_AT, arrayLiteral.elements());
+				target = Expression.Invocation.makeMethodCall(arrayLiteral.position(), target, OperatorConstants.OPERATOR_AT, arrayLiteral.elements());
 				this.nextToken();
 			} else if (!this._skippedNewline && next instanceof Expression.StringLiteral stringLiteral) {
 				if (precedence > 100) return target;
