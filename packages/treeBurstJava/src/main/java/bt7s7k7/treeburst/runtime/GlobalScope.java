@@ -4,6 +4,7 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.BINARY_OPERATOR_PARAMETERS;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
@@ -23,6 +24,7 @@ import bt7s7k7.treeburst.standard.MapPrototype;
 import bt7s7k7.treeburst.standard.TableApi;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.ManagedValueUtils;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
@@ -83,31 +85,12 @@ public class GlobalScope extends Scope {
 
 	private static void makeNumberOperator(String name, NumberOperatorImpl operator) {
 		NUMERIC_OPERATORS.add(new AbstractMap.SimpleEntry<>(name, (args, scope, result) -> {
-			if (args.size() > 2) {
-				args = ensureArgumentTypes(args, List.of("this", "left", "right"), List.of(ManagedValue.class, Primitive.Number.class, Primitive.Number.class), scope, result);
-				if (result.label != null) return;
-
-				var a = args.get(1).getNumberValue();
-				var b = args.get(2).getNumberValue();
-				result.value = operator.evaluate(a, b);
-				return;
-			} else {
-				args = ensureArgumentTypes(args, List.of("this", "right"), List.of(Primitive.Number.class, Primitive.Number.class), scope, result);
-				if (result.label != null) {
-					// Failed to cast arguments, which means this overload does not match and we
-					// should try to execute this operator using the right operand's handler.
-					result.label = null;
-					var self = args.get(0);
-					var right = args.get(1);
-					evaluateInvocation(right, right, name, Position.INTRINSIC, List.of(self, right), scope, result);
-					return;
-				}
-
-				var a = args.get(0).getNumberValue();
-				var b = args.get(1).getNumberValue();
-				result.value = operator.evaluate(a, b);
-				return;
-			}
+			var operands = ManagedValueUtils.prepareBinaryOperator(name, Primitive.Number.class, Primitive.Number.class, args, scope, result);
+			if (operands == null) return;
+			var a = operands.left().getNumberValue();
+			var b = operands.right().getNumberValue();
+			result.value = operator.evaluate(a, b);
+			return;
 		}));
 	}
 
@@ -202,11 +185,11 @@ public class GlobalScope extends Scope {
 		if (!this.Map.declareProperty("prototype", this.MapPrototype)) throw new IllegalStateException();
 
 		for (var kv : OPERATOR_FALLBACKS) {
-			this.TablePrototype.declareProperty(kv.getKey(), NativeFunction.simple(globalScope, List.of("this", "a", "b?"), kv.getValue()));
+			this.TablePrototype.declareProperty(kv.getKey(), NativeFunction.simple(globalScope, BINARY_OPERATOR_PARAMETERS, kv.getValue()));
 		}
 
 		for (var kv : NUMERIC_OPERATORS) {
-			this.NumberPrototype.declareProperty(kv.getKey(), NativeFunction.simple(globalScope, List.of("this", "a", "b?"), kv.getValue()));
+			this.NumberPrototype.declareProperty(kv.getKey(), NativeFunction.simple(globalScope, BINARY_OPERATOR_PARAMETERS, kv.getValue()));
 		}
 
 		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_NEG, NativeFunction.simple(globalScope, List.of("this"), List.of(Primitive.Number.class), (args, scope, result) -> {
@@ -233,7 +216,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(java.lang.Boolean.toString(self));
 		}));
 
-		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(globalScope, List.of("this", "left", "right?"), (args, scope, result) -> {
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
 			String left, right;
 
 			if (args.size() == 2) {

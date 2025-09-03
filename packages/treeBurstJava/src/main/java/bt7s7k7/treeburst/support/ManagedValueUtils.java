@@ -159,4 +159,29 @@ public class ManagedValueUtils {
 		result.setException(new Diagnostic("Expected expression arguments", Position.INTRINSIC));
 		return null;
 	}
+	public static record BinaryOperatorOperands(ManagedValue left, ManagedValue right) {}
+
+	public static final List<String> BINARY_OPERATOR_PARAMETERS = List.of("this", "left", "right?");
+
+	public static BinaryOperatorOperands prepareBinaryOperator(String name, Class<?> leftType, Class<?> rightType, List<ManagedValue> args, Scope scope, ExpressionResult result) {
+		if (args.size() > 2) {
+			args = ensureArgumentTypes(args, List.of("this", "left", "right"), List.of(ManagedValue.class, leftType, rightType), scope, result);
+			if (result.label != null) return null;
+
+			return new BinaryOperatorOperands(args.get(1), args.get(2));
+		}
+
+		args = ensureArgumentTypes(args, List.of("this", "right"), List.of(leftType, rightType), scope, result);
+		if (result.label != null) {
+			// Failed to cast arguments, which means this overload does not match and we
+			// should try to execute this operator using the right operand's handler.
+			result.label = null;
+			var self = args.get(0);
+			var right = args.get(1);
+			evaluateInvocation(right, right, name, Position.INTRINSIC, List.of(self, right), scope, result);
+			return null;
+		}
+
+		return new BinaryOperatorOperands(args.get(0), args.get(1));
+	}
 }
