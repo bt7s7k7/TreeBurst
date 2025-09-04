@@ -41,12 +41,11 @@ class AutomaticTest {
 
 		public final HashMap<String, Double> numbers = new HashMap<>();
 
-		public static final NativeHandleWrapper<DummyObject> WRAPPER = new NativeHandleWrapper<>(DummyObject.class)
-				.addName("DummyObject")
+		public static final NativeHandleWrapper<DummyObject> WRAPPER = new NativeHandleWrapper<>("DummyObject", DummyObject.class, ctx -> ctx
 				.addProperty("a", Primitive.Number.class, v -> Primitive.from(v.a), (v, a) -> v.a = a.value)
 				.addProperty("b", Primitive.Number.class, v -> Primitive.from(v.b), (v, b) -> v.b = b.value)
 				.addGetter("sum", v -> Primitive.from(v.a + v.b))
-				.addMapAccess(v -> v.numbers, Primitive.String.class, Primitive.Number.class, Primitive::from, ManagedValue::getStringValue, Primitive::from, ManagedValue::getNumberValue);
+				.addMapAccess(v -> v.numbers, Primitive.String.class, Primitive.Number.class, Primitive::from, ManagedValue::getStringValue, Primitive::from, ManagedValue::getNumberValue));
 	}
 
 	private static class Test {

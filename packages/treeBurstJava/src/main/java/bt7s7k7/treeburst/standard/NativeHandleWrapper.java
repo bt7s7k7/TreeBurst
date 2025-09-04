@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,231 +31,218 @@ import bt7s7k7.treeburst.support.Primitive;
 
 public class NativeHandleWrapper<T> {
 	public final Class<T> type;
+	protected final Consumer<NativeHandleWrapper<T>.InitializationContext> callback;
+	public final String name;
 
-	protected boolean hasGetters = false;
-	protected boolean hasSetters = false;
-	protected final List<BiConsumer<ManagedTable, GlobalScope>> capabilities = new ArrayList<>();
-	protected String name = null;
-
-	public NativeHandleWrapper(Class<T> type) {
+	public NativeHandleWrapper(String name, Class<T> type, Consumer<InitializationContext> callback) {
+		this.name = name;
 		this.type = type;
+		this.callback = callback;
 	}
 
 	public class Prototype extends LazyTable {
 		public Prototype(ManagedObject prototype, GlobalScope globalScope) {
 			super(prototype, globalScope);
+			// Always set get/setter to true because we don't actually know if we have get/setters
+			// before the initialization function is executed. If there is a potential getter, we
+			// must give it a chance to be created when initialization runs.
+			this.hasGetters = true;
+			this.hasSetters = true;
 		}
 
 		@Override
 		protected void initialize() {
+			// Reset the get/setter flags so they can be properly set by the initialization function
+			if (this.prototype != null) {
+				this.hasGetters = this.prototype.hasGetters;
+				this.hasSetters = this.prototype.hasSetters;
+			} else {
+				this.hasGetters = false;
+				this.hasSetters = false;
+			}
 			NativeHandleWrapper.this.initializePrototype(this, this.globalScope);
 		}
 	}
 
-	@FunctionalInterface
-	public interface MethodImplementation<T> {
-		public void run(T self, List<ManagedValue> args, Scope scope, ExpressionResult result);
-	}
+	public class InitializationContext {
+		public final ManagedTable prototype;
+		public final GlobalScope globalScope;
 
-	public NativeHandleWrapper<T> addMethod(String name, Function<GlobalScope, ManagedFunction> factory) {
-		this.capabilities.add((handle, globalScope) -> {
-			handle.declareProperty(name, factory.apply(globalScope));
-		});
+		public InitializationContext(ManagedTable handle, GlobalScope globalScope) {
+			handle.name = NativeHandleWrapper.this.name;
+			this.prototype = handle;
+			this.globalScope = globalScope;
+		}
 
-		return this;
-	}
+		@FunctionalInterface
+		public interface MethodImplementation<T> {
+			public void run(T self, List<ManagedValue> args, Scope scope, ExpressionResult result);
+		}
 
-	public NativeHandleWrapper<T> addMethod(String name, List<String> parameters, List<Class<?>> types, MethodImplementation<T> impl) {
-		this.capabilities.add((handle, globalScope) -> {
-			handle.declareProperty(name, NativeFunction.simple(globalScope,
+		public InitializationContext addMethod(String name, Function<GlobalScope, ManagedFunction> factory) {
+			this.prototype.declareProperty(name, factory.apply(this.globalScope));
+			return this;
+		}
+
+		public InitializationContext addMethod(String name, List<String> parameters, List<Class<?>> types, MethodImplementation<T> impl) {
+			this.prototype.declareProperty(name, NativeFunction.simple(this.globalScope,
 					Stream.concat(Stream.of("this"), parameters.stream()).toList(),
-					Stream.concat(Stream.of(this.type), types == null ? Collections.nCopies(parameters.size(), ManagedValue.class).stream() : types.stream()).toList(),
+					Stream.concat(Stream.of(NativeHandleWrapper.this.type), types == null ? Collections.nCopies(parameters.size(), ManagedValue.class).stream() : types.stream()).toList(),
 					(args, scope, result) -> {
-						var self = args.get(0).getNativeValue(this.type);
-						impl.run(self, args.subList(1, args.size()), globalScope, result);
+						var self = args.get(0).getNativeValue(NativeHandleWrapper.this.type);
+						impl.run(self, args.subList(1, args.size()), this.globalScope, result);
 					}));
-		});
 
-		return this;
-	}
+			return this;
+		}
 
-	public NativeHandleWrapper<T> addGetter(String name, Function<T, ManagedValue> getter) {
-		this.hasGetters = true;
+		public InitializationContext addGetter(String name, Function<T, ManagedValue> getter) {
+			this.prototype.hasGetters = true;
 
-		return this.addMethod("get_" + name, Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
-			result.value = getter.apply(self);
-		});
-	}
+			return this.addMethod("get_" + name, Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+				result.value = getter.apply(self);
+			});
+		}
 
-	public NativeHandleWrapper<T> addGetter(String name, BiFunction<T, Scope, ManagedValue> getter) {
-		this.hasGetters = true;
+		public <TValue> InitializationContext addProperty(String name, Class<TValue> valueType, Function<T, ManagedValue> getter, BiConsumer<T, TValue> setter) {
+			this.addGetter(name, getter);
 
-		return this.addMethod("get_" + name, Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
-			result.value = getter.apply(self, scope);
-		});
-	}
+			this.prototype.hasSetters = true;
+			return this.addMethod("set_" + name, List.of("value"), List.of(valueType), (self, args, scope, result) -> {
+				var newValue = args.get(0);
+				setter.accept(self, newValue.cast(valueType));
+				result.value = newValue;
+			});
+		}
 
-	public <TValue> NativeHandleWrapper<T> addProperty(String name, Class<TValue> valueType, Function<T, ManagedValue> getter, BiConsumer<T, TValue> setter) {
-		this.addGetter(name, getter);
+		public <TKey, TValue> InitializationContext addMapAccess(Function<T, Map<TKey, TValue>> mapGetter,
+				Class<?> keyType, Class<?> valueType,
+				Function<TKey, ManagedValue> importKey, Function<ManagedValue, TKey> exportKey,
+				Function<TValue, ManagedValue> importValue, Function<ManagedValue, TValue> exportValue) {
 
-		this.hasSetters = true;
-		return this.addMethod("set_" + name, List.of("value"), List.of(valueType), (self, args, scope, result) -> {
-			var newValue = args.get(0);
-			setter.accept(self, newValue.cast(valueType));
-			result.value = newValue;
-		});
-	}
+			this.addGetter("length", self -> Primitive.from(mapGetter.apply(self).size()));
 
-	public <TKey, TValue> NativeHandleWrapper<T> addMapAccess(Function<T, Map<TKey, TValue>> mapGetter,
-			Class<?> keyType, Class<?> valueType,
-			Function<TKey, ManagedValue> importKey, Function<ManagedValue, TKey> exportKey,
-			Function<TValue, ManagedValue> importValue, Function<ManagedValue, TValue> exportValue) {
-		return this.addMapAccess(mapGetter, keyType, valueType, (key, __) -> importKey.apply(key), exportKey, (value, __) -> importValue.apply(value), exportValue);
-	}
+			if (exportKey != null && importValue != null) {
+				if (exportValue != null) {
+					this.addMethod("clear", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+						var map = mapGetter.apply(self);
+						map.clear();
+						result.value = Primitive.VOID;
+					});
 
-	public <TKey, TValue> NativeHandleWrapper<T> addMapAccess(Function<T, Map<TKey, TValue>> mapGetter,
-			Class<?> keyType, Class<?> valueType,
-			BiFunction<TKey, Scope, ManagedValue> importKey, Function<ManagedValue, TKey> exportKey,
-			BiFunction<TValue, Scope, ManagedValue> importValue, Function<ManagedValue, TValue> exportValue) {
+					this.addMethod(OperatorConstants.OPERATOR_AT, List.of("key", "value?"), List.of(keyType, valueType), (self, args, scope, result) -> {
+						var map = mapGetter.apply(self);
+						var key = exportKey.apply(args.get(0));
 
-		this.addGetter("length", self -> Primitive.from(mapGetter.apply(self).size()));
+						if (args.size() == 1) {
+							var value = map.get(key);
 
-		if (exportKey != null && importValue != null) {
-			if (exportValue != null) {
-				this.addMethod("clear", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
-					var map = mapGetter.apply(self);
-					map.clear();
-					result.value = Primitive.VOID;
-				});
+							if (value == null) {
+								result.value = Primitive.VOID;
+							} else {
+								result.value = importValue.apply(value);
+							}
+						} else {
+							var value = exportValue.apply(args.get(1));
 
-				this.addMethod(OperatorConstants.OPERATOR_AT, List.of("key", "value?"), List.of(keyType, valueType), (self, args, scope, result) -> {
-					var map = mapGetter.apply(self);
-					var key = exportKey.apply(args.get(0));
+							if (value == Primitive.VOID) {
+								map.remove(key);
+							} else {
+								map.put(key, value);
+							}
 
-					if (args.size() == 1) {
+							result.value = args.get(1);
+						}
+					});
+				} else {
+					this.addMethod(OperatorConstants.OPERATOR_AT, List.of("key"), List.of(keyType), (self, args, scope, result) -> {
+						var map = mapGetter.apply(self);
+						var key = exportKey.apply(args.get(0));
 						var value = map.get(key);
 
 						if (value == null) {
 							result.value = Primitive.VOID;
 						} else {
-							result.value = importValue.apply(value, scope);
+							result.value = importValue.apply(value);
 						}
-					} else {
-						var value = exportValue.apply(args.get(1));
+					});
+				}
 
-						if (value == Primitive.VOID) {
-							map.remove(key);
-						} else {
-							map.put(key, value);
+				if (importKey != null) {
+					this.addMethod("keys", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+						var map = mapGetter.apply(self);
+						result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.keySet().stream().map(importKey).collect(Collectors.toCollection(ArrayList::new)));
+					});
+				}
+
+				if (importValue != null) {
+					this.addMethod("values", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+						var map = mapGetter.apply(self);
+						result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.values().stream().map(importValue).collect(Collectors.toCollection(ArrayList::new)));
+					});
+				}
+
+				if (importValue != null && importKey != null) {
+					this.addMethod("entries", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+						var map = mapGetter.apply(self);
+						result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.entrySet().stream()
+								.map(kv -> new ManagedArray(scope.globalScope.ArrayPrototype, List.of(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()))))
+								.collect(Collectors.toCollection(ArrayList::new)));
+					});
+
+					this.addMethod("map", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
+						var map = mapGetter.apply(self);
+						var managedMap = new ManagedMap(scope.globalScope.MapPrototype);
+
+						for (var kv : map.entrySet()) {
+							managedMap.entries.put(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()));
 						}
 
-						result.value = args.get(1);
-					}
-				});
-			} else {
-				this.addMethod(OperatorConstants.OPERATOR_AT, List.of("key"), List.of(keyType), (self, args, scope, result) -> {
-					var map = mapGetter.apply(self);
-					var key = exportKey.apply(args.get(0));
-					var value = map.get(key);
+						result.value = managedMap;
+					});
 
-					if (value == null) {
-						result.value = Primitive.VOID;
-					} else {
-						result.value = importValue.apply(value, scope);
-					}
-				});
-			}
+					this.addDumpMethod((self, depth, scope, result) -> {
+						var map = mapGetter.apply(self);
+						return ManagedValueUtils.dumpCollection(
+								NativeHandleWrapper.this.name, true, "{", "}",
+								map.entrySet(), v -> importKey.apply(v.getKey()), null, v -> importValue.apply(v.getValue()), depth - 1, scope, result);
+					});
 
-			if (importKey != null) {
-				this.addMethod("keys", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
-					var map = mapGetter.apply(self);
-					result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.keySet().stream().map(v -> importKey.apply(v, scope)).collect(Collectors.toCollection(ArrayList::new)));
-				});
-			}
-
-			if (importValue != null) {
-				this.addMethod("values", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
-					var map = mapGetter.apply(self);
-					result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.values().stream().map(v -> importValue.apply(v, scope)).collect(Collectors.toCollection(ArrayList::new)));
-				});
-			}
-
-			if (importValue != null && importKey != null) {
-				this.addMethod("entries", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
-					var map = mapGetter.apply(self);
-					result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.entrySet().stream()
-							.map(kv -> new ManagedArray(scope.globalScope.ArrayPrototype, List.of(importKey.apply(kv.getKey(), scope), importValue.apply(kv.getValue(), scope))))
-							.collect(Collectors.toCollection(ArrayList::new)));
-				});
-
-				this.addMethod("map", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
-					var map = mapGetter.apply(self);
-					var managedMap = new ManagedMap(scope.globalScope.MapPrototype);
-
-					for (var kv : map.entrySet()) {
-						managedMap.entries.put(importKey.apply(kv.getKey(), scope), importValue.apply(kv.getValue(), scope));
-					}
-
-					result.value = managedMap;
-				});
-
-				this.addDumpMethod((self, depth, scope, result) -> {
-					var map = mapGetter.apply(self);
-					return ManagedValueUtils.dumpCollection(
-							this.name, true, "{", "}",
-							map.entrySet(), v -> importKey.apply(v.getKey(), scope), null, v -> importValue.apply(v.getValue(), scope), depth - 1, scope, result);
-				});
-
-				this.capabilities.add((handle, globalScope) -> {
-					handle.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(globalScope, List.of("this", "depth?"), List.of(this.type, Primitive.Number.class), (args, scope, result) -> {
+					this.prototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(NativeHandleWrapper.this.type, Primitive.Number.class), (args, scope, result) -> {
 						var self = args.get(0);
 						evaluateInvocation(self, self, "map", Position.INTRINSIC, Collections.emptyList(), scope, result);
 						if (result.label != null) return;
 						var map = result.value;
 						evaluateInvocation(map, map, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, args.subList(1, args.size()), scope, result);
 					}));
-				});
+				}
 			}
+
+			return this;
 		}
 
-		return this;
-	}
+		@FunctionalInterface
+		public static interface DumpMethodImpl<T> {
+			public String get(T self, int depth, Scope scope, ExpressionResult result);
+		}
 
-	public NativeHandleWrapper<T> addName(String name) {
-		this.name = name;
-		this.capabilities.add((handle, globalScope) -> {
-			handle.name = name;
-		});
+		public InitializationContext addDumpMethod(DumpMethodImpl<T> dumpGetter) {
+			this.addMethod(OperatorConstants.OPERATOR_DUMP, List.of("depth?"), List.of(Primitive.Number.class), (self, args, scope, result) -> {
+				var dump = dumpGetter.get(self, (int) args.get(0).getNumberValue(), scope, result);
+				if (dump == null) return;
+				result.value = Primitive.from(dump);
+			});
 
-		return this;
-	}
-
-	@FunctionalInterface
-	public static interface DumpMethodImpl<T> {
-		public String get(T self, int depth, Scope scope, ExpressionResult result);
-	}
-
-	public NativeHandleWrapper<T> addDumpMethod(DumpMethodImpl<T> dumpGetter) {
-		this.addMethod(OperatorConstants.OPERATOR_DUMP, List.of("depth?"), List.of(Primitive.Number.class), (self, args, scope, result) -> {
-			var dump = dumpGetter.get(self, (int) args.get(0).getNumberValue(), scope, result);
-			if (dump == null) return;
-			result.value = Primitive.from(dump);
-		});
-
-		return this;
+			return this;
+		}
 	}
 
 	public void initializePrototype(ManagedTable table, GlobalScope globalScope) {
-		for (var capability : this.capabilities) {
-			capability.accept(table, globalScope);
-		}
+		this.callback.accept(new InitializationContext(table, globalScope));
 	}
 
 	public ManagedTable buildPrototype(GlobalScope globalScope) {
-		var prototype = new Prototype(globalScope.TablePrototype, globalScope);
-		if (this.hasGetters) prototype.hasGetters = true;
-		if (this.hasSetters) prototype.hasSetters = true;
-		return prototype;
+		return new Prototype(globalScope.TablePrototype, globalScope);
 	}
 
 	public ManagedTable ensurePrototype(GlobalScope globalScope) {
