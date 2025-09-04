@@ -601,3 +601,26 @@ assertEqual(null + ",a", "null,a")
 
 assertEqual("a" + void, "a")
 assertEqual(void + "a", "a")
+
+// Test: pipeline operator
+1 -> $variable
+assertEqual(variable, 1)
+2 -> variable
+assertEqual(variable, 2)
+3 -> variable -> $other
+assertEqual(variable, 3)
+assertEqual(variable, other)
+
+$table = Table.new()
+
+1 -> $table.foo
+assertEqual(table.foo, 1)
+
+$step1 = \(v) v + "1"
+$step2 = \(v) v + "2"
+
+"s" 
+-> step1()
+-> step2()
+-> $output
+assertEqual(output, "s12")

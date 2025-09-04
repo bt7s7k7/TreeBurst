@@ -16,7 +16,7 @@ import bt7s7k7.treeburst.support.Position;
 
 public class TreeBurstParser extends GenericParser {
 	public enum OperatorType {
-		INVOCATION, ASSIGNMENT, MEMBER_ACCESS, VARIABLE_DECLARATION
+		INVOCATION, ASSIGNMENT, PIPELINE, MEMBER_ACCESS, VARIABLE_DECLARATION
 	}
 
 	public static class Operator {
@@ -92,6 +92,7 @@ public class TreeBurstParser extends GenericParser {
 
 		_INFIX_OPERATORS = new LinkedHashMap<>();
 		_INFIX_OPERATORS.put("=", new Operator(0, OperatorType.ASSIGNMENT).withResultPrecedence(0));
+		_INFIX_OPERATORS.put("->", new Operator(1, OperatorType.PIPELINE));
 		_INFIX_OPERATORS.put("&&", new Operator(1, OperatorConstants.OPERATOR_AND));
 		_INFIX_OPERATORS.put("||", new Operator(1, OperatorConstants.OPERATOR_OR));
 		_INFIX_OPERATORS.put("??", new Operator(1, OperatorConstants.OPERATOR_COALESCE));
@@ -619,6 +620,15 @@ public class TreeBurstParser extends GenericParser {
 						}
 
 						target = new Expression.Assignment(nextOpInstance.position, target, operand);
+					} else if (infixOperator.type == OperatorType.PIPELINE) {
+						if (operand instanceof Expression.Invocation invocation) {
+							target = invocation.withArgument(target);
+							continue;
+						}
+
+						target = new Expression.Assignment(nextOpInstance.position, operand, target);
+					} else {
+						throw new IllegalStateException("Invalid infix operator type: " + infixOperator.type);
 					}
 				} else {
 					return target;
