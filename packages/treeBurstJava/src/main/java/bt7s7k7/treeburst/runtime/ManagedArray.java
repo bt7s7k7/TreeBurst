@@ -12,6 +12,11 @@ public class ManagedArray extends ManagedObject {
 
 	public final ArrayList<ManagedValue> elements;
 
+	public ManagedArray(ManagedObject prototype) {
+		super(prototype);
+		this.elements = new ArrayList<>();
+	}
+
 	public ManagedArray(ManagedObject prototype, ArrayList<ManagedValue> elements) {
 		super(prototype);
 		this.elements = elements;
