@@ -15,7 +15,7 @@ import bt7s7k7.treeburst.support.Primitive;
 
 public class ExpressionEvaluator {
 
-	public static List<ManagedValue> evaluateExpressions(List<Expression> children, Scope scope, ExpressionResult result) {
+	public static List<ManagedValue> evaluateExpressions(List<Expression> children, boolean excludeVoid, Scope scope, ExpressionResult result) {
 		List<ManagedValue> results = new ArrayList<>();
 
 		for (Expression child : children) {
@@ -24,6 +24,8 @@ public class ExpressionEvaluator {
 			if (result.label != null) {
 				return null;
 			}
+
+			if (excludeVoid && result.value == Primitive.VOID) continue;
 
 			results.add(result.value);
 		}
@@ -293,7 +295,7 @@ public class ExpressionEvaluator {
 		}
 
 		if (expression instanceof Expression.ArrayLiteral arrayLiteral) {
-			var elements = evaluateExpressions(arrayLiteral.elements(), scope, result);
+			var elements = evaluateExpressions(arrayLiteral.elements(), true, scope, result);
 			if (elements == null) return;
 			result.value = new ManagedArray(scope.globalScope.ArrayPrototype, elements);
 			return;

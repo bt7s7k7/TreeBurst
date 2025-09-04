@@ -131,7 +131,7 @@ public class ExtendedExpressionEvaluation {
 
 			this.argumentValues = mappedArgs;
 		} else {
-			var argValues = evaluateExpressions(this.argumentExpressions, this.scope, this.result);
+			var argValues = evaluateExpressions(this.argumentExpressions, false, this.scope, this.result);
 			if (argValues == null) return false;
 
 			this.argumentValues = argValues;
