@@ -28,32 +28,86 @@ public class ArrayPrototype extends LazyTable {
 	@Override
 	protected void initialize() {
 		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+			ManagedArray self;
+			int index;
+			ManagedValue value = null;
+
 			if (args.size() <= 2) {
 				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);
 				if (result.label != null) return;
 
-				var self = args.get(0).getArrayValue();
-				var index = (int) args.get(1).getNumberValue();
-
-				index = self.normalizeIndex(index, result);
-				if (result.label != null) return;
-
-				result.value = self.elements.get(index);
+				self = args.get(0).getArrayValue();
+				index = (int) args.get(1).getNumberValue();
 			} else {
 				args = ensureArgumentTypes(args, List.of("this", "index", "value"), List.of(ManagedArray.class, Primitive.Number.class, ManagedValue.class), scope, result);
 				if (result.label != null) return;
 
-				var self = args.get(0).getArrayValue();
-				var index = (int) args.get(1).getNumberValue();
-				var value = args.get(2);
+				self = args.get(0).getArrayValue();
+				index = (int) args.get(1).getNumberValue();
+				value = args.get(2);
 
 				if (value == Primitive.VOID) {
 					result.setException(new Diagnostic("Cannot set an array element to void", Position.INTRINSIC));
 					return;
 				}
+			}
 
-				index = self.normalizeIndex(index, result);
+			index = self.normalizeIndex(index, result);
+			if (result.label != null) return;
+
+			if (value == null) {
+				result.value = self.elements.get(index);
+			} else {
+				self.elements.set(index, value);
+				result.value = value;
+			}
+		}));
+
+		this.declareProperty("tryAt", NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+			ManagedArray self;
+			int index;
+			ManagedValue value = null;
+
+			if (args.size() <= 2) {
+				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);
 				if (result.label != null) return;
+
+				self = args.get(0).getArrayValue();
+				index = (int) args.get(1).getNumberValue();
+			} else {
+				args = ensureArgumentTypes(args, List.of("this", "index", "value"), List.of(ManagedArray.class, Primitive.Number.class, ManagedValue.class), scope, result);
+				if (result.label != null) return;
+
+				self = args.get(0).getArrayValue();
+				index = (int) args.get(1).getNumberValue();
+				value = args.get(2);
+
+				if (value == Primitive.VOID) {
+					result.setException(new Diagnostic("Cannot set an array element to void", Position.INTRINSIC));
+					return;
+				}
+			}
+
+			if (index < 0) {
+				index = self.elements.size() + index;
+
+				if (index < 0) {
+					result.setException(new Diagnostic("Cannot use negative indices for an array", Position.INTRINSIC));
+					return;
+				}
+			}
+
+			if (value == null) {
+				if (index >= self.elements.size()) {
+					result.value = Primitive.VOID;
+					return;
+				}
+
+				result.value = self.elements.get(index);
+			} else {
+				if (index >= self.elements.size()) {
+					self.elements.addAll(Collections.nCopies(index + 1 - self.elements.size(), Primitive.NULL));
+				}
 
 				self.elements.set(index, value);
 				result.value = value;

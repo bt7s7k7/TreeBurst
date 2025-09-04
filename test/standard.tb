@@ -202,6 +202,13 @@ assertEqual(x[-2], 2)
 x[0] = 5
 assertEqual(x[0], 5)
 
+// Test: array try
+$x = []
+assertEqual(x.tryAt(10), void)
+x.tryAt(10) = 5
+assertEqual(x[10], 5)
+assertEqual(x[9], null)
+
 // Test: array bounds check 1, expect fail
 $x = [1,2,3]
 x[4]
@@ -624,3 +631,7 @@ $step2 = \(v) v + "2"
 -> step2()
 -> $output
 assertEqual(output, "s12")
+
+$array = []
+"element" -> array.tryAt(0)
+assertEqual(array[0], "element")
