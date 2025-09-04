@@ -215,6 +215,8 @@ public class ManagedValueUtils {
 					builder.append(Primitive.String.escapeString(key));
 					builder.append(']');
 				}
+
+				builder.append(": ");
 			}
 
 			if (valueGetter != null) {
