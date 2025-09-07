@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,6 +25,7 @@ public class TreeBurstParser extends GenericParser {
 		public final OperatorType type;
 		public final String name;
 		public int resultPrecedence;
+		public boolean isNameWord = false;
 
 		public Operator(int precedence, String name) {
 			this.precedence = precedence;
@@ -41,6 +43,11 @@ public class TreeBurstParser extends GenericParser {
 
 		public Operator withResultPrecedence(int value) {
 			this.resultPrecedence = value;
+			return this;
+		}
+
+		public Operator setIsNameWord() {
+			this.isNameWord = true;
 			return this;
 		}
 	}
@@ -80,6 +87,7 @@ public class TreeBurstParser extends GenericParser {
 	private static final Map<String, Operator> _PREFIX_OPERATORS;
 	private static final Map<String, Operator> _INFIX_OPERATORS;
 	private static final List<String> _OPERATOR_TOKENS;
+	private static final Set<String> _WORD_OPERATOR_TOKENS;
 
 	static {
 		_PREFIX_OPERATORS = new LinkedHashMap<>();
@@ -96,13 +104,13 @@ public class TreeBurstParser extends GenericParser {
 		_INFIX_OPERATORS.put("&&", new Operator(1, OperatorConstants.OPERATOR_AND));
 		_INFIX_OPERATORS.put("||", new Operator(1, OperatorConstants.OPERATOR_OR));
 		_INFIX_OPERATORS.put("??", new Operator(1, OperatorConstants.OPERATOR_COALESCE));
-		_INFIX_OPERATORS.put("else", new Operator(1, OperatorConstants.OPERATOR_ELSE));
+		_INFIX_OPERATORS.put("else", new Operator(1, OperatorConstants.OPERATOR_ELSE).setIsNameWord());
 		_INFIX_OPERATORS.put("<", new Operator(2, OperatorConstants.OPERATOR_LT));
 		_INFIX_OPERATORS.put("<=", new Operator(2, OperatorConstants.OPERATOR_LTE));
 		_INFIX_OPERATORS.put(">", new Operator(2, OperatorConstants.OPERATOR_GT));
 		_INFIX_OPERATORS.put(">=", new Operator(2, OperatorConstants.OPERATOR_GTE));
 		_INFIX_OPERATORS.put("==", new Operator(2, OperatorConstants.OPERATOR_EQ));
-		_INFIX_OPERATORS.put("is", new Operator(2, OperatorConstants.OPERATOR_IS));
+		_INFIX_OPERATORS.put("is", new Operator(2, OperatorConstants.OPERATOR_IS).setIsNameWord());
 		_INFIX_OPERATORS.put("!=", new Operator(2, OperatorConstants.OPERATOR_NEQ));
 		_INFIX_OPERATORS.put("^", new Operator(3, OperatorConstants.OPERATOR_BIT_XOR));
 		_INFIX_OPERATORS.put("&", new Operator(3, OperatorConstants.OPERATOR_BIT_AND));
@@ -118,10 +126,18 @@ public class TreeBurstParser extends GenericParser {
 		_INFIX_OPERATORS.put("**", new Operator(7, OperatorConstants.OPERATOR_POW).withResultPrecedence(5));
 		_INFIX_OPERATORS.put(".", new Operator(100, OperatorType.MEMBER_ACCESS));
 
-		_OPERATOR_TOKENS = Stream.concat(_PREFIX_OPERATORS.keySet().stream(), _INFIX_OPERATORS.keySet().stream())
+		_OPERATOR_TOKENS = Stream.concat(_PREFIX_OPERATORS.entrySet().stream(), _INFIX_OPERATORS.entrySet().stream())
+				.filter(v -> !v.getValue().isNameWord)
+				.map(Map.Entry::getKey)
 				.distinct()
 				.sorted((a, b) -> b.length() - a.length())
 				.collect(Collectors.toList());
+
+		_WORD_OPERATOR_TOKENS = Stream.concat(_PREFIX_OPERATORS.entrySet().stream(), _INFIX_OPERATORS.entrySet().stream())
+				.filter(v -> v.getValue().isNameWord)
+				.map(Map.Entry::getKey)
+				.collect(Collectors.toSet());
+
 	}
 
 	public TreeBurstParser(InputDocument document) {
@@ -529,6 +545,16 @@ public class TreeBurstParser extends GenericParser {
 
 			this._tokenStart = start;
 			return this._token = new Expression.Label(labelPosition, identifierName, target);
+		}
+
+		if (_WORD_OPERATOR_TOKENS.contains(identifierName)) {
+			if (this.consume("=")) {
+				this._tokenStart = start;
+				return this._token = OperatorInstance.makeAdvancedAssignment(this.getPosition(start), identifierName);
+			}
+
+			this._tokenStart = start;
+			return this._token = new OperatorInstance(this.getPosition(start), identifierName);
 		}
 
 		this._tokenStart = start;
