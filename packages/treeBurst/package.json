@@ -12,7 +12,7 @@
         "eslint": "^8.57.1",
         "sass": "^1.63.6",
         "typescript": "^5.1.6",
-        "vite": "^4.4.3"
+        "vite": "^5.4.20"
     },
     "scripts": {
         "dev": "concurrently --raw --kill-others \"vite\" \"tsc --noEmit --watch --incremental --preserveWatchOutput\"",
