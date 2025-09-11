@@ -84,7 +84,7 @@ public class GlobalScope extends Scope {
 	}
 
 	private static void makeNumberOperator(String name, NumberOperatorImpl operator) {
-		NUMERIC_OPERATORS.add(new AbstractMap.SimpleEntry<>(name, (args, scope, result) -> {
+		NUMERIC_OPERATORS.add(new AbstractMap.SimpleEntry<>(name, (args, scope, result) -> { // @symbol: <template>numberOperator, @kind: function
 			var operands = ManagedValueUtils.prepareBinaryOperator(name, Primitive.Number.class, Primitive.Number.class, args, scope, result);
 			if (operands == null) return;
 			var a = operands.left().getNumberValue();
@@ -118,16 +118,16 @@ public class GlobalScope extends Scope {
 	public final ManagedTable TablePrototype = new ManagedTable(null);
 	public final ManagedTable Table = this.declareGlobal("Table", new TableApi(this.TablePrototype, this));
 
-	public final ManagedTable FunctionPrototype = new ManagedTable(this.TablePrototype);
+	public final ManagedTable FunctionPrototype = new ManagedTable(this.TablePrototype); /// @symbol:Function.prototype
 	public final ManagedTable Function = this.declareGlobal("Function", new ManagedTable(this.TablePrototype));
 
-	public final ManagedTable NumberPrototype = new ManagedTable(this.TablePrototype);
+	public final ManagedTable NumberPrototype = new ManagedTable(this.TablePrototype); /// @symbol:Number.prototype
 	public final ManagedTable Number = this.declareGlobal("Number", new ManagedTable(this.TablePrototype));
 
-	public final ManagedTable StringPrototype = new ManagedTable(this.TablePrototype);
+	public final ManagedTable StringPrototype = new ManagedTable(this.TablePrototype); /// @symbol:String.prototype
 	public final ManagedTable String = this.declareGlobal("String", new ManagedTable(this.TablePrototype));
 
-	public final ManagedTable BooleanPrototype = new ManagedTable(this.TablePrototype);
+	public final ManagedTable BooleanPrototype = new ManagedTable(this.TablePrototype); /// @symbol:Boolean.prototype
 	public final ManagedTable Boolean = this.declareGlobal("Boolean", new ManagedTable(this.TablePrototype));
 
 	public final ManagedTable ArrayPrototype = new ArrayPrototype(this.TablePrototype, this);

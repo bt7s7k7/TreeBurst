@@ -1,0 +1,13 @@
+{
+	"sourceRoot": "src/main/java/bt7s7k7/treeburst",
+	"excludedFiles": [
+		"src/main/java/bt7s7k7/treeburst/standard/NativeHandleWrapper.java"
+	],
+	"symbolFactories": [
+		{
+			"pattern": "makeNumberOperator\\(OperatorConstants\\.(\\w+)",
+			"template": "<template>numberOperator",
+			"owner": "Number.prototype"
+		}
+	]
+}
