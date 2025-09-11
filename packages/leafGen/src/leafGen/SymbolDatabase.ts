@@ -67,18 +67,7 @@ export class SymbolDatabase {
 
             if (symbol.templates) {
                 for (const template of symbol.templates) {
-                    symbol.isFunction ||= template.isFunction
-                    symbol.isVariadicFunction ||= template.isVariadicFunction
-
-                    if (template.overloads) {
-                        (symbol.overloads ??= []).push(...template.overloads)
-                    }
-
-                    if (template.value) {
-                        symbol.value ??= template.value
-                    }
-
-                    symbol.summary.push(...template.summary)
+                    symbol.apply(template)
                 }
             }
         }

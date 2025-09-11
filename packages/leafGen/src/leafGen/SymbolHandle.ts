@@ -16,6 +16,21 @@ export class SymbolHandle {
     public readonly sites: string[] = []
     public readonly summary: string[] = []
 
+    public apply(template: SymbolHandle) {
+        this.isFunction ||= template.isFunction
+        this.isVariadicFunction ||= template.isVariadicFunction
+
+        if (template.overloads) {
+            (this.overloads ??= []).push(...template.overloads)
+        }
+
+        if (template.value) {
+            this.value ??= template.value
+        }
+
+        this.summary.push(...template.summary)
+    }
+
     public getChild(name: string) {
         return this.db.getSymbol(this.name + "." + name)
     }

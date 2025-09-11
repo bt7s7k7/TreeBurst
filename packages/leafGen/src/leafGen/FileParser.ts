@@ -2,11 +2,19 @@ import { EMPTY_ARRAY } from "../comTypes/const"
 import { unreachable } from "../comTypes/util"
 import { OPERATOR_CONSTANTS } from "./constants"
 import { FunctionOverload } from "./FunctionOverload"
+import { printWarn } from "./print"
 import { Project } from "./Project"
 import { SymbolDatabase } from "./SymbolDatabase"
 import { SymbolHandle } from "./SymbolHandle"
 
 export class ScopeInfo {
+    public isNativeHandleWrapper = false
+
+    public setNativeHandleWrapper() {
+        this.isNativeHandleWrapper = true
+        return this
+    }
+
     constructor(
         public readonly symbol: SymbolHandle,
         public readonly indent: number,
@@ -165,6 +173,70 @@ export class FileParser {
 
                     (scope.symbol.overloads ??= []).push(...FunctionOverload.makeBinaryOperator(this.db, this.db.getSymbol(types[1]), this.db.getSymbol(types[2])))
                 }
+            }
+        }
+
+        const nativeHandleWrapper = line.match(/new NativeHandleWrapper<.*?>\("(\w+)", ([\w.]+)\.class/)
+        if (nativeHandleWrapper) {
+            const name = nativeHandleWrapper[1]
+            const className = nativeHandleWrapper[2]
+            if (name != className) {
+                printWarn(`Native handle name mismatch: "${name}" != ${className}.class`)
+            }
+
+            const symbol = this.db.getSymbol(name).getChild("prototype")
+            symbol.sites.push(this.getSite())
+            this.scopes.push(new ScopeInfo(symbol, indent + 1).setNativeHandleWrapper())
+            this.parseAdditionalInfo()
+            return
+        }
+
+        const ensurePrototype = line.match(/(\w+).WRAPPER.ensurePrototype\(/)
+        if (ensurePrototype) {
+            const name = ensurePrototype[1]
+            const symbol = this.db.getSymbol(name)
+            symbol.isEntry = true
+            symbol.sites.push(this.getSite())
+            this.scopes.push(new ScopeInfo(symbol, indent + 1))
+            this.parseAdditionalInfo()
+            return
+        }
+
+        if (scope.isNativeHandleWrapper) {
+            const addGetter = line.match(/addGetter\("(\w+)"/)
+            if (addGetter) {
+                const name = addGetter[1]
+                const symbol = scope.symbol.getChild(name)
+                symbol.sites.push(this.getSite())
+                this.scopes.push(new ScopeInfo(symbol, indent + 1))
+                this.parseAdditionalInfo()
+                return
+            }
+
+            const addProperty = line.match(/addProperty\("(\w+)"/)
+            if (addProperty) {
+                const name = addProperty[1]
+                const symbol = scope.symbol.getChild(name)
+                symbol.sites.push(this.getSite())
+                this.scopes.push(new ScopeInfo(symbol, indent + 1))
+                this.parseAdditionalInfo()
+                return
+            }
+
+            const addMethod = line.match(/addMethod\("(\w+)"/)
+            if (addMethod) {
+                const name = addMethod[1]
+                const symbol = scope.symbol.getChild(name)
+                symbol.sites.push(this.getSite())
+                symbol.isFunction = true
+                symbol.isPendingExplicitParameters = true
+
+                const overload = this.parseOverload()
+                if (overload) (symbol.overloads ??= []).push(overload)
+
+                this.scopes.push(new ScopeInfo(symbol, indent + 1))
+                this.parseDeclarationValue()
+                return
             }
         }
 
