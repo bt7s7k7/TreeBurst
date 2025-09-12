@@ -171,7 +171,10 @@ export class FileParser {
                         scope.symbol.isPendingExplicitParameters = false
                     }
 
-                    (scope.symbol.overloads ??= []).push(...FunctionOverload.makeBinaryOperator(this.db, this.db.getSymbol(types[1]), this.db.getSymbol(types[2])))
+                    const left = this.db.findManagedSymbolByNativeClass(types[1])
+                    const right = this.db.findManagedSymbolByNativeClass(types[2])
+
+                    void (scope.symbol.overloads ??= []).push(...FunctionOverload.makeBinaryOperator(this.db, left, right))
                 }
             }
         }
