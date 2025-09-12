@@ -76,8 +76,9 @@ export const cli = new Cli("leaf-gen")
         name: "build", desc: "Builds documentation",
         options: {
             path: Type.string.as(Type.nullable),
+            markdown: Type.boolean.as(Type.nullable),
         },
-        async callback({ path }) {
+        async callback({ path, markdown }) {
             path ??= process.cwd()
             const project = await Project.load(path)
 
@@ -89,9 +90,16 @@ export const cli = new Cli("leaf-gen")
             await rm(docsPath, { recursive: true, force: true })
             await mkdir(docsPath, { recursive: true })
 
-            for (const page of builder.buildMarkdown()) {
-                printInfo("Writing: " + page.filename)
-                await writeFile(join(docsPath, page.filename), page.build())
+            if (markdown) {
+                for (const page of builder.buildMarkdown()) {
+                    printInfo("Writing: " + page.filename)
+                    await writeFile(join(docsPath, page.filename), page.build())
+                }
+            } else {
+                for (const page of builder.buildHtml()) {
+                    printInfo("Writing: " + page.filename)
+                    await writeFile(join(docsPath, page.filename), page.html)
+                }
             }
         },
     })

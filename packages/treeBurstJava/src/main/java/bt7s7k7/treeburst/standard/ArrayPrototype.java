@@ -30,7 +30,7 @@ public class ArrayPrototype extends LazyTable {
 	protected void initialize() {
 		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
 			// @summary[[Gets or sets an element at the requested index. If an index outside the
-			// array is specified, an exception is generated. As always, the index element may be
+			// array is specified, an exception is generated. As always, the index may be
 			// negative to index from the end of the array, where `-1` is the last element and so
 			// on.]]
 			ManagedArray self;
@@ -72,7 +72,7 @@ public class ArrayPrototype extends LazyTable {
 			// @summary[[Gets or sets an element at the requested index. If an index outside the
 			// array is specified, it returns {@link void} when reading or the length of array is
 			// extended on writing (all added elements are filled with {@link null}). As always, the
-			// index element may be negative to index from the end of the array, where `-1` is the
+			// index may be negative to index from the end of the array, where `-1` is the
 			// last element and so on.]]
 			ManagedArray self;
 			int index;
@@ -158,7 +158,7 @@ public class ArrayPrototype extends LazyTable {
 
 		this.declareProperty("slice", NativeFunction.simple(this.globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
 			// @summary[[Creates a copy of a section of the array starting at `from` and ending at
-			// `to` (or the end of the array if not provided). As always, the index element may be
+			// `to` (or the end of the array if not provided). As always, the index may be
 			// negative to index from the end of the array, where `-1` is the last element and so
 			// on.]]
 			if (args.size() == 2) {
@@ -185,7 +185,7 @@ public class ArrayPrototype extends LazyTable {
 			// @summary[[Removes a section of the array at `index` of length `delete`. Optionally
 			// replacing this section with the elements of `insert`. If the `delete` argument is
 			// `0`, this function is equivalent to an insertion function; in this case the `index`
-			// may point to just after the end of the array. As always, the index element may be
+			// may point to just after the end of the array. As always, the index may be
 			// negative to index from the end of the array, where `-1` is the last element and so
 			// on.]]
 			if (args.size() == 3) {

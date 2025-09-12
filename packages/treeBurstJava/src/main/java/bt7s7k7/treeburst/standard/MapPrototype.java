@@ -80,19 +80,19 @@ public class MapPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("keys", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			// @summary: Returns an array, containing keys of all the entries in the map.
+			// @summary: Returns an {@link Array}, containing keys of all the entries in the map.
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.keySet()));
 		}));
 
 		this.declareProperty("values", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			// @summary: Returns an array, containing values of all the entries in the map.
+			// @summary: Returns an {@link Array}, containing values of all the entries in the map.
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.values()));
 		}));
 
 		this.declareProperty("entries", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
-			// @summary: Returns an array, containing all the entries in the map.
+			// @summary: Returns an {@link Array}, containing all the entries in the map.
 			var self = args.get(0).getMapValue();
 			var entries = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.size()));
 

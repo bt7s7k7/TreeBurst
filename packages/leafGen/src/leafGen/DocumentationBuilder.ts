@@ -1,5 +1,8 @@
 import { relative } from "node:path"
+import templateHtml from "../../template.html"
 import { ensureKey, isWord, iteratorNth } from "../comTypes/util"
+import { MmlHtmlRenderer } from "../miniML/MmlHtmlRenderer"
+import { MmlParser } from "../miniML/MmlParser"
 import { Project } from "./Project"
 import { SymbolDatabase } from "./SymbolDatabase"
 import { SymbolHandle } from "./SymbolHandle"
@@ -17,6 +20,14 @@ export class Page {
 export class MarkdownPageBuilder {
     protected readonly _result: string[] = []
 
+    public makeAnchoredText(text: string) {
+        return `[${text}]{id="${this.owner.symbolNameToAnchor(text)}"}`
+    }
+
+    public add(line: string) {
+        this._result.push(line)
+    }
+
     public addHeading(text: string) {
         this._result.push("\n# " + text + "\n")
     }
@@ -27,9 +38,9 @@ export class MarkdownPageBuilder {
 
     public addSymbolHeading(symbol: SymbolHandle) {
         if (this.owner.rootSymbols.has(symbol)) {
-            this._result.push(`### <code>${this.tryMakeLink(symbol)}</code>`)
+            this._result.push(`### <code>${this.makeAnchoredText(this.tryMakeLink(symbol))}</code>`)
         } else {
-            this._result.push(`### \`${symbol.name}\``)
+            this._result.push(`### \`${this.makeAnchoredText(symbol.name)}\``)
         }
     }
 
@@ -52,7 +63,7 @@ export class MarkdownPageBuilder {
         }
 
         if (symbol.value) {
-            this._result.push(`**Type:** ${this.tryMakeLink(symbol.value)}`)
+            this._result.push(`**Type:** <code>${this.tryMakeLink(symbol.value)}</code>`)
             this._result.push("")
         }
 
@@ -65,6 +76,8 @@ export class MarkdownPageBuilder {
                 })
             this._result.push(summary + "\n")
         }
+
+        this._result.push("<hr/>")
     }
 
     public addSymbol(symbol: SymbolHandle) {
@@ -82,7 +95,7 @@ export class MarkdownPageBuilder {
     }
 
     public tryMakeLink(symbol: SymbolHandle) {
-        const link = this.owner.findLinkToSymbol(symbol, ".md")
+        const link = this.owner.findLinkToSymbol(symbol, this.extension)
         if (link) return `[${symbol.name}](${link})`
         return `${symbol.name}`
     }
@@ -93,6 +106,7 @@ export class MarkdownPageBuilder {
 
     constructor(
         public readonly owner: DocumentationBuilder,
+        public readonly extension: string,
         public readonly filename: string,
     ) { }
 }
@@ -144,12 +158,17 @@ export class DocumentationBuilder {
         }
     }
 
+    public symbolNameToAnchor(name: string) {
+        if (name == "null") name = "symbol null"
+        return name.toLowerCase().replace(/[^\w .-]/g, "").replace(/[ .]/g, "-").replace(/-{2,}/g, "-")
+    }
+
     public findLinkToSymbol(symbol: SymbolHandle, extension: string) {
         const prints = this.printedSymbols.get(symbol)
         if (prints == null) return null
 
         const page = iteratorNth(prints)
-        const symbolHeading = symbol.name.toLowerCase().replace(/[^\w ]/g, "").replace(/ /g, "-").replace(/-{2,}/g, "-")
+        const symbolHeading = this.symbolNameToAnchor(symbol.name)
         return this.getFilenameForPage(page, extension) + "#" + symbolHeading
     }
 
@@ -157,14 +176,15 @@ export class DocumentationBuilder {
         return page == this.globalPage ? "index" + extension : page.rootSymbol.name + extension
     }
 
-    public *buildMarkdown() {
+    public *buildMarkdown(extension = ".md") {
         for (const page of this.pages) {
-            const builder = new MarkdownPageBuilder(this, this.getFilenameForPage(page, ".md"))
+            const builder = new MarkdownPageBuilder(this, extension, this.getFilenameForPage(page, extension))
 
             if (page == this.globalPage) {
-                builder.addHeading("Reference")
+                builder.addHeading(builder.makeAnchoredText("Reference"))
             } else {
-                builder.addHeading(page.rootSymbol.name)
+                builder.add("[Back](index.html)")
+                builder.addHeading(builder.makeAnchoredText(page.rootSymbol.name))
 
                 if (page.rootPrototypeSymbol) {
                     builder.addSites(page.rootSymbol.sites.concat(page.rootPrototypeSymbol.sites))
@@ -191,6 +211,23 @@ export class DocumentationBuilder {
             }
 
             yield builder
+        }
+    }
+
+    public *buildHtml(extension = ".html") {
+        const renderer = new MmlHtmlRenderer()
+
+        for (const markdown of this.buildMarkdown(extension)) {
+            const parser = new MmlParser(markdown.build(), {})
+
+            const root = parser.parseDocument()
+            const html = renderer.render(root)
+
+            const output = templateHtml
+                .replace(/{{BODY}}/, html)
+                .replace(/{{TITLE}}/, markdown.filename)
+
+            yield { filename: markdown.filename, html: output }
         }
     }
 
