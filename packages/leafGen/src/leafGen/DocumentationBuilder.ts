@@ -105,6 +105,7 @@ export class MarkdownPageBuilder {
     }
 
     constructor(
+        public readonly title: string,
         public readonly owner: DocumentationBuilder,
         public readonly extension: string,
         public readonly filename: string,
@@ -178,9 +179,15 @@ export class DocumentationBuilder {
 
     public *buildMarkdown(extension = ".md") {
         for (const page of this.pages) {
-            const builder = new MarkdownPageBuilder(this, extension, this.getFilenameForPage(page, extension))
+            const builder = new MarkdownPageBuilder(
+                (page == this.globalPage ? "Reference" : page.rootSymbol.name) + " - " + this.project.title,
+                this, extension, this.getFilenameForPage(page, extension),
+            )
+
+            const inserts = this.project.getInsertsForFilename(builder.filename, ".md")
 
             if (page == this.globalPage) {
+                builder.add(inserts.join("\n"))
                 builder.addHeading(builder.makeAnchoredText("Reference"))
             } else {
                 builder.add("[Back](index.html)")
@@ -193,6 +200,8 @@ export class DocumentationBuilder {
                 }
 
                 builder.addSymbolInfo(page.rootSymbol)
+                builder.add(inserts.join("\n"))
+
                 if (page.rootPrototypeSymbol) builder.addSymbolInfo(page.rootPrototypeSymbol)
             }
 
@@ -218,14 +227,18 @@ export class DocumentationBuilder {
         const renderer = new MmlHtmlRenderer()
 
         for (const markdown of this.buildMarkdown(extension)) {
+
             const parser = new MmlParser(markdown.build(), {})
 
             const root = parser.parseDocument()
-            const html = renderer.render(root)
+
+            const inserts = this.project.getInsertsForFilename(markdown.filename, ".html")
+
+            const html = inserts.join("\n") + "\n" + renderer.render(root)
 
             const output = templateHtml
                 .replace(/{{BODY}}/, html)
-                .replace(/{{TITLE}}/, markdown.filename)
+                .replace(/{{TITLE}}/, markdown.title)
 
             yield { filename: markdown.filename, html: output }
         }

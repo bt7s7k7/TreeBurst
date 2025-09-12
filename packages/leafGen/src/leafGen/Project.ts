@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs"
 import { readdir, readFile, writeFile } from "node:fs/promises"
-import { join, relative } from "node:path"
+import { extname, join, relative } from "node:path"
 import { EMPTY_ARRAY } from "../comTypes/const"
+import { ensureKey } from "../comTypes/util"
 import { Struct } from "../struct/Struct"
 import { Type } from "../struct/Type"
 import { FileParser } from "./FileParser"
@@ -22,8 +24,10 @@ export class SymbolFactoryDefinition extends Struct.define("SymbolFactoryDefinit
 export class Project extends Struct.define("Project", {
     sourceRoot: Type.string,
     docsPath: Type.string,
+    title: Type.string.as(Type.withDefault, () => "Project"),
     excludedFiles: Type.string.as(Type.array).as(Type.nullable).as(Type.withDefault, () => []),
     symbolFactories: SymbolFactoryDefinition.ref().as(Type.array).as(Type.nullable).as(Type.withDefault, () => []),
+    inserts: Type.string.as(Type.map).as(Type.nullable).as(Type.withDefault, () => new Map() as never),
 }) {
     public path: string = null!
 
@@ -63,6 +67,33 @@ export class Project extends Struct.define("Project", {
 
         db.postProcessSymbols()
         return db
+    }
+
+    protected _cachedInserts = new Map<string, string>()
+    public getInsertsForFilename(filename: string, extension: string) {
+        if (this.inserts == null) return EMPTY_ARRAY as never
+
+        const result: string[] = []
+
+        for (const [key, value] of this.inserts) {
+            const insertExtension = extname(value)
+            if (insertExtension != extension) continue
+
+            if (key.startsWith("*") && key.endsWith("*")) {
+                if (!filename.includes(key)) continue
+            } else if (key.startsWith("*")) {
+                if (!filename.endsWith(key.slice(1))) continue
+            } else if (key.endsWith("*")) {
+                if (!filename.startsWith(key.slice(0, -1))) continue
+            } else {
+                if (filename != key) continue
+            }
+
+            const content = ensureKey(this._cachedInserts, value, () => readFileSync(join(this.path, value), "utf-8"))
+            result.push(content)
+        }
+
+        return result as readonly string[]
     }
 
     public static instance: Project = null!

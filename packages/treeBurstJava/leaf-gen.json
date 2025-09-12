@@ -1,4 +1,5 @@
 {
+	"title": "TreeBurst",
 	"sourceRoot": "src/main/java/bt7s7k7/treeburst",
 	"docsPath": "docs-build",
 	"excludedFiles": [
@@ -10,5 +11,8 @@
 			"template": "<template>numberOperator",
 			"owner": "Number.prototype"
 		}
-	]
+	],
+	"inserts": {
+		"index.*": "docs/index.md"
+	}
 }
