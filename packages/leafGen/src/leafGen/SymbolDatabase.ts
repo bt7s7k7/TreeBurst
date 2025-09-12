@@ -8,6 +8,7 @@ const _MANAGED_SYMBOL_BY_CLASS = new Map([
     ["ManagedTable", "Table"],
     ["ManagedArray", "Array"],
     ["ManagedMap", "Map"],
+    ["ManagedFunction", "Function"],
     ["ManagedValue", "any"],
 ])
 
@@ -38,6 +39,10 @@ export class SymbolDatabase {
         parent?.children.push(symbol)
 
         return symbol
+    }
+
+    public tryGetSymbol(name: string) {
+        return this._symbols.get(name) ?? null
     }
 
     public getSymbolNames() {

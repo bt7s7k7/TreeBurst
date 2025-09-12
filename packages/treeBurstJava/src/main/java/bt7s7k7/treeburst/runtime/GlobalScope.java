@@ -95,24 +95,24 @@ public class GlobalScope extends Scope {
 	}
 
 	static {
-		makeNumberOperator(OperatorConstants.OPERATOR_ADD, (a, b) -> Primitive.from(a + b));
-		makeNumberOperator(OperatorConstants.OPERATOR_SUB, (a, b) -> Primitive.from(a - b));
-		makeNumberOperator(OperatorConstants.OPERATOR_MUL, (a, b) -> Primitive.from(a * b));
-		makeNumberOperator(OperatorConstants.OPERATOR_DIV, (a, b) -> Primitive.from(a / b));
-		makeNumberOperator(OperatorConstants.OPERATOR_MOD, (a, b) -> Primitive.from(a % b));
-		makeNumberOperator(OperatorConstants.OPERATOR_POW, (a, b) -> Primitive.from(Math.pow(a, b)));
+		makeNumberOperator(OperatorConstants.OPERATOR_ADD, (a, b) -> Primitive.from(a + b)); // @summary: Adds two numbers together.
+		makeNumberOperator(OperatorConstants.OPERATOR_SUB, (a, b) -> Primitive.from(a - b)); // @summary: Subtracts the second number from the first one.
+		makeNumberOperator(OperatorConstants.OPERATOR_MUL, (a, b) -> Primitive.from(a * b)); // @summary: Multiplies two numbers together.
+		makeNumberOperator(OperatorConstants.OPERATOR_DIV, (a, b) -> Primitive.from(a / b)); // @summary: Divides the first number by the second one.
+		makeNumberOperator(OperatorConstants.OPERATOR_MOD, (a, b) -> Primitive.from(a % b)); // @summary: Returns the remainder of the first number when divided by the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_POW, (a, b) -> Primitive.from(Math.pow(a, b))); // @summary: Puts the first number to the second's power.
 
-		makeNumberOperator(OperatorConstants.OPERATOR_LT, (a, b) -> Primitive.from(a < b));
-		makeNumberOperator(OperatorConstants.OPERATOR_GT, (a, b) -> Primitive.from(a > b));
-		makeNumberOperator(OperatorConstants.OPERATOR_GTE, (a, b) -> Primitive.from(a >= b));
-		makeNumberOperator(OperatorConstants.OPERATOR_LTE, (a, b) -> Primitive.from(a <= b));
+		makeNumberOperator(OperatorConstants.OPERATOR_LT, (a, b) -> Primitive.from(a < b)); // @summary: Returns `true` if the first number is less than the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_GT, (a, b) -> Primitive.from(a > b)); // @summary: Returns `true` if the first number is greater than the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_GTE, (a, b) -> Primitive.from(a >= b)); // @summary: Returns `true` if the first number is greater or equal to the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_LTE, (a, b) -> Primitive.from(a <= b)); // @summary: Returns `true` if the first number is less or equal to the second.
 
-		makeNumberOperator(OperatorConstants.OPERATOR_BIT_XOR, (a, b) -> Primitive.from((int) a ^ (int) b));
-		makeNumberOperator(OperatorConstants.OPERATOR_BIT_AND, (a, b) -> Primitive.from((int) a & (int) b));
-		makeNumberOperator(OperatorConstants.OPERATOR_BIT_OR, (a, b) -> Primitive.from((int) a | (int) b));
-		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHL, (a, b) -> Primitive.from((int) a << (int) b));
-		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHR, (a, b) -> Primitive.from((int) a >> (int) b));
-		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHR_UNSIGNED, (a, b) -> Primitive.from((int) a >>> (int) b));
+		makeNumberOperator(OperatorConstants.OPERATOR_BIT_XOR, (a, b) -> Primitive.from((int) a ^ (int) b)); // @summary: Performs a bitwise XOR over the two numbers, calculated using 32-bit signed integers.
+		makeNumberOperator(OperatorConstants.OPERATOR_BIT_AND, (a, b) -> Primitive.from((int) a & (int) b)); // @summary: Performs a bitwise AND over the two numbers, calculated using 32-bit signed integers.
+		makeNumberOperator(OperatorConstants.OPERATOR_BIT_OR, (a, b) -> Primitive.from((int) a | (int) b)); // @summary: Performs a bitwise OR over the two numbers, calculated using 32-bit signed integers.
+		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHL, (a, b) -> Primitive.from((int) a << (int) b)); // @summary: Shifts the bits in the first number left by the value of the second number, calculated using 32-bit signed integers.
+		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHR, (a, b) -> Primitive.from((int) a >> (int) b)); // @summary: Shifts the bits in the first number right by the value of the second number, calculated using 32-bit signed integers.
+		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHR_UNSIGNED, (a, b) -> Primitive.from((int) a >>> (int) b)); // @summary: Shifts the bits in the first number right by the value of the second number, calculated using 32-bit unsigned integers.
 	}
 
 	public final ManagedTable TablePrototype = new ManagedTable(null);
@@ -122,13 +122,13 @@ public class GlobalScope extends Scope {
 	public final ManagedTable Function = this.declareGlobal("Function", new ManagedTable(this.TablePrototype));
 
 	public final ManagedTable NumberPrototype = new ManagedTable(this.TablePrototype); /// @symbol:Number.prototype
-	public final ManagedTable Number = this.declareGlobal("Number", new ManagedTable(this.TablePrototype));
+	public final ManagedTable Number = this.declareGlobal("Number", new ManagedTable(this.TablePrototype)); // @summary: Represents a real number.
 
 	public final ManagedTable StringPrototype = new ManagedTable(this.TablePrototype); /// @symbol:String.prototype
-	public final ManagedTable String = this.declareGlobal("String", new ManagedTable(this.TablePrototype));
+	public final ManagedTable String = this.declareGlobal("String", new ManagedTable(this.TablePrototype)); // @summary: Represents a string of characters.
 
 	public final ManagedTable BooleanPrototype = new ManagedTable(this.TablePrototype); /// @symbol:Boolean.prototype
-	public final ManagedTable Boolean = this.declareGlobal("Boolean", new ManagedTable(this.TablePrototype));
+	public final ManagedTable Boolean = this.declareGlobal("Boolean", new ManagedTable(this.TablePrototype)); // @summary: Represents a truth value of either `true` or `false`.
 
 	public final ManagedTable ArrayPrototype = new ArrayPrototype(this.TablePrototype, this);
 	public final ManagedTable Array = this.declareGlobal("Array", new ManagedTable(this.TablePrototype));
@@ -181,10 +181,10 @@ public class GlobalScope extends Scope {
 	public GlobalScope() {
 		super();
 
-		this.declareGlobal("true", Primitive.TRUE);
-		this.declareGlobal("false", Primitive.FALSE);
-		this.declareGlobal("null", Primitive.NULL);
-		this.declareGlobal("void", Primitive.VOID);
+		this.declareGlobal("true", Primitive.TRUE); // @type: Boolean, @summary: Constant value of `true`
+		this.declareGlobal("false", Primitive.FALSE); // @type: Boolean, @summary: Constant value of `false`
+		this.declareGlobal("null", Primitive.NULL); // @summary: Object representing an empty value
+		this.declareGlobal("void", Primitive.VOID); // @summary: Object representing a missing or non-existent value.
 
 		if (!this.Function.declareProperty("prototype", this.FunctionPrototype)) throw new IllegalStateException();
 		if (!this.Number.declareProperty("prototype", this.NumberPrototype)) throw new IllegalStateException();
@@ -202,10 +202,12 @@ public class GlobalScope extends Scope {
 		}
 
 		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_NEG, NativeFunction.simple(this.globalScope, List.of("this"), List.of(Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Returns a number with an inverted sign.
 			result.value = Primitive.from(-((Primitive.Number) args.get(0)).value);
 		}));
 
 		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(Primitive.Number.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Formats the number into a textual form.
 			var self = args.get(0).getNumberValue();
 
 			var string = Double.toString(self);
@@ -217,15 +219,18 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_NOT, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(Primitive.Boolean.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Returns an inverted value of the boolean.
 			result.value = Primitive.from(!((Primitive.Boolean) args.get(0)).value);
 		}));
 
 		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this"), List.of(Primitive.Boolean.class), (args, scope, result) -> {
+			// @summary: Formats the boolean into a textual form.
 			var self = args.get(0).getBooleanValue();
 			result.value = Primitive.from(java.lang.Boolean.toString(self));
 		}));
 
 		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+			// @summary: Concatenates two strings together.
 			String left, right;
 
 			if (args.size() == 2) {
@@ -246,15 +251,18 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this.globalScope, List.of("this"), List.of(Primitive.String.class), (args, scope, result) -> {
+			// @summary: Returns the string unchanged.
 			result.value = args.get(0);
 		}));
 
 		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Formats the string into a textual form, which is surrounded by `"` characters and all special characters are escaped.
 			var self = args.get(0).getStringValue();
 			result.value = Primitive.from("\"" + Primitive.String.escapeString(self) + "\"");
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
+			// @summary: This object is converted to a {@link Boolean}. If the result is `true`, the `other` expression is evaluated and the result retuned, otherwise this object is returned.
 			var predicateResult = args.get(0);
 			var predicateValue = ensureBoolean(predicateResult, scope, result);
 			if (result.label != null) return;
@@ -269,6 +277,7 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_OR, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
+			// @summary: This object is converted to a {@link Boolean}. If the result is `true` this object is retuned, otherwise the `other` expression is evaluated and the result retuned.
 			var predicateResult = args.get(0);
 			var predicateValue = ensureBoolean(predicateResult, scope, result);
 			if (result.label != null) return;
@@ -283,6 +292,7 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_COALESCE, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
+			// @summary: If this object is not {@link null} or {@link void}, it is returned, otherwise the `other` expression is evaluated and the result retuned.
 			var predicateResult = args.get(0);
 			if (result.label != null) return;
 
@@ -296,6 +306,7 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_ELSE, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
+			// @summary: If this object is not {@link void}, it is returned, otherwise the `other` expression is evaluated and the result retuned.
 			var predicateResult = args.get(0);
 			if (result.label != null) return;
 
@@ -309,6 +320,7 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_BOOLEAN, NativeFunction.simple(this.globalScope, List.of("this"), (args, scope, result) -> {
+			// @summary: This object is converted to a {@link Boolean}.
 			var self = args.get(0);
 
 			if (self.equals(Primitive.FALSE) || self.equals(Primitive.ZERO) || self.equals(Primitive.EMPTY_STRING) || self == Primitive.VOID) {
@@ -319,10 +331,16 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(this.globalScope, List.of("this", "other"), (args, scope, result) -> {
+			// @summary[[Returns `true` if this object is equal by reference to the other object.
+			// This function returns inconsistent results for objects of type {@link String} and
+			// {@link Number}, and should not be used with them. The intended use is for reference
+			// comparisons between compound objects and {@link null} or {@link void}, without using
+			// their overload of the `k_eq` operator.]]
 			result.value = Primitive.from(args.get(0) == args.get(1));
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedValue.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Formats the value into a textual form.
 			var self = args.get(0);
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
 
@@ -340,6 +358,9 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this.globalScope, List.of("this"), (args, scope, result) -> {
+			// @summary: Formats the value into a textual form, using its `k_dump` implementation
+			// with `depth` of `1`. An exception is an {@link void} object, in which case an empty
+			// string is returned.
 			var self = args.get(0);
 
 			if (self == Primitive.VOID) {
@@ -351,6 +372,7 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(this.globalScope, List.of("this", "receiver", "arguments"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {
+			// @summary: Calls the function with the specified receiver and arguments, returning its return value.
 			var self = args.get(0).getFunctionValue();
 			var receiver = args.get(1);
 			var arguments = args.get(2).getArrayValue();
@@ -359,11 +381,20 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.declareGlobal("unreachable", NativeFunction.simple(this.globalScope, Collections.emptyList(), (args, scope, result) -> {
+			// @summary: Specifies that this portion of the code should not be reachable in standard operation. If it is reached an exception is generated.
 			result.setException(new Diagnostic("Reached unreachable code", Position.INTRINSIC));
 			return;
 		}));
 
 		this.declareGlobal("@if", new NativeFunction(this.FunctionPrototype, Collections.emptyList(), (args, scope, result) -> {
+			// @summary[[Selects expressions to execute based on predicates. Expected arguments
+			// follow a repeating pattern of `condition` + `result`, where the `condition`
+			// expression should return a {@link Boolean} or a value that can be converted to such.
+			// These pairs are evaluated in order, where if the result of the `condition` expression
+			// is `true`, the `result` expression is evaluated and returned. Otherwise the
+			// evaluation of the `result` is skipped and the next pair is evaluated. Optionally, a
+			// fallback expression may be added as the last argument, which will be evaluated and
+			// returned if no conditions return `true`.]]
 			for (int i = 0; i < args.size(); i += 2) {
 				if (args.size() - i < 2) {
 					var elseValue = ensureExpression(args.get(i), result);
@@ -393,6 +424,9 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.declareGlobal("@while", NativeFunction.simple(this.globalScope, List.of("predicate", "body"), List.of(Expression.class, Expression.class), (args, scope, result) -> {
+			// @summary[[Repeatedly evaluates the `predicate` expression, which is expected to
+			// return a {@link Boolean} or be convertible to such. If `true` is returned, the `body`
+			// expression is executed, otherwise the cycle is terminated.]]
 			var predicate = args.get(0).getNativeValue(Expression.class);
 			var body = args.get(1).getNativeValue(Expression.class);
 			if (result.label != null) return;
@@ -414,11 +448,15 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.declareGlobal("return", NativeFunction.simple(this.globalScope, List.of("value?"), (args, scope, result) -> {
+			// @summary: Aborts the execution of the current function, optionally retuning the provided value.
 			result.value = args.isEmpty() ? Primitive.VOID : args.get(0);
 			result.label = LABEL_RETURN;
 		}));
 
 		this.declareGlobal("goto", NativeFunction.simple(this.globalScope, List.of("label"), List.of(Primitive.String.class), (args, scope, result) -> {
+			// @summary[[Switches execution to a label with the specified name. This label must be
+			// in a block that is at the same level as this invocation or in a parent block that is
+			// still in the same function.]]
 			result.value = Primitive.VOID;
 			result.label = args.get(0).getStringValue();
 		}));

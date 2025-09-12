@@ -1,8 +1,12 @@
 import { readdir, readFile, writeFile } from "node:fs/promises"
-import { join } from "node:path"
+import { join, relative } from "node:path"
+import { EMPTY_ARRAY } from "../comTypes/const"
 import { Struct } from "../struct/Struct"
 import { Type } from "../struct/Type"
+import { FileParser } from "./FileParser"
+import { SymbolDatabase } from "./SymbolDatabase"
 import { UserError } from "./UserError"
+import { printInfo } from "./print"
 
 export class SymbolFactoryDefinition extends Struct.define("SymbolFactoryDefinition", {
     pattern: Type.string,
@@ -17,6 +21,7 @@ export class SymbolFactoryDefinition extends Struct.define("SymbolFactoryDefinit
 
 export class Project extends Struct.define("Project", {
     sourceRoot: Type.string,
+    docsPath: Type.string,
     excludedFiles: Type.string.as(Type.array).as(Type.nullable).as(Type.withDefault, () => []),
     symbolFactories: SymbolFactoryDefinition.ref().as(Type.array).as(Type.nullable).as(Type.withDefault, () => []),
 }) {
@@ -40,6 +45,24 @@ export class Project extends Struct.define("Project", {
         }
 
         return files
+    }
+
+    public async parseFiles() {
+        const db = new SymbolDatabase()
+        const excludedFiles = new Set(this.excludedFiles ?? EMPTY_ARRAY)
+
+        for (const file of await this.getFileList()) {
+            const name = relative(this.path, file)
+            if (excludedFiles.has(name)) continue
+            printInfo("Processing: " + name)
+            const fileContent = await readFile(file, "utf-8")
+            const lines = fileContent.split("\n")
+            const parser = new FileParser(file, lines, this, db)
+            parser.parse()
+        }
+
+        db.postProcessSymbols()
+        return db
     }
 
     public static instance: Project = null!

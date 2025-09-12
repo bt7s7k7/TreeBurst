@@ -16,6 +16,12 @@ export class SymbolHandle {
     public readonly sites: string[] = []
     public readonly summary: string[] = []
 
+    public getShortName() {
+        const dot = this.name.lastIndexOf(".")
+        if (dot == -1) return this.name
+        return this.name.slice(dot + 1)
+    }
+
     public apply(template: SymbolHandle) {
         this.isFunction ||= template.isFunction
         this.isVariadicFunction ||= template.isVariadicFunction

@@ -20,6 +20,7 @@ import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
 public class ArrayPrototype extends LazyTable {
+	// @summary: Allows the storage of an ordered list of elements, each indexed by a number starting from `0`.
 
 	public ArrayPrototype(ManagedObject prototype, GlobalScope globalScope) {
 		super(prototype, globalScope);
@@ -28,6 +29,10 @@ public class ArrayPrototype extends LazyTable {
 	@Override
 	protected void initialize() {
 		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+			// @summary[[Gets or sets an element at the requested index. If an index outside the
+			// array is specified, an exception is generated. As always, the index element may be
+			// negative to index from the end of the array, where `-1` is the last element and so
+			// on.]]
 			ManagedArray self;
 			int index;
 			ManagedValue value = null;
@@ -64,6 +69,11 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("tryAt", NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+			// @summary[[Gets or sets an element at the requested index. If an index outside the
+			// array is specified, it returns {@link void} when reading or the length of array is
+			// extended on writing (all added elements are filled with {@link null}). As always, the
+			// index element may be negative to index from the end of the array, where `-1` is the
+			// last element and so on.]]
 			ManagedArray self;
 			int index;
 			ManagedValue value = null;
@@ -115,6 +125,7 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("truncate", NativeFunction.simple(this.globalScope, List.of("this", "length"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Sets the length of the array to the provided value. If the new length is shorter, elements at the end are discarded. If the length is longer, new elements are filled with {@link null}.
 			var self = args.get(0).getArrayValue();
 			var length = (int) args.get(1).getNumberValue();
 
@@ -133,17 +144,23 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+			// @summary: Creates a copy of the array.
 			var self = args.get(0).getArrayValue();
 			result.value = new ManagedArray(self.prototype, new ArrayList<>(self.elements));
 		}));
 
 		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+			// @summary: Removes all elements in the array.
 			var self = args.get(0).getArrayValue();
 			self.elements.clear();
 			result.value = Primitive.VOID;
 		}));
 
 		this.declareProperty("slice", NativeFunction.simple(this.globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
+			// @summary[[Creates a copy of a section of the array starting at `from` and ending at
+			// `to` (or the end of the array if not provided). As always, the index element may be
+			// negative to index from the end of the array, where `-1` is the last element and so
+			// on.]]
 			if (args.size() == 2) {
 				args = ensureArgumentTypes(args, List.of("this", "from"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);
 			} else {
@@ -165,6 +182,12 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("splice", NativeFunction.simple(this.globalScope, List.of("this", "index", "delete", "insert?"), (args, scope, result) -> {
+			// @summary[[Removes a section of the array at `index` of length `delete`. Optionally
+			// replacing this section with the elements of `insert`. If the `delete` argument is
+			// `0`, this function is equivalent to an insertion function; in this case the `index`
+			// may point to just after the end of the array. As always, the index element may be
+			// negative to index from the end of the array, where `-1` is the last element and so
+			// on.]]
 			if (args.size() == 3) {
 				args = ensureArgumentTypes(args, List.of("this", "index", "delete"), List.of(ManagedArray.class, Primitive.Number.class, Primitive.Number.class), scope, result);
 			} else {
@@ -195,16 +218,19 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("append", NativeFunction.simple(this.globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
+			// @summary: Appends the provided elements to the end of the array.
 			var self = args.get(0).getArrayValue();
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, args.get(1)), scope, result);
 		}));
 
 		this.declareProperty("prepend", NativeFunction.simple(this.globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
+			// @summary: Prepends the provided elements before the start of the array.
 			var self = args.get(0).getArrayValue();
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, args.get(1)), scope, result);
 		}));
 
 		this.declareProperty("pop", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+			// @summary: Removes the last element of the array and returns it. If the array is empty returns {@link void}.
 			var self = args.get(0).getArrayValue();
 			var removedValue = self.elements.size() > 0 ? self.elements.getLast() : Primitive.VOID;
 
@@ -216,6 +242,7 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("shift", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+			// @summary: Removes the first element of the array and returns it. If the array is empty returns {@link void}.
 			var self = args.get(0).getArrayValue();
 			var removedValue = self.elements.size() > 0 ? self.elements.getFirst() : Primitive.VOID;
 
@@ -227,6 +254,7 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("push", new NativeFunction(this.globalScope.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
+			// @summary: Adds an element after the end of the array.
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
 
@@ -236,6 +264,7 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("unshift", new NativeFunction(this.globalScope.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
+			// @summary: Adds an element before the start of the array.
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
 
@@ -245,6 +274,7 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Formats the array into a textual form.
 			var self = args.get(0).getArrayValue();
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
 

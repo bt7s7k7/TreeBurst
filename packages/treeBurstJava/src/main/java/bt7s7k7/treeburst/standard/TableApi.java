@@ -12,6 +12,7 @@ import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.Position;
 
 public class TableApi extends LazyTable {
+	// @summary[[Represents an object with properties.]]
 
 	public TableApi(ManagedObject prototype, GlobalScope globalScope) {
 		super(prototype, globalScope);
@@ -22,6 +23,7 @@ public class TableApi extends LazyTable {
 		this.declareProperty("prototype", this.globalScope.TablePrototype);
 
 		this.declareProperty("new", NativeFunction.simple(this.globalScope, List.of("this"), (args, scope, result) -> {
+			// @summary: Creates a new object that inherits from this table's `prototype` property, assuming it exists. Otherwise an exception is generated.
 			var self = args.get(0);
 
 			if (!findProperty(self, self, "prototype", scope, result)) {

@@ -142,6 +142,8 @@ export class FileParser {
                 const symbol = this.db.getSymbol(factoryDefinition.owner).getChild(name)
                 symbol.sites.push(this.getSite())
                 void (symbol.templates ??= []).push(this.db.getSymbol(factoryDefinition.template))
+                this.scopes.push(new ScopeInfo(symbol, indent + 1))
+                this.parseAdditionalInfo()
                 return
             }
         }
@@ -322,19 +324,31 @@ export class FileParser {
             scope.symbol.isFunction = true
         }
 
-        const summary = line.match(/@summary:\s([^@]*)/)
+        const summary = line.match(/@summary:\s?(.*)/)
         if (summary) {
             scope.symbol.summary.push(summary[1])
         }
 
-        const multilineSummary = line.match(/@summary\[\[(.*)/)
+        const multilineSummary = line.match(/@summary\[\[/)
         if (multilineSummary) {
-            if (multilineSummary[1].trim()) scope.symbol.summary.push(multilineSummary[1])
-            this.line++
+            let start = multilineSummary.index! + 10
+
             for (; this.line < this.lines.length; this.line++) {
+                let shouldBreak = false
                 line = this.lines[this.line]
-                if (line.includes("]]")) break
+
+                if (start != 0) {
+                    line = line.slice(start)
+                    start = 0
+                }
+
+                if (line.trimEnd().endsWith("]]")) {
+                    line = line.trimEnd().slice(0, -2)
+                    shouldBreak = true
+                }
+
                 let trimmedLine = line.trim()
+
                 if (trimmedLine.startsWith("* ")) {
                     scope.symbol.summary.push(trimmedLine.slice(2))
                 } else if (trimmedLine.startsWith("// ")) {
@@ -344,6 +358,8 @@ export class FileParser {
                 } else {
                     scope.symbol.summary.push(line)
                 }
+
+                if (shouldBreak) break
             }
         }
     }

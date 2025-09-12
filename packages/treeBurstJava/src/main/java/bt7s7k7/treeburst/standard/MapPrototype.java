@@ -20,6 +20,7 @@ import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
 public class MapPrototype extends LazyTable {
+	// @summary: Allows the storage of an unordered set of entries, indexed by a key, which may be any type of value.
 
 	public MapPrototype(ManagedObject prototype, GlobalScope globalScope) {
 		super(prototype, globalScope);
@@ -28,6 +29,7 @@ public class MapPrototype extends LazyTable {
 	@Override
 	protected void initialize() {
 		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+			// @summary: Gets or sets an entry in the map. When writing, if the `value` is {@link void}, the selected entry is deleted. When reading, if the selected entry does not exist, a {@link void} is returned.
 			if (args.size() <= 2) {
 				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedMap.class, ManagedValue.class), scope, result);
 				if (result.label != null) return;
@@ -65,27 +67,32 @@ public class MapPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			// @summary: Creates a copy of the map.
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedMap(self.prototype, new HashMap<>(self.entries));
 		}));
 
 		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			// @summary: Removes all entries in the map.
 			var self = args.get(0).getMapValue();
 			self.entries.clear();
 			result.value = Primitive.VOID;
 		}));
 
 		this.declareProperty("keys", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			// @summary: Returns an array, containing keys of all the entries in the map.
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.keySet()));
 		}));
 
 		this.declareProperty("values", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			// @summary: Returns an array, containing values of all the entries in the map.
 			var self = args.get(0).getMapValue();
 			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.values()));
 		}));
 
 		this.declareProperty("entries", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+			// @summary: Returns an array, containing all the entries in the map.
 			var self = args.get(0).getMapValue();
 			var entries = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.size()));
 
@@ -97,6 +104,7 @@ public class MapPrototype extends LazyTable {
 		}));
 
 		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedMap.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Formats the map into a textual form.
 			var self = args.get(0).getMapValue();
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
 

@@ -1,11 +1,10 @@
-import { readFile } from "node:fs/promises"
-import { relative } from "node:path"
+import { mkdir, rm, writeFile } from "node:fs/promises"
+import { join } from "node:path"
 import { Cli } from "./cli/Cli"
 import { EMPTY_ARRAY } from "./comTypes/const"
-import { FileParser } from "./leafGen/FileParser"
+import { DocumentationBuilder } from "./leafGen/DocumentationBuilder"
 import { print, printError, printInfo } from "./leafGen/print"
 import { Project } from "./leafGen/Project"
-import { SymbolDatabase } from "./leafGen/SymbolDatabase"
 import { UserError } from "./leafGen/UserError"
 import { Type } from "./struct/Type"
 
@@ -23,7 +22,7 @@ export const cli = new Cli("leaf-gen")
         },
     })
     .addOption({
-        name: "info", desc: "Verifies the project config and print all included files",
+        name: "info", desc: "Prints all referenced symbols along with their information",
         options: {
             path: Type.string.as(Type.nullable),
         },
@@ -31,34 +30,7 @@ export const cli = new Cli("leaf-gen")
             path ??= process.cwd()
             const project = await Project.load(path)
 
-            for (const file of await project.getFileList()) {
-                print(relative(project.path, file))
-            }
-        },
-    })
-    .addOption({
-        name: "build", desc: "Scans project files and generates documentation",
-        options: {
-            path: Type.string.as(Type.nullable),
-        },
-        async callback({ path }) {
-            path ??= process.cwd()
-            const project = await Project.load(path)
-
-            const db = new SymbolDatabase()
-            const excludedFiles = new Set(project.excludedFiles ?? EMPTY_ARRAY)
-
-            for (const file of await project.getFileList()) {
-                const name = relative(project.path, file)
-                if (excludedFiles.has(name)) continue
-                printInfo("Processing: " + name)
-                const fileContent = await readFile(file, "utf-8")
-                const lines = fileContent.split("\n")
-                const parser = new FileParser(file, lines, project, db)
-                parser.parse()
-            }
-
-            db.postProcessSymbols()
+            const db = await project.parseFiles()
 
             const symbols = Array.from(db.getSymbolNames())
             symbols.sort()
@@ -97,6 +69,29 @@ export const cli = new Cli("leaf-gen")
                 for (const site of symbol.sites) {
                     print(`    \x1b[2m${site}\x1b[0m`)
                 }
+            }
+        },
+    })
+    .addOption({
+        name: "build", desc: "Builds documentation",
+        options: {
+            path: Type.string.as(Type.nullable),
+        },
+        async callback({ path }) {
+            path ??= process.cwd()
+            const project = await Project.load(path)
+
+            const db = await project.parseFiles()
+            const builder = new DocumentationBuilder(project, db)
+            builder.sortSymbols()
+
+            const docsPath = join(project.path, project.docsPath)
+            await rm(docsPath, { recursive: true, force: true })
+            await mkdir(docsPath, { recursive: true })
+
+            for (const page of builder.buildMarkdown()) {
+                printInfo("Writing: " + page.filename)
+                await writeFile(join(docsPath, page.filename), page.build())
             }
         },
     })

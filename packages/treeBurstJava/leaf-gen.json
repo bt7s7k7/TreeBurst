@@ -1,5 +1,6 @@
 {
 	"sourceRoot": "src/main/java/bt7s7k7/treeburst",
+	"docsPath": "docs-build",
 	"excludedFiles": [
 		"src/main/java/bt7s7k7/treeburst/standard/NativeHandleWrapper.java"
 	],

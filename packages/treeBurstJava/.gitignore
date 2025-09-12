@@ -27,6 +27,7 @@ repo
 *.local
 src/generated/resources
 src/main/resources/assets/supervisory/textures
+/docs-build
 
 # UCPEM
 ucpem_ports
