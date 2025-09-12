@@ -319,6 +319,18 @@ export class FileParser {
             void (scope.symbol.templates ??= []).push(template)
         }
 
+        const usePrototype = line.match(/@prototype:\s?([\w.<>]+)/)
+        if (usePrototype) {
+            const prototype = this.db.getSymbol(usePrototype[1])
+            let target = scope.symbol
+
+            if (!target.name.endsWith(".prototype")) {
+                target = target.getChild("prototype")
+            }
+
+            target.prototype = prototype
+        }
+
         const forceFunction = line.match(/@kind:\s?function/)
         if (forceFunction) {
             scope.symbol.isFunction = true
@@ -327,6 +339,11 @@ export class FileParser {
         const summary = line.match(/@summary:\s?(.*)/)
         if (summary) {
             scope.symbol.summary.push(summary[1])
+        }
+
+        const entry = line.match(/@entry-symbol/)
+        if (entry) {
+            scope.symbol.isEntry = true
         }
 
         const multilineSummary = line.match(/@summary\[\[/)

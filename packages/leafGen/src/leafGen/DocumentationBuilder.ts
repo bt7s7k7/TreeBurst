@@ -1,6 +1,6 @@
 import { relative } from "node:path"
 import templateHtml from "../../template.html"
-import { ensureKey, isWord, iteratorNth } from "../comTypes/util"
+import { createSortFunction, ensureKey, isAlpha, iteratorNth } from "../comTypes/util"
 import { MmlHtmlRenderer } from "../miniML/MmlHtmlRenderer"
 import { MmlParser } from "../miniML/MmlParser"
 import { Project } from "./Project"
@@ -8,10 +8,19 @@ import { SymbolDatabase } from "./SymbolDatabase"
 import { SymbolHandle } from "./SymbolHandle"
 
 export class Page {
-    public readonly instanceSymbols = new Set<SymbolHandle>()
-    public readonly staticSymbols = new Set<SymbolHandle>()
+    public readonly instanceSymbols: SymbolHandle[] = []
+    public readonly staticSymbols: SymbolHandle[] = []
+
+    public getSuperclassPage() {
+        if (this.rootPrototypeSymbol == null) return null
+        const prototype = this.rootPrototypeSymbol.prototype
+        if (prototype == null) return null
+        const page = this.owner.rootSymbols.get(prototype)
+        return page ?? null
+    }
 
     constructor(
+        public readonly owner: DocumentationBuilder,
         public readonly rootSymbol: SymbolHandle,
         public readonly rootPrototypeSymbol: SymbolHandle | null,
     ) { }
@@ -80,11 +89,16 @@ export class MarkdownPageBuilder {
         this._result.push("<hr/>")
     }
 
-    public addSymbol(symbol: SymbolHandle) {
+    public addSymbol(symbol: SymbolHandle, from: SymbolHandle | null) {
         this.addSymbolHeading(symbol)
 
         if (!this.owner.rootSymbols.has(symbol)) {
             this.addSites(symbol.sites)
+        }
+
+        if (from != null) {
+            this.add(`**Inherited from:** <code>${this.tryMakeLink(from)}</code>`)
+            this._result.push("")
         }
 
         this.addSymbolInfo(symbol)
@@ -113,10 +127,10 @@ export class MarkdownPageBuilder {
 }
 
 export class DocumentationBuilder {
-    public readonly globalPage = new Page(this.db.globalScope, null)
+    public readonly globalPage = new Page(this, this.db.globalScope, null)
     public readonly pages: Page[] = [this.globalPage]
     public readonly printedSymbols = new Map<SymbolHandle, Set<Page>>()
-    public readonly rootSymbols = new Set<SymbolHandle>()
+    public readonly rootSymbols = new Map<SymbolHandle, Page>()
 
     public markPrintedSymbol(symbol: SymbolHandle, page: Page) {
         ensureKey(this.printedSymbols, symbol, () => new Set()).add(page)
@@ -131,22 +145,27 @@ export class DocumentationBuilder {
             if (!symbol.isEntry) continue
 
             const prototype = this.db.tryGetSymbol(symbolName + ".prototype")
-            const isRoot = prototype != null || (isWord(symbolName, 0) && symbolName[0] == symbolName[0].toUpperCase())
+            const isRoot = prototype != null
+                || (isAlpha(symbolName, 0) && symbolName[0] == symbolName[0].toUpperCase())
+                || (symbolName[0] == "_" && isAlpha(symbolName, 1) && symbolName[1] == symbolName[1].toUpperCase())
+
             if (isRoot) {
-                const page = new Page(symbol, prototype)
+                const page = new Page(this, symbol, prototype)
                 this.pages.push(page)
-                this.rootSymbols.add(symbol)
+                this.rootSymbols.set(symbol, page)
                 this.markPrintedSymbol(symbol, page)
 
                 for (const child of symbol.children) {
                     if (child == prototype) continue
-                    page.staticSymbols.add(child)
+                    page.staticSymbols.push(child)
                 }
 
                 if (prototype) {
+                    this.rootSymbols.set(prototype, page)
                     this.markPrintedSymbol(prototype, page)
+
                     for (const child of prototype.children) {
-                        page.instanceSymbols.add(child)
+                        page.instanceSymbols.push(child)
                     }
 
                     symbol.summary.push(...prototype.summary)
@@ -154,8 +173,13 @@ export class DocumentationBuilder {
                 }
             }
 
-            this.globalPage.staticSymbols.add(symbol)
+            this.globalPage.staticSymbols.push(symbol)
             if (!isRoot) this.markPrintedSymbol(symbol, this.globalPage)
+        }
+
+        for (const page of this.pages) {
+            page.staticSymbols.sort(createSortFunction(v => v.name, "ascending"))
+            page.instanceSymbols.sort(createSortFunction(v => v.name, "ascending"))
         }
     }
 
@@ -205,17 +229,38 @@ export class DocumentationBuilder {
                 if (page.rootPrototypeSymbol) builder.addSymbolInfo(page.rootPrototypeSymbol)
             }
 
-            if (page.staticSymbols.size > 0) {
-                if (page != this.globalPage) builder.addSubheading("Static Properties")
+            const emitHeadings = page != this.globalPage && page.staticSymbols.length > 0 && page.instanceSymbols.length > 0
+
+            if (page.staticSymbols.length > 0) {
+                if (emitHeadings) builder.addSubheading("Static Properties")
                 for (const symbol of page.staticSymbols) {
-                    builder.addSymbol(symbol)
+                    builder.addSymbol(symbol, null)
                 }
             }
 
-            if (page.instanceSymbols.size > 0) {
-                if (page != this.globalPage) builder.addSubheading("Instance Properties")
+            const overriddenNames = new Set<string>()
+
+            if (page.instanceSymbols.length > 0) {
+                if (emitHeadings) builder.addSubheading("Instance Properties")
+
                 for (const symbol of page.instanceSymbols) {
-                    builder.addSymbol(symbol)
+                    builder.addSymbol(symbol, null)
+                    overriddenNames.add(symbol.getShortName())
+                }
+            }
+
+            const superSymbols: { symbol: SymbolHandle, from: SymbolHandle }[] = []
+            for (let superPage = page.getSuperclassPage(); superPage != null; superPage = superPage.getSuperclassPage()) {
+                superSymbols.push(...superPage.instanceSymbols.map(symbol => ({ symbol, from: superPage.rootSymbol })))
+            }
+
+            if (superSymbols.length > 0) {
+                builder.addSubheading("Inherited Properties")
+                for (const { symbol, from } of superSymbols) {
+                    if (overriddenNames.has(symbol.getShortName())) continue
+
+                    builder.addSymbol(symbol, from)
+                    overriddenNames.add(symbol.getShortName())
                 }
             }
 
