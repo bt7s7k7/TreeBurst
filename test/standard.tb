@@ -655,3 +655,9 @@ assertEqual(output, "s12")
 $array = []
 "element" -> array.tryAt(0)
 assertEqual(array[0], "element")
+
+// Test: conditional operator
+assertEqual(true ? "a" : "b", "a")
+assertEqual(false ? "a" : 5 + 7, 12)
+assertEqual(false ? "a" : true ? 5 + 7 : 4 / 2, 12)
+assertEqual(false ? "a" : false ? 5 + 7 : 4 / 2, 2)

@@ -17,7 +17,7 @@ import bt7s7k7.treeburst.support.Position;
 
 public class TreeBurstParser extends GenericParser {
 	public enum OperatorType {
-		INVOCATION, ASSIGNMENT, PIPELINE, MEMBER_ACCESS, VARIABLE_DECLARATION
+		INVOCATION, ASSIGNMENT, PIPELINE, MEMBER_ACCESS, VARIABLE_DECLARATION, SPECIAL_SYNTAX
 	}
 
 	public static class Operator {
@@ -72,6 +72,11 @@ public class TreeBurstParser extends GenericParser {
 		public static OperatorInstance makeAdvancedAssignment(Position position, String token) {
 			return new OperatorInstance(position, token, true);
 		}
+
+		@Override
+		public Position position() {
+			return this.position;
+		}
 	}
 
 	public List<Diagnostic> diagnostics = new ArrayList<>();
@@ -100,30 +105,32 @@ public class TreeBurstParser extends GenericParser {
 
 		_INFIX_OPERATORS = new LinkedHashMap<>();
 		_INFIX_OPERATORS.put("=", new Operator(0, OperatorType.ASSIGNMENT).withResultPrecedence(0));
-		_INFIX_OPERATORS.put("->", new Operator(1, OperatorType.PIPELINE));
-		_INFIX_OPERATORS.put("&&", new Operator(1, OperatorConstants.OPERATOR_AND));
-		_INFIX_OPERATORS.put("||", new Operator(1, OperatorConstants.OPERATOR_OR));
-		_INFIX_OPERATORS.put("??", new Operator(1, OperatorConstants.OPERATOR_COALESCE));
-		_INFIX_OPERATORS.put("else", new Operator(1, OperatorConstants.OPERATOR_ELSE).setIsNameWord());
-		_INFIX_OPERATORS.put("<", new Operator(2, OperatorConstants.OPERATOR_LT));
-		_INFIX_OPERATORS.put("<=", new Operator(2, OperatorConstants.OPERATOR_LTE));
-		_INFIX_OPERATORS.put(">", new Operator(2, OperatorConstants.OPERATOR_GT));
-		_INFIX_OPERATORS.put(">=", new Operator(2, OperatorConstants.OPERATOR_GTE));
-		_INFIX_OPERATORS.put("==", new Operator(2, OperatorConstants.OPERATOR_EQ));
-		_INFIX_OPERATORS.put("is", new Operator(2, OperatorConstants.OPERATOR_IS).setIsNameWord());
-		_INFIX_OPERATORS.put("!=", new Operator(2, OperatorConstants.OPERATOR_NEQ));
-		_INFIX_OPERATORS.put("^", new Operator(3, OperatorConstants.OPERATOR_BIT_XOR));
-		_INFIX_OPERATORS.put("&", new Operator(3, OperatorConstants.OPERATOR_BIT_AND));
-		_INFIX_OPERATORS.put("|", new Operator(3, OperatorConstants.OPERATOR_BIT_OR));
-		_INFIX_OPERATORS.put("<<", new Operator(4, OperatorConstants.OPERATOR_BIT_SHL));
-		_INFIX_OPERATORS.put(">>", new Operator(4, OperatorConstants.OPERATOR_BIT_SHR));
-		_INFIX_OPERATORS.put(">>>", new Operator(4, OperatorConstants.OPERATOR_BIT_SHR_UNSIGNED));
-		_INFIX_OPERATORS.put("+", new Operator(5, OperatorConstants.OPERATOR_ADD));
-		_INFIX_OPERATORS.put("-", new Operator(5, OperatorConstants.OPERATOR_SUB));
-		_INFIX_OPERATORS.put("*", new Operator(6, OperatorConstants.OPERATOR_MUL));
-		_INFIX_OPERATORS.put("/", new Operator(6, OperatorConstants.OPERATOR_DIV));
-		_INFIX_OPERATORS.put("%", new Operator(6, OperatorConstants.OPERATOR_MOD));
-		_INFIX_OPERATORS.put("**", new Operator(7, OperatorConstants.OPERATOR_POW).withResultPrecedence(5));
+		_INFIX_OPERATORS.put("?", new Operator(1, OperatorType.SPECIAL_SYNTAX));
+		_INFIX_OPERATORS.put(":", new Operator(1, OperatorType.SPECIAL_SYNTAX).withResultPrecedence(1));
+		_INFIX_OPERATORS.put("->", new Operator(2, OperatorType.PIPELINE));
+		_INFIX_OPERATORS.put("&&", new Operator(2, OperatorConstants.OPERATOR_AND));
+		_INFIX_OPERATORS.put("||", new Operator(2, OperatorConstants.OPERATOR_OR));
+		_INFIX_OPERATORS.put("??", new Operator(2, OperatorConstants.OPERATOR_COALESCE));
+		_INFIX_OPERATORS.put("else", new Operator(2, OperatorConstants.OPERATOR_ELSE).setIsNameWord());
+		_INFIX_OPERATORS.put("<", new Operator(3, OperatorConstants.OPERATOR_LT));
+		_INFIX_OPERATORS.put("<=", new Operator(3, OperatorConstants.OPERATOR_LTE));
+		_INFIX_OPERATORS.put(">", new Operator(3, OperatorConstants.OPERATOR_GT));
+		_INFIX_OPERATORS.put(">=", new Operator(3, OperatorConstants.OPERATOR_GTE));
+		_INFIX_OPERATORS.put("==", new Operator(3, OperatorConstants.OPERATOR_EQ));
+		_INFIX_OPERATORS.put("is", new Operator(3, OperatorConstants.OPERATOR_IS).setIsNameWord());
+		_INFIX_OPERATORS.put("!=", new Operator(3, OperatorConstants.OPERATOR_NEQ));
+		_INFIX_OPERATORS.put("^", new Operator(4, OperatorConstants.OPERATOR_BIT_XOR));
+		_INFIX_OPERATORS.put("&", new Operator(4, OperatorConstants.OPERATOR_BIT_AND));
+		_INFIX_OPERATORS.put("|", new Operator(4, OperatorConstants.OPERATOR_BIT_OR));
+		_INFIX_OPERATORS.put("<<", new Operator(5, OperatorConstants.OPERATOR_BIT_SHL));
+		_INFIX_OPERATORS.put(">>", new Operator(5, OperatorConstants.OPERATOR_BIT_SHR));
+		_INFIX_OPERATORS.put(">>>", new Operator(5, OperatorConstants.OPERATOR_BIT_SHR_UNSIGNED));
+		_INFIX_OPERATORS.put("+", new Operator(6, OperatorConstants.OPERATOR_ADD));
+		_INFIX_OPERATORS.put("-", new Operator(6, OperatorConstants.OPERATOR_SUB));
+		_INFIX_OPERATORS.put("*", new Operator(7, OperatorConstants.OPERATOR_MUL));
+		_INFIX_OPERATORS.put("/", new Operator(7, OperatorConstants.OPERATOR_DIV));
+		_INFIX_OPERATORS.put("%", new Operator(7, OperatorConstants.OPERATOR_MOD));
+		_INFIX_OPERATORS.put("**", new Operator(8, OperatorConstants.OPERATOR_POW).withResultPrecedence(8));
 		_INFIX_OPERATORS.put(".", new Operator(100, OperatorType.MEMBER_ACCESS));
 
 		_OPERATOR_TOKENS = Stream.concat(_PREFIX_OPERATORS.entrySet().stream(), _INFIX_OPERATORS.entrySet().stream())
@@ -653,6 +660,28 @@ public class TreeBurstParser extends GenericParser {
 						}
 
 						target = new Expression.Assignment(nextOpInstance.position, operand, target);
+					} else if (infixOperator.type == OperatorType.SPECIAL_SYNTAX) {
+						if (nextOpInstance.token.equals("?")) {
+							var joinToken = this.peekToken();
+
+							if (joinToken == null || !(joinToken instanceof OperatorInstance join && join.token == ":")) {
+								this.createDiagnostic("Expected ':' token for conditional operator", joinToken == null ? this.getPosition() : joinToken.position());
+								return null;
+							}
+
+							this.nextToken();
+
+							var alternative = this.parseExpression(infixOperator.resultPrecedence);
+							if (alternative == null) {
+								this.createDiagnostic("Expected alternative expression for conditional operator");
+								return null;
+							}
+
+							target = new Expression.Invocation(
+									nextOpInstance.position,
+									new Expression.Identifier(nextOpInstance.position, "@if"),
+									List.of(target, operand, alternative));
+						}
 					} else {
 						throw new IllegalStateException("Invalid infix operator type: " + infixOperator.type);
 					}
