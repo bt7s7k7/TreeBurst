@@ -2,6 +2,7 @@ package bt7s7k7.treeburst.standard;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import java.util.function.Function;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
+import bt7s7k7.treeburst.runtime.ManagedFunction;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.support.Diagnostic;
@@ -291,6 +293,56 @@ public class ArrayPrototype extends LazyTable {
 			var header = self.toString();
 			result.value = Primitive.from(header);
 		}));
-	}
 
+		this.declareProperty("map", NativeFunction.simple(this.globalScope, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
+			// @summary[[Creates a new array with the results of calling `function` on every
+			// element. The function is called with `value` of the element, the `index` of the
+			// element and a reference to this `array`. If `function` returns {@link void}, the
+			// element is discarded and the resulting array is shorter.]]
+			var self = args.get(0).getArrayValue();
+			var function = args.get(1).getFunctionValue();
+
+			var output = new ManagedArray(this.globalScope.ArrayPrototype);
+
+			for (int i = 0; i < self.elements.size(); i++) {
+				var element = self.elements.get(i);
+
+				evaluateInvocation(Primitive.VOID, Primitive.VOID, function, Position.INTRINSIC, List.of(element, Primitive.from(i), self), scope, result);
+				if (result.label != null) return;
+
+				var resultElement = result.value;
+				if (result.value == Primitive.VOID) continue;
+
+				output.elements.add(resultElement);
+			}
+
+			result.value = output;
+		}));
+
+		this.declareProperty("filter", NativeFunction.simple(this.globalScope, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
+			// @summary[[Creates a new array with only the elements for which `function` returned
+			// `true`. The function is called with `value` of the element, the `index` of the
+			// element and a reference to this `array`.]]
+			var self = args.get(0).getArrayValue();
+			var function = args.get(1).getFunctionValue();
+
+			var output = new ManagedArray(this.globalScope.ArrayPrototype);
+
+			for (int i = 0; i < self.elements.size(); i++) {
+				var element = self.elements.get(i);
+
+				evaluateInvocation(Primitive.VOID, Primitive.VOID, function, Position.INTRINSIC, List.of(element, Primitive.from(i), self), scope, result);
+				if (result.label != null) return;
+
+				var resultElement = ensureBoolean(result.value, scope, result);
+				if (result.label != null) return;
+
+				if (resultElement.value) {
+					output.elements.add(element);
+				}
+			}
+
+			result.value = output;
+		}));
+	}
 }
