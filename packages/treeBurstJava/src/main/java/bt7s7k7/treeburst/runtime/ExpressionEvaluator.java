@@ -200,19 +200,19 @@ public class ExpressionEvaluator {
 		evaluateInvocation(receiver, container, Primitive.from(methodName), position, args, scope, result);
 	}
 
-	public static void evaluateInvocation(ManagedValue receiver, ManagedValue container, ManagedValue function_1, Position position, List<ManagedValue> args, Scope scope, ExpressionResult result) {
-		if (function_1 instanceof Primitive.String primitiveString) {
+	public static void evaluateInvocation(ManagedValue receiver, ManagedValue container, ManagedValue function, Position position, List<ManagedValue> args, Scope scope, ExpressionResult result) {
+		if (function instanceof Primitive.String primitiveString) {
 			var functionName = primitiveString.value;
 			if (!findProperty(container, container, functionName, scope, result)) {
 				result.setException(new Diagnostic("Cannot find method \"" + getValueName(container) + "." + functionName + "\"", position));
 				return;
 			}
 
-			function_1 = result.value;
+			function = result.value;
 		}
 
-		if (!(function_1 instanceof ManagedFunction managedFunction)) {
-			result.setException(new Diagnostic("Target \"" + getValueName(container) + "\" is not callable", position));
+		if (!(function instanceof ManagedFunction managedFunction)) {
+			result.setException(new Diagnostic("Target \"" + getValueName(function) + "\" is not callable", position));
 			return;
 		}
 
