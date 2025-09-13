@@ -530,6 +530,29 @@ public class TreeBurstParser extends GenericParser {
 			} else {
 				this._token = null;
 				body = this.consumeExpression();
+
+				// Detect the use of placeholders and replace them with newly created parameters.
+				// For example the function `\? + 1` will be converted to `\(_p_0) _p_0 + 1`.
+				body = body.transform(new Expression.Transformer() {
+					@Override
+					public Expression apply(Expression expression) {
+						if (expression instanceof Expression.Placeholder) {
+							var index = parameters.size();
+							var name = "_p_" + index;
+							parameters.add(name);
+							return new Expression.Identifier(expression.position(), name);
+						}
+
+						return expression;
+					}
+
+					@Override
+					public boolean canApply(Expression expression) {
+						// Prevent from visiting child function declarations. They would have
+						// replaced their own placeholders anyway.
+						return !(expression instanceof Expression.FunctionDeclaration);
+					}
+				});
 			}
 
 			this._tokenStart = start;
@@ -596,9 +619,18 @@ public class TreeBurstParser extends GenericParser {
 		if (targetToken instanceof OperatorInstance opInstance) {
 			var prefixOperator = _PREFIX_OPERATORS.get(opInstance.token);
 			if (prefixOperator == null) {
-				this.createDiagnostic("Unexpected operator", opInstance.position);
-				this.nextToken();
-				return null;
+				if (opInstance.token.equals("?")) {
+					// The token "?" can be used as an operator as part of the ternary condition
+					// operator, but it can also be used as a placeholder token in function
+					// declaration. To resolve this, we detect when "?" is **not** used as an infix
+					// operator and create a Placeholder expression node.
+					target = new Expression.Placeholder(targetToken.position());
+					this.nextToken();
+				} else {
+					this.createDiagnostic("Unexpected operator", opInstance.position);
+					this.nextToken();
+					return null;
+				}
 			} else {
 				this.nextToken();
 				var operand = this.parseExpression(prefixOperator.resultPrecedence);
@@ -664,7 +696,7 @@ public class TreeBurstParser extends GenericParser {
 						if (nextOpInstance.token.equals("?")) {
 							var joinToken = this.peekToken();
 
-							if (joinToken == null || !(joinToken instanceof OperatorInstance join && join.token == ":")) {
+							if (joinToken == null || !(joinToken instanceof OperatorInstance join && join.token.equals(":"))) {
 								this.createDiagnostic("Expected ':' token for conditional operator", joinToken == null ? this.getPosition() : joinToken.position());
 								return null;
 							}

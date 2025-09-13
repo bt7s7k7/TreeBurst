@@ -661,3 +661,44 @@ assertEqual(true ? "a" : "b", "a")
 assertEqual(false ? "a" : 5 + 7, 12)
 assertEqual(false ? "a" : true ? 5 + 7 : 4 / 2, 12)
 assertEqual(false ? "a" : false ? 5 + 7 : 4 / 2, 2)
+
+// Test: placeholder
+$table = Table.new()
+$table.value = 5
+
+assertEqual((\?.value)(table), 5)
+
+$container = Table.new()
+$container.table = table
+
+assertEqual((\?.table.value)(container), 5)
+
+$result = Table.new()
+$result.value = 15
+
+$func = \(v) {
+    assertEqual(v, 1)
+    result
+}
+
+assertEqual((\func(?))(1), result)
+
+$table.method = \(a, b, c) {
+    assertEqual(a, 1)
+    assertEqual(b, 2)
+    assertEqual(c, 3)
+
+    return(result)
+}
+
+assertEqual((\?.table.method(1, ?, 3))(container, 2), result)
+assertEqual((\?.table.method(1, ?, 3).value)(container, 2), 15)
+
+$inc = \? + 1
+assertEqual(inc(5), 6)
+
+$x = [1, 2, 3]
+assertEqual(x.map(\? + 1).k_string(), "[2, 3, 4]")
+
+$y = [\1, \2, \3]
+assertEqual(y.map(\?()).k_string(), "[1, 2, 3]")
