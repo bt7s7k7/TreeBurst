@@ -24,7 +24,11 @@ public class ScriptFunction extends ManagedFunction {
 			String parameter = this.parameters.get(i);
 			ManagedValue arg = i < args.size() ? args.get(i) : Primitive.VOID;
 
-			functionScope.declareVariable(parameter).value = arg;
+			var variable = functionScope.declareVariable(parameter);
+			// If there is a duplicate parameter name, the declaration will fail. In this case we
+			// should just get the existing variable.
+			if (variable == null) variable = functionScope.findVariable(parameter);
+			variable.value = arg;
 		}
 
 		evaluateExpression(this.body, functionScope, result);
