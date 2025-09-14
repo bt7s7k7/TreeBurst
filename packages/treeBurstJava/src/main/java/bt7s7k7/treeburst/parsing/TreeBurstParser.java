@@ -323,6 +323,66 @@ public class TreeBurstParser extends GenericParser {
 		return new Expression.StringLiteral(this.getPosition(start), value.toString());
 	}
 
+	public Expression parseTemplate(String term) {
+		var fragments = new ArrayList<Expression>();
+		var resultArray = new Expression.ArrayLiteral(this.getPosition(), fragments);
+
+		StringBuilder fragment = null;
+		var fragmentStart = this.index;
+
+		while (!this.isDone()) {
+			var c = this.getCurrent();
+			this.index++;
+
+			if (String.valueOf(c).equals(term)) break;
+
+			if (c == '\\') {
+				if (fragment == null) {
+					fragment = new StringBuilder();
+					fragmentStart = this.index - 1;
+				}
+
+				fragment.append(this.parseEscapeSequence());
+				continue;
+			}
+
+			if (c == '$' && !this.isDone() && this.getCurrent() == '{') {
+				this.index++;
+				var statements = this.parseBlock("}");
+				var statementStart = this.index;
+
+				if (statements.isEmpty()) continue;
+
+				if (fragment != null) {
+					fragments.add(new Expression.StringLiteral(this.getPosition(fragmentStart), fragment.toString()));
+					fragment = null;
+				}
+
+				if (statements.size() == 1) {
+					fragments.add(statements.get(0));
+				} else {
+					fragments.add(new Expression.Group(this.getPosition(statementStart), statements));
+				}
+
+				continue;
+			}
+
+			if (fragment == null) {
+				fragment = new StringBuilder();
+				fragmentStart = this.index - 1;
+			}
+
+			fragment.append(c);
+		}
+
+		if (fragment != null) {
+			fragments.add(new Expression.StringLiteral(this.getPosition(fragmentStart), fragment.toString()));
+			fragment = null;
+		}
+
+		return Expression.Invocation.makeMethodCall(resultArray.position(), resultArray, "join", List.of(new Expression.StringLiteral(resultArray.position(), "")));
+	}
+
 	public Token peekToken() {
 		if (this._token == null) {
 			return this.nextToken();
@@ -385,6 +445,20 @@ public class TreeBurstParser extends GenericParser {
 		}
 
 		var start = this.index;
+
+		if (this.consume("$\"")) {
+			this._tokenStart = start;
+			return this._token = this.parseTemplate("\"");
+		}
+		if (this.consume("$'")) {
+			this._tokenStart = start;
+			return this._token = this.parseTemplate("'");
+		}
+		if (this.consume("$`")) {
+			this._tokenStart = start;
+			return this._token = this.parseTemplate("`");
+		}
+
 		for (var token : _OPERATOR_TOKENS) {
 			if (this.consume(token)) {
 				if (token.equals("-") && (Character.isLetterOrDigit(this.getCurrent()) || this.getCurrent() == '_')) {

@@ -354,6 +354,10 @@ $x = [1, true, Table.new()]
 
 assertEqual(x.join(", "), "1, true, Table()")
 
+// Test: template string
+
+assertEqual($"${1}, ${true}, ${Table.new()}", "1, true, Table()")
+
 // Test: map
 $a = 5
 $map = {a, b: true, [1]: "c"}
