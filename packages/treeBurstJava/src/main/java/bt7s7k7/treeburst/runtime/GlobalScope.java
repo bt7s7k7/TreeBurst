@@ -5,7 +5,6 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.BINARY_OPERATOR_PARAMETERS;
-import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
@@ -232,21 +231,11 @@ public class GlobalScope extends Scope {
 
 		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
 			// @summary: Concatenates two strings together.
-			String left, right;
+			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, Primitive.String.class, Primitive.String.class, args, scope, result);
+			if (result.label != null) return;
 
-			if (args.size() == 2) {
-				args = ensureArgumentTypes(args, List.of("this", "other"), List.of(Primitive.String.class, Primitive.String.class), scope, result);
-				if (result.label != null) return;
-
-				left = args.get(0).getStringValue();
-				right = args.get(1).getStringValue();
-			} else {
-				args = ensureArgumentTypes(args, List.of("this", "left", "right"), List.of(ManagedValue.class, Primitive.String.class, Primitive.String.class), scope, result);
-				if (result.label != null) return;
-
-				left = args.get(1).getStringValue();
-				right = args.get(2).getStringValue();
-			}
+			var left = operands.left().getStringValue();
+			var right = operands.right().getStringValue();
 
 			result.value = Primitive.from(left + right);
 		}));
