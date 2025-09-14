@@ -349,6 +349,11 @@ $x = [1, 2, 3]
 assertEqual(x.filter(\true).k_dump(1), "[1, 2, 3]")
 assertEqual(x.filter(\(v) v > 1).k_dump(1), "[2, 3]")
 
+// Test: array join
+$x = [1, true, Table.new()]
+
+assertEqual(x.join(", "), "1, true, Table()")
+
 // Test: map
 $a = 5
 $map = {a, b: true, [1]: "c"}

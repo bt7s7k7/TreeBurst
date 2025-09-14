@@ -3,6 +3,7 @@ package bt7s7k7.treeburst.standard;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -343,6 +344,32 @@ public class ArrayPrototype extends LazyTable {
 			}
 
 			result.value = output;
+		}));
+
+		this.declareProperty("join", NativeFunction.simple(this.globalScope, List.of("this", "separator"), List.of(ManagedArray.class, Primitive.String.class), (args, scope, result) -> {
+			// @summary[[Creates a {@link String} as that is a concatenation of all elements of the
+			// array. Elements that are not strings are converted to strings using their `k_string`
+			// method.]]
+
+			var self = args.get(0).getArrayValue();
+			var separator = args.get(1).getStringValue();
+
+			var builder = new StringBuilder();
+
+			var first = true;
+			for (var element : self.elements) {
+				if (first) {
+					first = false;
+				} else {
+					builder.append(separator);
+				}
+
+				var string = ensureString(element, scope, result);
+				if (result.label != null) return;
+				builder.append(string.value);
+			}
+
+			result.value = Primitive.from(builder.toString());
 		}));
 	}
 }
