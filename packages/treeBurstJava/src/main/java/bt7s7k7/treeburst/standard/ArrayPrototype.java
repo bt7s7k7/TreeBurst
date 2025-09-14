@@ -1,9 +1,11 @@
 package bt7s7k7.treeburst.standard;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.BINARY_OPERATOR_PARAMETERS;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.prepareBinaryOperator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -370,6 +372,37 @@ public class ArrayPrototype extends LazyTable {
 			}
 
 			result.value = Primitive.from(builder.toString());
+		}));
+
+		this.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+			// @summary[[Creates a new array that is a concatenation of the two input arrays.]]
+			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, ManagedArray.class, ManagedArray.class, args, scope, result);
+			if (result.label != null) return;
+
+			var left = operands.left().getArrayValue();
+			var right = operands.right().getArrayValue();
+			var output = new ArrayList<ManagedValue>(left.elements.size() + right.elements.size());
+
+			output.addAll(left.elements);
+			output.addAll(right.elements);
+
+			result.value = new ManagedArray(scope.globalScope.ArrayPrototype, output);
+		}));
+
+		this.declareProperty(OperatorConstants.OPERATOR_MUL, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+			// @summary[[Creates a new array that is the input array repeated `n` times.]]
+			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, ManagedArray.class, Primitive.Number.class, args, scope, result);
+			if (result.label != null) return;
+
+			var left = operands.left().getArrayValue();
+			var right = (int) operands.right().getNumberValue();
+			var output = new ArrayList<ManagedValue>(left.elements.size() * right);
+
+			for (int i = 0; i < right; i++) {
+				output.addAll(left.elements);
+			}
+
+			result.value = new ManagedArray(scope.globalScope.ArrayPrototype, output);
 		}));
 	}
 }

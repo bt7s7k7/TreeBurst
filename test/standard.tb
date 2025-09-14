@@ -358,6 +358,17 @@ assertEqual(x.join(", "), "1, true, Table()")
 
 assertEqual($"${1}, ${true}, ${Table.new()}", "1, true, Table()")
 
+// Test: array concat
+$x = [1, 2]
+$y = [3, 4]
+
+assertEqual((x + y).k_string(), "[1, 2, 3, 4]")
+
+// Test: array repeat
+$x = [1, 2]
+
+assertEqual((x * 3).k_string(), "[1, 2, 1, 2, 1, 2]")
+
 // Test: map
 $a = 5
 $map = {a, b: true, [1]: "c"}
@@ -637,6 +648,15 @@ assertEqual(null + ",a", "null,a")
 
 assertEqual("a" + void, "a")
 assertEqual(void + "a", "a")
+
+// Test: string repeat
+assertEqual("12" * 3, "121212")
+
+// Test: string pad
+assertEqual("12".pad(3), " 12")
+assertEqual("12".padLeft(3), "12 ")
+assertEqual("12".pad(3, "0"), "012")
+assertEqual("12".padLeft(3, "0"), "120")
 
 // Test: pipeline operator
 1 -> $variable

@@ -9,6 +9,7 @@ import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.prepareBinaryOperator;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.verifyArguments;
 
 import java.util.AbstractMap;
@@ -85,7 +86,7 @@ public class GlobalScope extends Scope {
 
 	private static void makeNumberOperator(String name, NumberOperatorImpl operator) {
 		NUMERIC_OPERATORS.add(new AbstractMap.SimpleEntry<>(name, (args, scope, result) -> { // @symbol: <template>numberOperator, @kind: function
-			var operands = ManagedValueUtils.prepareBinaryOperator(name, Primitive.Number.class, Primitive.Number.class, args, scope, result);
+			var operands = prepareBinaryOperator(name, Primitive.Number.class, Primitive.Number.class, args, scope, result);
 			if (operands == null) return;
 			var a = operands.left().getNumberValue();
 			var b = operands.right().getNumberValue();
@@ -259,6 +260,74 @@ public class GlobalScope extends Scope {
 			// @summary: Formats the string into a textual form, which is surrounded by `"` characters and all special characters are escaped.
 			var self = args.get(0).getStringValue();
 			result.value = Primitive.from("\"" + Primitive.String.escapeString(self) + "\"");
+		}));
+
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_MUL, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+			// @summary[[Creates a new string that is the input string repeated `n` times.]]
+			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, Primitive.String.class, Primitive.Number.class, args, scope, result);
+			if (result.label != null) return;
+
+			var left = operands.left().getStringValue();
+			var right = (int) operands.right().getNumberValue();
+			var output = new StringBuilder(left.length() * right);
+
+			for (int i = 0; i < right; i++) {
+				output.append(left);
+			}
+
+			result.value = Primitive.from(output.toString());
+		}));
+
+		this.StringPrototype.declareProperty("pad", NativeFunction.simple(this.globalScope, List.of("this", "length", "fill?"), List.of(Primitive.String.class, Primitive.Number.class, Primitive.String.class), (args, scope, result) -> {
+			// @summary[[If the string is shorter that `length`, creates a new string that is padded
+			// with the `fill` character (or space character if not provided) to reach the desired
+			// length. The string is padded to be right aligned, use {@link String.prototype.padLeft} for left alignment.]]
+
+			var self = args.get(0).getStringValue();
+			var length = (int) args.get(1).getNumberValue();
+			var fill = args.size() == 2 ? " " : args.get(2).getStringValue();
+
+			if (self.length() >= length) {
+				result.value = args.get(0);
+				return;
+			}
+
+			var builder = new StringBuilder(length);
+			var fillCount = length - self.length();
+
+			for (int i = 0; i < fillCount; i++) {
+				builder.append(fill);
+			}
+
+			builder.append(self);
+
+			result.value = Primitive.from(builder.toString());
+		}));
+
+		this.StringPrototype.declareProperty("padLeft", NativeFunction.simple(this.globalScope, List.of("this", "length", "fill?"), List.of(Primitive.String.class, Primitive.Number.class, Primitive.String.class), (args, scope, result) -> {
+			// @summary[[If the string is shorter that `length`, creates a new string that is padded
+			// with the `fill` character (or space character if not provided) to reach the desired
+			// length. The resulting string is left aligned.]]
+
+			var self = args.get(0).getStringValue();
+			var length = (int) args.get(1).getNumberValue();
+			var fill = args.size() == 2 ? " " : args.get(2).getStringValue();
+
+			if (self.length() >= length) {
+				result.value = args.get(0);
+				return;
+			}
+
+			var builder = new StringBuilder(length);
+			builder.append(self);
+
+			var fillCount = length - self.length();
+
+			for (int i = 0; i < fillCount; i++) {
+				builder.append(fill);
+			}
+
+			result.value = Primitive.from(builder.toString());
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
