@@ -823,6 +823,8 @@ public class TreeBurstParser extends GenericParser {
 							}
 
 							target = Expression.Invocation.makeMethodCall(nextOpInstance.position(), target, OperatorConstants.OPERATOR_AT, List.of(index));
+						} else if (nextOpInstance.token.equals(":")) {
+							this.createDiagnostic(_INVALID_TOKEN, nextOpInstance.position);
 						} else {
 							throw new IllegalStateException("Cannot handle special syntax infix operator of token '" + nextOpInstance.token + "'");
 						}
