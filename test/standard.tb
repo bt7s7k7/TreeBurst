@@ -308,14 +308,14 @@ assertEqual(y[3], 4)
 
 // Test: array push
 $x = [1]
-x.push(2, 3)
+assertEqual(x.push(2, 3), 3)
 assertEqual(x.length, 3)
 assertEqual(x[1], 2)
 assertEqual(x[2], 3)
 
 // Test: array append
 $x = [1]
-x.append([2, 3])
+assertEqual(x.append([2, 3]), x)
 assertEqual(x.length, 3)
 assertEqual(x[1], 2)
 assertEqual(x[2], 3)
@@ -326,16 +326,22 @@ $last = x.pop()
 assertEqual(x.length, 1)
 assertEqual(last, 2)
 
+// Test: array shift
+$x = [1, 2]
+$first = x.shift()
+assertEqual(x.length, 1)
+assertEqual(first, 1)
+
 // Test: array unshift
 $x = [1]
-x.unshift(-1, "pre")
+assertEqual(x.unshift(-1, "pre"), "pre")
 assertEqual(x.length, 3)
 assertEqual(x[0], -1)
 assertEqual(x[1], "pre")
 
 // Test: array prepend
 $x = [1]
-x.prepend([-1, "pre"])
+assertEqual(x.prepend([-1, "pre"]), x)
 assertEqual(x.length, 3)
 assertEqual(x[0], -1)
 assertEqual(x[1], "pre")

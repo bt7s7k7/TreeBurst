@@ -223,15 +223,19 @@ public class ArrayPrototype extends LazyTable {
 		}));
 
 		this.declareProperty("append", NativeFunction.simple(this.globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
-			// @summary: Appends the provided elements to the end of the array.
+			// @summary: Appends the provided elements to the end of the array. Returns the current array.
 			var self = args.get(0).getArrayValue();
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, args.get(1)), scope, result);
+			var elements = args.get(1);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, elements), scope, result);
+			result.value = self;
 		}));
 
 		this.declareProperty("prepend", NativeFunction.simple(this.globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
-			// @summary: Prepends the provided elements before the start of the array.
+			// @summary: Prepends the provided elements before the start of the array. Returns the current array.
 			var self = args.get(0).getArrayValue();
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, args.get(1)), scope, result);
+			var elements = args.get(1);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, elements), scope, result);
+			result.value = self;
 		}));
 
 		this.declareProperty("pop", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
@@ -240,10 +244,9 @@ public class ArrayPrototype extends LazyTable {
 			var removedValue = self.elements.size() > 0 ? self.elements.getLast() : Primitive.VOID;
 
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(-1), Primitive.from(1)), scope, result);
+			if (result.label != null) return;
 
-			if (result.label == null) {
-				result.value = removedValue;
-			}
+			result.value = removedValue;
 		}));
 
 		this.declareProperty("shift", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
@@ -252,30 +255,45 @@ public class ArrayPrototype extends LazyTable {
 			var removedValue = self.elements.size() > 0 ? self.elements.getFirst() : Primitive.VOID;
 
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.from(1)), scope, result);
+			if (result.label != null) return;
 
-			if (result.label == null) {
-				result.value = removedValue;
-			}
+			result.value = removedValue;
 		}));
 
 		this.declareProperty("push", new NativeFunction(this.globalScope.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
-			// @summary: Adds an element after the end of the array.
+			// @summary: Adds an element after the end of the array. Returns the last added value.
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
 
 			var self = args_1.get(0).getArrayValue();
+
+			if (args.size() == 1) {
+				// If there are no elements to add, don't even call splice
+				result.value = Primitive.VOID;
+				return;
+			}
+
 			var elementsToAdd = new ManagedArray(this, args.subList(1, args.size()));
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, elementsToAdd), scope, result);
+			result.value = args.getLast();
 		}));
 
 		this.declareProperty("unshift", new NativeFunction(this.globalScope.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
-			// @summary: Adds an element before the start of the array.
+			// @summary: Adds an element before the start of the array. Returns the last added value.
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
 
 			var self = args_1.get(0).getArrayValue();
+
+			if (args.size() == 1) {
+				// If there are no elements to add, don't even call splice
+				result.value = Primitive.VOID;
+				return;
+			}
+
 			var elementsToAdd = new ManagedArray(this, args.subList(1, args.size()));
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, elementsToAdd), scope, result);
+			result.value = args.getLast();
 		}));
 
 		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
