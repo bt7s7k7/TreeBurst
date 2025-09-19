@@ -307,11 +307,11 @@
             "patterns": [
                 {
                     "name": "variable.constant.tree-burst",
-                    "match": "\\b[A-Z][A-Z0-9]+\\b"
+                    "match": "\\b_*[A-Z][A-Z0-9_]+\\b"
                 },
                 {
                     "name": "support.class.tree-burst",
-                    "match": "(?<!\\.)[A-Z][\\w]+"
+                    "match": "(?<!\\.)_*[A-Z][\\w]+"
                 },
                 {
                     "name": "entity.name.function.tree-burst",
