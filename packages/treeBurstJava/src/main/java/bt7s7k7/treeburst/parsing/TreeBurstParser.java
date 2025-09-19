@@ -109,7 +109,7 @@ public class TreeBurstParser extends GenericParser {
 		_INFIX_OPERATORS.put("=", new Operator(0, OperatorType.ASSIGNMENT).withResultPrecedence(0));
 		_INFIX_OPERATORS.put("?", new Operator(1, OperatorType.SPECIAL_SYNTAX));
 		_INFIX_OPERATORS.put(":", new Operator(1, OperatorType.SPECIAL_SYNTAX).withResultPrecedence(1));
-		_INFIX_OPERATORS.put("->", new Operator(2, OperatorType.PIPELINE));
+		_INFIX_OPERATORS.put("|>", new Operator(2, OperatorType.PIPELINE));
 		_INFIX_OPERATORS.put("&&", new Operator(2, OperatorConstants.OPERATOR_AND));
 		_INFIX_OPERATORS.put("||", new Operator(2, OperatorConstants.OPERATOR_OR));
 		_INFIX_OPERATORS.put("??", new Operator(2, OperatorConstants.OPERATOR_COALESCE));
@@ -133,6 +133,7 @@ public class TreeBurstParser extends GenericParser {
 		_INFIX_OPERATORS.put("/", new Operator(7, OperatorConstants.OPERATOR_DIV));
 		_INFIX_OPERATORS.put("%", new Operator(7, OperatorConstants.OPERATOR_MOD));
 		_INFIX_OPERATORS.put("**", new Operator(8, OperatorConstants.OPERATOR_POW).withResultPrecedence(8));
+		_INFIX_OPERATORS.put("->", new Operator(100, OperatorType.SPECIAL_SYNTAX));
 		_INFIX_OPERATORS.put(".", new Operator(100, OperatorType.MEMBER_ACCESS));
 
 		_OPERATOR_TOKENS = Stream.concat(_PREFIX_OPERATORS.entrySet().stream(), _INFIX_OPERATORS.entrySet().stream())
@@ -812,6 +813,18 @@ public class TreeBurstParser extends GenericParser {
 									nextOpInstance.position,
 									new Expression.Identifier(nextOpInstance.position, "@if"),
 									List.of(target, operand, alternative));
+						} else if (nextOpInstance.token.equals("->")) {
+							if (this._skippedNewline) return target;
+
+							var index = operand;
+
+							if (index instanceof Expression.Identifier identifier) {
+								index = new Expression.StringLiteral(identifier.position(), identifier.name());
+							}
+
+							target = Expression.Invocation.makeMethodCall(nextOpInstance.position(), target, OperatorConstants.OPERATOR_AT, List.of(index));
+						} else {
+							throw new IllegalStateException("Cannot handle special syntax infix operator of token '" + nextOpInstance.token + "'");
 						}
 					} else {
 						throw new IllegalStateException("Invalid infix operator type: " + infixOperator.type);

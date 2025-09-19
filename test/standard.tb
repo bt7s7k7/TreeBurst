@@ -199,6 +199,13 @@ assertEqual(x[1], 2)
 assertEqual(x[-1], 3)
 assertEqual(x[-2], 2)
 
+// Test: array direct index operator
+$x = [1,2,3]
+assertEqual(x->0, 1)
+assertEqual(x->1, 2)
+assertEqual(x->-1, 3)
+assertEqual(x->-2, 2)
+
 x[0] = 5
 assertEqual(x[0], 5)
 
@@ -384,6 +391,20 @@ assertEqual(map["a"], 6)
 map["a"] = void
 assertEqual(map["a"], void)
 assertEqual(map.length, 2)
+
+// Test: map direct access operator
+$a = 5
+$map = {a, b: true, [1]: "c"}
+assertEqual(map->a, 5)
+assertEqual(map->b, true)
+assertEqual(map->1, "c")
+assertEqual(map->other, void)
+
+map->a = 6
+assertEqual(map->a, 6)
+
+map->a = void
+assertEqual(map->a, void)
 
 // Test: map clear
 $map = {a: 1, b: 2, c: 3}
@@ -623,7 +644,7 @@ assertEqual((1).k_string(), "1")
 assertEqual((true).k_string(), "true")
 assertEqual(([1, true]).k_string(), "[1, true]")
 assertEqual(({}).k_string(), "{}")
-assertEqual((Table.new).k_string(), "function Table.new(this)")
+assertEqual((return()).k_string(), "function return(value)")
 assertEqual((Table.new()).k_string(), "Table()")
 
 // Test: native object dump
@@ -659,30 +680,30 @@ assertEqual("12".pad(3, "0"), "012")
 assertEqual("12".padLeft(3, "0"), "120")
 
 // Test: pipeline operator
-1 -> $variable
+1 |> $variable
 assertEqual(variable, 1)
-2 -> variable
+2 |> variable
 assertEqual(variable, 2)
-3 -> variable -> $other
+3 |> variable |> $other
 assertEqual(variable, 3)
 assertEqual(variable, other)
 
 $table = Table.new()
 
-1 -> $table.foo
+1 |> $table.foo
 assertEqual(table.foo, 1)
 
 $step1 = \(v) v + "1"
 $step2 = \(v) v + "2"
 
 "s" 
--> step1()
--> step2()
--> $output
+|> step1()
+|> step2()
+|> $output
 assertEqual(output, "s12")
 
 $array = []
-"element" -> array.tryAt(0)
+"element" |> array.tryAt(0)
 assertEqual(array[0], "element")
 
 // Test: conditional operator
