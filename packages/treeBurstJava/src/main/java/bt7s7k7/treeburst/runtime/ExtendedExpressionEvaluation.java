@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
@@ -187,7 +188,39 @@ public class ExtendedExpressionEvaluation {
 
 			this.operandCallback = v -> {
 				evaluateDeclaration(declaration.declaration(), v, this.scope, this.result);
-				return this.result.value != null;
+				return this.result.label == null;
+			};
+
+			return true;
+		}
+
+		if (receiver instanceof Expression.ArrayLiteral arrayLiteral) {
+			if (loadTarget) {
+				this.result.setException(new Diagnostic("Invalid target for assignment", receiver.position()));
+				return false;
+			}
+
+			this.operandCallback = v -> {
+				if (!(v instanceof ManagedArray array)) {
+					this.result.setException(new Diagnostic("Destructuring is only supported for arrays", this.position));
+					return false;
+				}
+
+				var parameters = new ArrayList<Parameter>(arrayLiteral.elements().size());
+
+				for (var element : arrayLiteral.elements()) {
+					var parameter = Parameter.parse(element);
+
+					if (parameter == null) {
+						this.result.setException(new Diagnostic("Invalid target for destructuring", element.position()));
+						return false;
+					}
+
+					parameters.add(parameter);
+				}
+
+				Parameter.destructure(parameters, false, array.elements, this.scope, this.result);
+				return this.result.label == null;
 			};
 
 			return true;

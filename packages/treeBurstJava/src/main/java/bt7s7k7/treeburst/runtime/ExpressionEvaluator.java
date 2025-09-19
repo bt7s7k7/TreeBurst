@@ -19,6 +19,20 @@ public class ExpressionEvaluator {
 		List<ManagedValue> results = new ArrayList<>();
 
 		for (Expression child : children) {
+			if (child instanceof Expression.Spread spread) {
+				evaluateExpression(spread.target(), scope, result);
+				if (result.label != null) return null;
+
+				if (!(result.value instanceof ManagedArray array)) {
+					result.setException(new Diagnostic("Spread operator must be used on an array", spread.position()));
+					return null;
+				}
+
+				// No need to check excludeVoid, arrays cannot have void elements
+				results.addAll(array.elements);
+				continue;
+			}
+
 			evaluateExpression(child, scope, result);
 
 			if (result.label != null) {

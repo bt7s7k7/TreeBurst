@@ -749,3 +749,26 @@ assertEqual(func(1).k_dump(5), "{a: 1, b: []}")
 assertEqual(func(1, 2).k_dump(5), "{a: 1, b: [], c: 2}")
 assertEqual(func(1, 2, 3).k_dump(5), "{a: 1, b: [2], c: 3}")
 assertEqual(func(1, 2, 3, 4).k_dump(5), "{a: 1, b: [2, 3], c: 4}")
+
+// Test: spread operator
+$x = [1, 2, 3]
+$func = \(...a) a
+
+assertEqual([0, ...x, 4].k_string(), "[0, 1, 2, 3, 4]")
+assertEqual(func(0, ...x, 4).k_string(), "[0, 1, 2, 3, 4]")
+
+// Test: array destructuring
+[$a, ...$b, $c] = []
+assertEqual({a, b, c}.k_dump(5), "{b: []}")
+
+[a, ...b, c] = [1]
+assertEqual({a, b, c}.k_dump(5), "{a: 1, b: []}")
+
+[a, ...b, c] = [1, 2]
+assertEqual({a, b, c}.k_dump(5), "{a: 1, b: [], c: 2}")
+
+[a, ...b, c] = [1, 2, 3]
+assertEqual({a, b, c}.k_dump(5), "{a: 1, b: [2], c: 3}")
+
+[a, ...b, c] = [1, 2, 3, 4]
+assertEqual({a, b, c}.k_dump(5), "{a: 1, b: [2, 3], c: 4}")

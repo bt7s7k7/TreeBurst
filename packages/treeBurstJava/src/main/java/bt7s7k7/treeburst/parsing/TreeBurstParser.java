@@ -449,16 +449,19 @@ public class TreeBurstParser extends GenericParser {
 		var start = this.index;
 
 		if (this.consume("$\"")) {
+			this._token = this.parseTemplate("\"");
 			this._tokenStart = start;
-			return this._token = this.parseTemplate("\"");
+			return this._token;
 		}
 		if (this.consume("$'")) {
+			this._token = this.parseTemplate("'");
 			this._tokenStart = start;
-			return this._token = this.parseTemplate("'");
+			return this._token;
 		}
 		if (this.consume("$`")) {
+			this._token = this.parseTemplate("`");
 			this._tokenStart = start;
-			return this._token = this.parseTemplate("`");
+			return this._token;
 		}
 
 		for (var token : _OPERATOR_TOKENS) {
@@ -469,40 +472,45 @@ public class TreeBurstParser extends GenericParser {
 				}
 
 				if (this.consume("=")) {
+					this._token = OperatorInstance.makeAdvancedAssignment(this.getPosition(start), token);
 					this._tokenStart = start;
-					return this._token = OperatorInstance.makeAdvancedAssignment(this.getPosition(start), token);
+					return this._token;
 				}
 
+				this._token = new OperatorInstance(this.getPosition(start), token);
 				this._tokenStart = start;
-				return this._token = new OperatorInstance(this.getPosition(start), token);
+				return this._token;
 			}
 		}
 
 		if (this.consume("(")) {
-			this._tokenStart = start;
 			this._token = new Expression.Group(this.getPosition(start), this.parseBlock(")"));
 			this._skippedNewline = skippedNewline;
+			this._tokenStart = start;
 			return this._token;
 		}
 
 		if (this.consume("[")) {
-			this._tokenStart = start;
 			this._token = new Expression.ArrayLiteral(this.getPosition(start), this.parseBlock("]"));
 			this._skippedNewline = skippedNewline;
+			this._tokenStart = start;
 			return this._token;
 		}
 
 		if (this.consume("\"")) {
+			this._token = this.parseString("\"");
 			this._tokenStart = start;
-			return this._token = this.parseString("\"");
+			return this._token;
 		}
 		if (this.consume("'")) {
+			this._token = this.parseString("'");
 			this._tokenStart = start;
-			return this._token = this.parseString("'");
+			return this._token;
 		}
 		if (this.consume("`")) {
+			this._token = this.parseString("`");
 			this._tokenStart = start;
-			return this._token = this.parseString("`");
+			return this._token;
 		}
 
 		if (this.consume("{")) {
@@ -555,8 +563,9 @@ public class TreeBurstParser extends GenericParser {
 				return true;
 			});
 
+			this._token = map;
 			this._tokenStart = start;
-			return this._token = map;
+			return this._token;
 		}
 
 		if (Character.isDigit(this.getCurrent()) || (this.getCurrent() == '-' && Character.isDigit(this.at(1)))) {
@@ -571,12 +580,14 @@ public class TreeBurstParser extends GenericParser {
 
 			try {
 				double number = Double.parseDouble(numberText.toString());
+				this._token = new Expression.NumberLiteral(this.getPosition(start), number);
 				this._tokenStart = start;
-				return this._token = new Expression.NumberLiteral(this.getPosition(start), number);
+				return this._token;
 			} catch (NumberFormatException e) {
 				this.createDiagnostic("Invalid number", start);
+				this._token = null;
 				this._tokenStart = start;
-				return this._token = null;
+				return this._token;
 			}
 		}
 
@@ -631,8 +642,9 @@ public class TreeBurstParser extends GenericParser {
 				});
 			}
 
+			this._token = new Expression.FunctionDeclaration(this.getPosition(start), parameters, body);
 			this._tokenStart = start;
-			return this._token = new Expression.FunctionDeclaration(this.getPosition(start), parameters, body);
+			return this._token;
 		}
 
 		var identifierName = this.consumeWord();
@@ -649,22 +661,26 @@ public class TreeBurstParser extends GenericParser {
 				if (target == null) return null;
 			}
 
+			this._token = new Expression.Label(labelPosition, identifierName, target);
 			this._tokenStart = start;
-			return this._token = new Expression.Label(labelPosition, identifierName, target);
+			return this._token;
 		}
 
 		if (_WORD_OPERATOR_TOKENS.contains(identifierName)) {
 			if (this.consume("=")) {
+				this._token = OperatorInstance.makeAdvancedAssignment(this.getPosition(start), identifierName);
 				this._tokenStart = start;
-				return this._token = OperatorInstance.makeAdvancedAssignment(this.getPosition(start), identifierName);
+				return this._token;
 			}
 
+			this._token = new OperatorInstance(this.getPosition(start), identifierName);
 			this._tokenStart = start;
-			return this._token = new OperatorInstance(this.getPosition(start), identifierName);
+			return this._token;
 		}
 
+		this._token = new Expression.Identifier(this.getPosition(start), identifierName);
 		this._tokenStart = start;
-		return this._token = new Expression.Identifier(this.getPosition(start), identifierName);
+		return this._token;
 	}
 
 	public Expression consumeExpression() {
