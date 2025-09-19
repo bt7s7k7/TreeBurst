@@ -244,7 +244,7 @@
                     "patterns": [
                         {
                             "begin": "([a-zA-Z_]\\w*):",
-                            "end": "(?=([,}\\[]|[a-zA-Z_]\\w*:))",
+                            "end": "(?=([,}]|\\[.*?\\]:|[a-zA-Z_]\\w*:))",
                             "beginCaptures": {
                                 "1": {
                                     "name": "support.type.property-name.tree-burst"
@@ -258,16 +258,16 @@
                         },
                         {
                             "name": "meta.objectliteral.tree-burst",
-                            "begin": "(?=\\[)",
-                            "end": "(?=([,}]|[a-zA-Z_]\\w*:))",
+                            "begin": "(\\[)",
+                            "beginCaptures": {
+                                "1": {
+                                    "name": "support.type.property-name.tree-burst"
+                                }
+                            },
+                            "end": "(?=([,}]|\\[.*?\\]:|[a-zA-Z_]\\w*:))",
                             "patterns": [
                                 {
-                                    "begin": "(\\[)",
-                                    "beginCaptures": {
-                                        "1": {
-                                            "name": "support.type.property-name.tree-burst"
-                                        }
-                                    },
+                                    "begin": "(?<=\\[)",
                                     "end": "(\\])",
                                     "endCaptures": {
                                         "1": {
@@ -282,7 +282,7 @@
                                 },
                                 {
                                     "begin": ":",
-                                    "end": "(?=([,}\\[]|[a-zA-Z_]\\w*:))",
+                                    "end": "(?=([,}]|\\[.*?\\]:|[a-zA-Z_]\\w*:))",
                                     "patterns": [
                                         {
                                             "include": "#global"

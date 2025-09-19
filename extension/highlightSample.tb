@@ -19,12 +19,16 @@ $func = \(...a) a
 {
     /* Hello world */
     prop: \(...args) {
+        1 + (2) + [1, 2]
         return({ args })
     },
     // Comment
+    [1 + [].push("advanced")]: advanced(5 + 2)
     [1 + 2]: "property"
     [1 + [].push("advanced")]: advanced(5 + 2)
     other: 5
+    items: [] [1]
+    [5, a]: 10
     /* */ a: 5
 }
 
