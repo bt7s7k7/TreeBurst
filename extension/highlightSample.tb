@@ -17,10 +17,15 @@ $x = [1, 2, 3]
 $func = \(...a) a
 
 {
+    /* Hello world */
     prop: \(...args) {
         return({ args })
     },
+    // Comment
+    [1 + 2]: "property"
+    [1 + [].push("advanced")]: advanced(5 + 2)
     other: 5
+    /* */ a: 5
 }
 
 @if(true, "true", "false")
