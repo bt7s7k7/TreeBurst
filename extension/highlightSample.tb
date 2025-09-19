@@ -1,0 +1,51 @@
+assert(true == true)
+assert(false == false)
+assert(true != false)
+assert(1 != "")
+assertEqual(2 / 4, 0.5)
+
+$owner = Table.new()
+$owner.method = \(this, arg) {
+    assertEqual(this, other)
+    assertEqual(arg, 5)
+    increment()
+}
+
+assertEqual($"${1}, ${true}, ${Table.new()}", "1, true, Table()")
+
+$x = [1, 2, 3]
+$func = \(...a) a
+
+{
+    prop: \(...args) {
+        return({ args })
+    },
+    other: 5
+}
+
+@if(true, "true", "false")
+a ? b : c
+
+assertEqual([0, ...x, 4].k_string(), "[0, 1, 2, 3, 4]")
+
+[$a, ...$b, $c] = []
+assertEqual({a, b, c}.k_dump(5), "{b: []}")
+
+assertEqual((\?.table.method(1, ?, 3))(container, 2), result)
+assertEqual((\?.table.method(1, ?, 3).value)(container, 2), 15)
+$inc = \? + 1
+
+/* /*
+goto */("skip")*/
+
+assertEqual(true, false)
+
+skip:
+
+// Test: goto statement 2
+    $i = 0
+start:
+    @if(i > 10, goto("end"))
+    i = i + 1
+    goto("start")
+end:

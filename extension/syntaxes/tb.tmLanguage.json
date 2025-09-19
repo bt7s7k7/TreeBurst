@@ -1,0 +1,295 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "TreeBurst",
+    "scopeName": "source.tree-burst",
+    "patterns": [
+        {
+            "include": "#global"
+        }
+    ],
+    "repository": {
+        "global": {
+            "patterns": [
+                {
+                    "include": "#strings"
+                },
+                {
+                    "include": "#keywords"
+                },
+                {
+                    "include": "#numbers"
+                },
+                {
+                    "include": "#variables"
+                },
+                {
+                    "include": "#constructs"
+                },
+                {
+                    "include": "#comments"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.tree-burst",
+                    "match": "@[\\w]*\\b()(?=\\()"
+                },
+                {
+                    "name": "keyword.control.tree-burst",
+                    "match": "(\\$|\\?|:)"
+                },
+                {
+                    "name": "constant.language.tree-burst",
+                    "match": "\\b(null|void|true|false)\\b"
+                }
+            ]
+        },
+        "string-escape": {
+            "patterns": [
+                {
+                    "name": "constant.character.escape.tree-burst",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "string-template-format": {
+            "name": "storage.type.format.tree-burst",
+            "begin": ":",
+            "end": "(?=})"
+        },
+        "string-template-expression": {
+            "patterns": [
+                {
+                    "name": "meta.template.expression.tree-burst",
+                    "begin": "(\\$\\{)",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.template-expression.begin.tree-burst"
+                        }
+                    },
+                    "end": "(\\})",
+                    "endCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.template-expression.end.tree-burst"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#string-template-format"
+                        },
+                        {
+                            "include": "#global"
+                        }
+                    ]
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.tree-burst",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "include": "#string-escape"
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.tree-burst",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "include": "#string-escape"
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.tree-burst",
+                    "begin": "`",
+                    "end": "`",
+                    "patterns": [
+                        {
+                            "include": "#string-escape"
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.other.tree-burst",
+                    "begin": "\\$\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "include": "#string-escape"
+                        },
+                        {
+                            "include": "#string-template-expression"
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.other.tree-burst",
+                    "begin": "\\$'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "include": "#string-escape"
+                        },
+                        {
+                            "include": "#string-template-expression"
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.other.tree-burst",
+                    "begin": "\\$`",
+                    "end": "`",
+                    "patterns": [
+                        {
+                            "include": "#string-escape"
+                        },
+                        {
+                            "include": "#string-template-expression"
+                        }
+                    ]
+                }
+            ]
+        },
+        "constructs": {
+            "patterns": [
+                {
+                    "name": "meta.function.tree-burst",
+                    "begin": "(\\\\)(?=(?:\\(.*?\\))?\\s*?\\{)",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "storage.type.function.tree-burst"
+                        }
+                    },
+                    "end": "}",
+                    "patterns": [
+                        {
+                            "begin": "\\(",
+                            "end": "\\)",
+                            "patterns": [
+                                {
+                                    "name": "variable.parameter.tree-burst",
+                                    "match": "[a-zA-Z_]\\w*"
+                                }
+                            ]
+                        },
+                        {
+                            "begin": "{",
+                            "end": "(?=})",
+                            "patterns": [
+                                {
+                                    "include": "#global"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "meta.function.tree-burst",
+                    "begin": "(\\\\)(?=\\))",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "storage.type.function.tree-burst"
+                        }
+                    },
+                    "end": ")",
+                    "patterns": [
+                        {
+                            "begin": "\\(",
+                            "end": "(?=\\))",
+                            "patterns": [
+                                {
+                                    "name": "variable.parameter.tree-burst",
+                                    "match": "[a-zA-Z_]\\w*"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "storage.type.function.tree-burst",
+                    "match": "\\\\"
+                },
+                {
+                    "name": "meta.objectliteral.tree-burst",
+                    "begin": "{",
+                    "patterns": [
+                        {
+                            "begin": "([a-zA-Z_]\\w*):",
+                            "end": "(?=([,}]|[a-zA-Z_]\\w*:))",
+                            "beginCaptures": {
+                                "1": {
+                                    "name": "support.type.property-name.tree-burst"
+                                }
+                            },
+                            "patterns": [
+                                {
+                                    "include": "#global"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "support.type.property-name.implicit.tree-burst",
+                            "match": "[a-zA-Z_]\\w*"
+                        }
+                    ],
+                    "end": "}"
+                }
+            ]
+        },
+        "variables": {
+            "patterns": [
+                {
+                    "name": "support.class.tree-burst",
+                    "match": "(?<!\\.)[A-Z][\\w]+"
+                },
+                {
+                    "name": "entity.name.function.tree-burst",
+                    "match": "\\b[\\w]+\\b()(?=\\()"
+                },
+                {
+                    "name": "entity.name.label.tree-burst",
+                    "match": "\\b[\\w]+:"
+                },
+                {
+                    "name": "variable.other.tree-burst",
+                    "match": "\\b[\\w]+\\b"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.decimal.tree-burst",
+                    "match": "\\b\\d+(\\.\\d+)?\\b"
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.tree-burst",
+                    "match": "\\/\\/.*"
+                },
+                {
+                    "name": "comment.block.tree-burst",
+                    "begin": "\\/\\*",
+                    "end": "\\*\\/",
+                    "patterns": [
+                        {
+                            "include": "#comments"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
