@@ -114,6 +114,10 @@ $table = Table.new()
 $table.name = "foo"
 assertEqual(table.name, "foo")
 
+// Test: table new from entries
+assertEqual(Table.new([["key", "value"], [1, 2], [null]]).k_dump(5), `Table([1]: 2, key: "value")`)
+assertEqual(Table.new({ key: "value", [1]: 2 }).k_dump(5), `Table([1]: 2, key: "value")`)
+
 // Test: nested tables
 $a = Table.new()
 $a.b = Table.new()
