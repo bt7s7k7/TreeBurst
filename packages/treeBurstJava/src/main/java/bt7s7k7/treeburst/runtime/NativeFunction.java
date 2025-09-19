@@ -17,8 +17,8 @@ public class NativeFunction extends ManagedFunction {
 
 	private final Handler handler;
 
-	public NativeFunction(ManagedObject prototype, List<String> parameters, Handler handler) {
-		super(prototype, parameters);
+	public NativeFunction(ManagedObject prototype, List<String> parameterNames, Handler handler) {
+		super(prototype, parameterNames, null);
 		this.handler = handler;
 	}
 

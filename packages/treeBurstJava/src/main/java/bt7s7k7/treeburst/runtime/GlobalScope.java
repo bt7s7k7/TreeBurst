@@ -429,13 +429,13 @@ public class GlobalScope extends Scope {
 			evaluateInvocation(self, self, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(1)), scope, result);
 		}));
 
-		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(this.globalScope, List.of("this", "receiver", "arguments"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {
+		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(this.globalScope, List.of("this", "receiver", "arguments?"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {
 			// @summary: Calls the function with the specified receiver and arguments, returning its return value.
 			var self = args.get(0).getFunctionValue();
 			var receiver = args.get(1);
-			var arguments = args.get(2).getArrayValue();
+			var arguments = args.size() == 2 ? Collections.<ManagedValue>emptyList() : args.get(2).getArrayValue().elements;
 
-			evaluateInvocation(receiver, Primitive.VOID, self, Position.INTRINSIC, arguments.elements, scope, result);
+			evaluateInvocation(receiver, Primitive.VOID, self, Position.INTRINSIC, arguments, scope, result);
 		}));
 
 		this.declareGlobal("unreachable", NativeFunction.simple(this.globalScope, Collections.emptyList(), (args, scope, result) -> {

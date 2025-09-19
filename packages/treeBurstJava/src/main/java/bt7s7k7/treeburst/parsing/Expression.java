@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
+import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
 
 public interface Expression extends Token {
@@ -119,7 +120,7 @@ public interface Expression extends Token {
 		}
 	}
 
-	public record FunctionDeclaration(Position position, List<String> parameters, Expression body) implements Expression {
+	public record FunctionDeclaration(Position position, List<Parameter> parameters, Expression body) implements Expression {
 		@Override
 		public Expression transform(Transformer transformer) {
 			if (!transformer.canApply(this)) return this;
@@ -132,6 +133,14 @@ public interface Expression extends Token {
 		public Expression transform(Transformer transformer) {
 			if (!transformer.canApply(this)) return this;
 			return transformer.apply(new Label(this.position, this.name, transformer.transform(this.target)));
+		}
+	}
+
+	public record Spread(Position position, Expression target) implements Expression {
+		@Override
+		public Expression transform(Transformer transformer) {
+			if (!transformer.canApply(this)) return this;
+			return transformer.apply(new Spread(this.position, transformer.transform(this.target)));
 		}
 	}
 

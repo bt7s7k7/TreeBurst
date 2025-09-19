@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.InputDocument;
+import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
 
 public class TreeBurstParser extends GenericParser {
@@ -101,6 +102,7 @@ public class TreeBurstParser extends GenericParser {
 		_PREFIX_OPERATORS.put("!", new Operator(10, OperatorConstants.OPERATOR_NOT));
 		_PREFIX_OPERATORS.put("+", new Operator(10, OperatorConstants.OPERATOR_NUMBER));
 		_PREFIX_OPERATORS.put("!!", new Operator(10, OperatorConstants.OPERATOR_BOOLEAN));
+		_PREFIX_OPERATORS.put("...", new Operator(10, OperatorType.SPECIAL_SYNTAX));
 		_PREFIX_OPERATORS.put("$", new Operator(20, OperatorType.VARIABLE_DECLARATION));
 
 		_INFIX_OPERATORS = new LinkedHashMap<>();
@@ -579,19 +581,19 @@ public class TreeBurstParser extends GenericParser {
 		}
 
 		if (this.consume("\\")) {
-			var parameters = new ArrayList<String>();
+			var parameters = new ArrayList<Parameter>();
 
 			if (this.consume("(")) {
-				while (!this.isDone()) {
-					this.skipWhitespace();
-					if (this.consume(")")) break;
-					if (this.consume(",")) continue;
-					var parameter = this.consumeWord();
-					if (parameter.isEmpty()) {
-						this.createDiagnostic("Expected parameter");
-					} else {
-						parameters.add(parameter);
+				var parameterExpressions = this.parseBlock(")");
+				for (var expression : parameterExpressions) {
+					var parameter = Parameter.parse(expression);
+
+					if (parameter == null) {
+						this.createDiagnostic("Invalid parameter expression", expression.position());
+						continue;
 					}
+
+					parameters.add(parameter);
 				}
 			}
 
@@ -613,7 +615,7 @@ public class TreeBurstParser extends GenericParser {
 						if (expression instanceof Expression.Placeholder) {
 							var index = parameters.size();
 							var name = "_p_" + index;
-							parameters.add(name);
+							parameters.add(new Parameter(expression.position(), name));
 							return new Expression.Identifier(expression.position(), name);
 						}
 
@@ -712,6 +714,13 @@ public class TreeBurstParser extends GenericParser {
 
 				if (prefixOperator.type == OperatorType.VARIABLE_DECLARATION) {
 					target = new Expression.VariableDeclaration(opInstance.position, operand);
+				} else if (prefixOperator.type == OperatorType.SPECIAL_SYNTAX) {
+					if (opInstance.token.equals("...")) {
+						target = new Expression.Spread(opInstance.position, operand);
+					} else {
+						throw new IllegalStateException("Cannot handle special syntax prefix operator of token '" + opInstance.token + "'");
+					}
+
 				} else {
 					target = Expression.Invocation.makeMethodCall(opInstance.position, operand, prefixOperator.name, new ArrayList<>());
 				}

@@ -216,7 +216,7 @@ public class ExpressionEvaluator {
 			return;
 		}
 
-		if (!managedFunction.parameters.isEmpty() && managedFunction.parameters.get(0).equals("this")) {
+		if (!managedFunction.getParameterNames().isEmpty() && managedFunction.getParameterNames().get(0).equals("this")) {
 			if (args instanceof ArrayList<ManagedValue> mutableArgs) {
 				mutableArgs.add(0, receiver);
 			} else {
@@ -313,12 +313,14 @@ public class ExpressionEvaluator {
 					return;
 				}
 				var key = result.value;
+				if (key == Primitive.VOID) continue;
 
 				evaluateExpression(valueExpression, scope, result);
 				if (result.label != null) {
 					return;
 				}
 				var value = result.value;
+				if (value == Primitive.VOID) continue;
 
 				map.entries.put(key, value);
 			}
@@ -334,6 +336,6 @@ public class ExpressionEvaluator {
 			return;
 		}
 
-		throw new IllegalStateException();
+		result.setException(new Diagnostic("Expression of type " + expression.getClass().getSimpleName() + " is not valid here", expression.position()));
 	}
 }

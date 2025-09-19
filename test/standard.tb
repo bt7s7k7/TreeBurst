@@ -731,3 +731,21 @@ assertEqual(x.map(\? + 1).k_string(), "[2, 3, 4]")
 
 $y = [\1, \2, \3]
 assertEqual(y.map(\?()).k_string(), "[1, 2, 3]")
+
+// Test: default parameters
+$func = \(a = 1, b = 2) ({a, b})
+$x 
+
+assertEqual(func().k_string(), "{a: 1, b: 2}")
+assertEqual(func(3).k_string(), "{a: 3, b: 2}")
+assertEqual(func(void, 3).k_string(), "{a: 1, b: 3}")
+assertEqual(func(void, void).k_string(), "{a: 1, b: 2}")
+
+// Test: rest parameters
+$func = \(a, ...b, c) ({a, b, c})
+
+assertEqual(func().k_dump(5), "{b: []}")
+assertEqual(func(1).k_dump(5), "{a: 1, b: []}")
+assertEqual(func(1, 2).k_dump(5), "{a: 1, b: [], c: 2}")
+assertEqual(func(1, 2, 3).k_dump(5), "{a: 1, b: [2], c: 3}")
+assertEqual(func(1, 2, 3, 4).k_dump(5), "{a: 1, b: [2, 3], c: 4}")

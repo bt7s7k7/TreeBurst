@@ -9,27 +9,20 @@ import java.util.List;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
-import bt7s7k7.treeburst.support.Primitive;
 
 public class ScriptFunction extends ManagedFunction {
-	private final Expression body;
-	private final Scope scope;
+	public final Expression body;
+	public final Scope scope;
+	public List<Parameter> parameterDeclarations;
 
 	@Override
 	public void invoke(List<ManagedValue> args, Scope scope, ExpressionResult result) {
 		Scope functionScope = this.scope.makeChild();
 
-		for (int i = 0; i < this.parameters.size(); i++) {
-			String parameter = this.parameters.get(i);
-			ManagedValue arg = i < args.size() ? args.get(i) : Primitive.VOID;
-
-			var variable = functionScope.declareVariable(parameter);
-			// If there is a duplicate parameter name, the declaration will fail. In this case we
-			// should just get the existing variable.
-			if (variable == null) variable = functionScope.findVariable(parameter);
-			variable.value = arg;
-		}
+		Parameter.destructure(this.getParameters(), true, args, functionScope, result);
+		if (result.label != null) return;
 
 		evaluateExpression(this.body, functionScope, result);
 		if (result.label == null) return;
@@ -43,12 +36,13 @@ public class ScriptFunction extends ManagedFunction {
 			return;
 		}
 
+		var oldLabel = result.label;
 		result.label = null;
-		result.setException(new Diagnostic("Did not resolve label '" + result.label + "' during function execution", Position.INTRINSIC));
+		result.setException(new Diagnostic("Did not resolve label '" + oldLabel + "' during function execution", Position.INTRINSIC));
 	}
 
-	public ScriptFunction(ManagedObject prototype, List<String> parameters, Expression body, Scope scope) {
-		super(prototype, parameters);
+	public ScriptFunction(ManagedObject prototype, List<Parameter> parameters, Expression body, Scope scope) {
+		super(prototype, null, parameters);
 		this.body = body;
 		this.scope = scope;
 	}
