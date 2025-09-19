@@ -113,13 +113,13 @@ public class TreeBurstParser extends GenericParser {
 		_INFIX_OPERATORS.put("&&", new Operator(2, OperatorConstants.OPERATOR_AND));
 		_INFIX_OPERATORS.put("||", new Operator(2, OperatorConstants.OPERATOR_OR));
 		_INFIX_OPERATORS.put("??", new Operator(2, OperatorConstants.OPERATOR_COALESCE));
-		_INFIX_OPERATORS.put("else", new Operator(2, OperatorConstants.OPERATOR_ELSE).setIsNameWord());
+		_INFIX_OPERATORS.put("!!", new Operator(2, OperatorConstants.OPERATOR_ELSE));
 		_INFIX_OPERATORS.put("<", new Operator(3, OperatorConstants.OPERATOR_LT));
 		_INFIX_OPERATORS.put("<=", new Operator(3, OperatorConstants.OPERATOR_LTE));
 		_INFIX_OPERATORS.put(">", new Operator(3, OperatorConstants.OPERATOR_GT));
 		_INFIX_OPERATORS.put(">=", new Operator(3, OperatorConstants.OPERATOR_GTE));
 		_INFIX_OPERATORS.put("==", new Operator(3, OperatorConstants.OPERATOR_EQ));
-		_INFIX_OPERATORS.put("is", new Operator(3, OperatorConstants.OPERATOR_IS).setIsNameWord());
+		_INFIX_OPERATORS.put("~", new Operator(3, OperatorConstants.OPERATOR_IS));
 		_INFIX_OPERATORS.put("!=", new Operator(3, OperatorConstants.OPERATOR_NEQ));
 		_INFIX_OPERATORS.put("^", new Operator(4, OperatorConstants.OPERATOR_BIT_XOR));
 		_INFIX_OPERATORS.put("&", new Operator(4, OperatorConstants.OPERATOR_BIT_AND));

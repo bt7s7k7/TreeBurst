@@ -52,8 +52,8 @@ assertEqual(getCounter(), 2)
 assertEqual(false ?? 0, false)
 assertEqual(null ?? 0, 0)
 assertEqual(void ?? 0, 0)
-assertEqual(null else 0, null)
-assertEqual(void else 0, 0)
+assertEqual(null !! 0, null)
+assertEqual(void !! 0, 0)
 
 // Test: numeric operators
 assertEqual(1 + 1.5, 2.5)
@@ -555,7 +555,7 @@ assertEqual(a, true)
 assertEqual(getCounter(), 1)
 
 $b = void
-b else= (increment(), 10)
+b !!= (increment(), 10)
 assertEqual(b, 10)
 assertEqual(getCounter(), 2)
 
