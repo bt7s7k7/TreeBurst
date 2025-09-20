@@ -127,6 +127,11 @@ $createBox = \(options) Table.new({
 
 assertEqual(createBox({ x: 1, y: 2, width: 3, height: 4 }).k_string(), "Table(x: 1, width: 3, y: 2, height: 4)")
 
+// Test: table getProperty
+$table = Table.new({ x: 1 })
+assertEqual(Table.getProperty(table, "x"), 1)
+assertEqual(Table.getProperty(table, "y"), void)
+
 // Test: nested tables
 $a = Table.new()
 $a.b = Table.new()

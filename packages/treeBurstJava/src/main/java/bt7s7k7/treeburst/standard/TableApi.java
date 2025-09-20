@@ -13,7 +13,9 @@ import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.support.Diagnostic;
+import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.Position;
+import bt7s7k7.treeburst.support.Primitive;
 
 public class TableApi extends LazyTable {
 	// @summary[[Represents an object with properties.]]
@@ -88,6 +90,19 @@ public class TableApi extends LazyTable {
 			}
 
 			result.value = table;
+		}));
+
+		this.declareProperty("getProperty", NativeFunction.simple(this.globalScope, List.of("object", "property", "receiver?"), List.of(ManagedValue.class, Primitive.String.class, ManagedValue.class), (args, scope, result) -> {
+			// @summary[[If the `object` contains property named `property`, returns its value.
+			// Otherwise returns {@link void}. If the `receiver` arguments is specified, it will be
+			// provided to any possible getters.]]
+			var object = args.get(0);
+			var property = args.get(1).getStringValue();
+			var receiver = args.size() > 2 ? args.get(2) : object;
+
+			if (!findProperty(receiver, object, property, scope, result)) {
+				result.value = Primitive.VOID;
+			}
 		}));
 	}
 
