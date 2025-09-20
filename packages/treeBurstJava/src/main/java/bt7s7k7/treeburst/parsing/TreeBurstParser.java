@@ -758,6 +758,10 @@ public class TreeBurstParser extends GenericParser {
 				var operatorResultPrecedence = nextOpInstance.isAdvancedAssignment ? 0 : infixOperator.resultPrecedence;
 
 				if (operatorPrecedence >= precedence) {
+					if (infixOperator.type == OperatorType.SPECIAL_SYNTAX && nextOpInstance.token.equals(":")) {
+						// The token ":" is only valid as a part of a conditional ternary operator, so don't try to parse it.
+						return target;
+					}
 					this.nextToken();
 
 					var operand = this.parseExpression(operatorResultPrecedence);
@@ -828,8 +832,6 @@ public class TreeBurstParser extends GenericParser {
 
 							target = Expression.Invocation.makeMethodCall(nextOpInstance.position(), target, OperatorConstants.OPERATOR_AT, List.of(index));
 						} else if (nextOpInstance.token.equals(":")) {
-							this.createDiagnostic(_INVALID_TOKEN, nextOpInstance.position);
-						} else {
 							throw new IllegalStateException("Cannot handle special syntax infix operator of token '" + nextOpInstance.token + "'");
 						}
 					} else {

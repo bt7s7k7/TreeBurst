@@ -118,6 +118,15 @@ assertEqual(table.name, "foo")
 assertEqual(Table.new([["key", "value"], [1, 2], [null]]).k_dump(5), `Table([1]: 2, key: "value")`)
 assertEqual(Table.new({ key: "value", [1]: 2 }).k_dump(5), `Table([1]: 2, key: "value")`)
 
+$createBox = \(options) Table.new({
+    x: options->x ?? unreachable()
+    y: options->y ?? unreachable()
+    width: options->width ?? unreachable()
+    height: options->height ?? unreachable()
+})
+
+assertEqual(createBox({ x: 1, y: 2, width: 3, height: 4 }).k_string(), "Table(x: 1, width: 3, y: 2, height: 4)")
+
 // Test: nested tables
 $a = Table.new()
 $a.b = Table.new()
@@ -415,6 +424,21 @@ assertEqual(map->a, 6)
 
 map->a = void
 assertEqual(map->a, void)
+
+// Test: map literal advanced
+$x = 0
+$height = "height"
+$map = {
+    x
+    y: 1
+    ["width"]: 3
+    [height]: 5
+}
+
+assertEqual(map->x, 0)
+assertEqual(map->y, 1)
+assertEqual(map->width, 3)
+assertEqual(map->height, 5)
 
 // Test: map clear
 $map = {a: 1, b: 2, c: 3}
