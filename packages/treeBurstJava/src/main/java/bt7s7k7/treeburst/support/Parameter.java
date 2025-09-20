@@ -73,7 +73,9 @@ public class Parameter {
 			var parameter = parameters.get(i);
 
 			Variable variable = null;
-			if (parameter.isDeclaration) {
+			if (parameter.name.equals("_")) {
+				// This is a discard parameter, no variable will be set
+			} else if (parameter.isDeclaration) {
 				variable = scope.declareVariable(parameter.name);
 
 				if (variable == null) {
@@ -97,20 +99,28 @@ public class Parameter {
 
 			if (parameter.isSpread) {
 				if (parameters.size() == 1) {
+					if (variable == null) continue;
 					variable.value = new ManagedArray(scope.globalScope.ArrayPrototype, inputs);
-					return;
+					continue;
 				}
 
 				// The count of inputs to consume is the remaining count of arguments not consumed
 				// by other parameters. Subtract 1 from total parameters to account for this parameter.
 				var inputsToConsume = inputs.size() - (parameters.size() - 1);
 				if (inputsToConsume <= 0) {
+					if (variable == null) continue;
 					variable.value = new ManagedArray(scope.globalScope.ArrayPrototype);
 					continue;
 				}
 
 				var consumed = new ManagedArray(scope.globalScope.ArrayPrototype, new ArrayList<>(inputsToConsume));
 				var maxIndex = inputIndex + inputsToConsume;
+
+				if (variable == null) {
+					inputIndex = maxIndex - 1;
+					continue;
+				}
+
 				while (inputIndex < maxIndex) {
 					consumed.elements.add(inputs.get(inputIndex++));
 				}
@@ -125,10 +135,12 @@ public class Parameter {
 				evaluateExpression(parameter.defaultValue, scope, result);
 				if (result.label != null) return;
 
+				if (variable == null) continue;
 				variable.value = result.value;
 				continue;
 			}
 
+			if (variable == null) continue;
 			variable.value = value;
 		}
 	}
