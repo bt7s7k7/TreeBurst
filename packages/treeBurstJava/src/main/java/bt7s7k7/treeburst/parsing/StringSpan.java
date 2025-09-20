@@ -54,6 +54,12 @@ public final class StringSpan {
 	}
 
 	public StringSpan substring(int start, int length) {
+		if (start >= this.length
+				|| start + length > this.length
+				|| start < 0
+				|| length < 0) {
+			throw new IndexOutOfBoundsException("Range [" + start + ", " + start + " + " + length + ") is out of bound for length " + this.length);
+		}
 		return new StringSpan(this.data, this.index + start, length);
 	}
 

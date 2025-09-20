@@ -281,7 +281,7 @@ public class TreeBurstParser extends GenericParser {
 				return "";
 			}
 
-			var hexString = this.input.substring(charStart, this.index).toString();
+			var hexString = this.input.substring(charStart, this.index - charStart).toString();
 			try {
 				int charValue = Integer.parseInt(hexString, 16);
 				return String.valueOf((char) charValue);
