@@ -547,7 +547,7 @@ public class TreeBurstParser extends GenericParser {
 					this.skipWhitespace();
 					this._token = null;
 
-					var parseResult = this.parseExpression();
+					var parseResult = this.consumeExpression();
 					if (parseResult == null) {
 						return false;
 					}
