@@ -795,7 +795,35 @@ public class TreeBurstParser extends GenericParser {
 						target = new Expression.Assignment(nextOpInstance.position, target, operand);
 					} else if (infixOperator.type == OperatorType.PIPELINE) {
 						if (operand instanceof Expression.Invocation invocation) {
-							target = invocation.withArgument(target);
+							var replacement = target;
+
+							var transformer = new Expression.Transformer() {
+								public boolean applied = false;
+
+								@Override
+								public Expression apply(Expression expression) {
+									if (expression instanceof Expression.Placeholder) {
+										this.applied = true;
+										return replacement;
+									}
+
+									return expression;
+								}
+
+								@Override
+								public boolean canApply(Expression expression) {
+									return !this.applied && !(expression instanceof Expression.FunctionDeclaration);
+								}
+							};
+
+							var invocationWithPlaceholderReplaced = invocation.transform(transformer);
+							if (transformer.applied) {
+								target = invocationWithPlaceholderReplaced;
+							} else {
+								// If the transformation was not applied
+								target = invocation.withFirstArgument(target);
+							}
+
 							continue;
 						}
 

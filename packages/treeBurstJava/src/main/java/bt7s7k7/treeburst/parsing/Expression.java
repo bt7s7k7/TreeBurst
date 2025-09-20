@@ -165,6 +165,10 @@ public interface Expression extends Token {
 			return new Expression.Invocation(this.position(), this.target(), Streams.concat(this.args().stream(), Stream.of(argument)).toList());
 		}
 
+		public Invocation withFirstArgument(Expression argument) {
+			return new Expression.Invocation(this.position(), this.target(), Streams.concat(Stream.of(argument), this.args().stream()).toList());
+		}
+
 		public static Invocation makeMethodCall(Position position, Expression receiver, String method, List<Expression> args) {
 			return new Invocation(position, new MemberAccess(position, receiver, method), args);
 		}

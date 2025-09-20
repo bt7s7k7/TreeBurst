@@ -742,8 +742,9 @@ $step2 = \(v) v + "2"
 assertEqual(output, "s12")
 
 $array = []
-"element" |> array.tryAt(0)
+"element" |> array.tryAt(0, ?)
 assertEqual(array[0], "element")
+assertEqual(array |> Table.getProperty("length"), 1)
 
 // Test: conditional operator
 assertEqual(true ? "a" : "b", "a")

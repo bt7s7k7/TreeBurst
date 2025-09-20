@@ -87,7 +87,12 @@ public class ExpressionEvaluator {
 			return getProperty(receiver, scope.globalScope.NumberPrototype, name, scope, result);
 		}
 
-		if (container instanceof Primitive.String) {
+		if (container instanceof Primitive.String string) {
+			if (name.equals("length")) {
+				result.value = Primitive.from(string.value.length());
+				return true;
+			}
+
 			return getProperty(receiver, scope.globalScope.StringPrototype, name, scope, result);
 		}
 
