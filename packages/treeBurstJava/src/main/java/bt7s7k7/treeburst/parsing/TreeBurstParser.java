@@ -753,10 +753,14 @@ public class TreeBurstParser extends GenericParser {
 				var infixOperator = _INFIX_OPERATORS.get(nextOpInstance.token);
 				if (infixOperator == null) return target;
 
-				if (infixOperator.precedence >= precedence) {
+				// Advanced assignment operators should have precedence like the assignment operator, that is 0 to 0
+				var operatorPrecedence = nextOpInstance.isAdvancedAssignment ? 0 : infixOperator.precedence;
+				var operatorResultPrecedence = nextOpInstance.isAdvancedAssignment ? 0 : infixOperator.resultPrecedence;
+
+				if (operatorPrecedence >= precedence) {
 					this.nextToken();
 
-					var operand = this.parseExpression(infixOperator.resultPrecedence);
+					var operand = this.parseExpression(operatorResultPrecedence);
 					if (operand == null) return target;
 
 					if (nextOpInstance.isAdvancedAssignment) {
@@ -803,7 +807,7 @@ public class TreeBurstParser extends GenericParser {
 
 							this.nextToken();
 
-							var alternative = this.parseExpression(infixOperator.resultPrecedence);
+							var alternative = this.parseExpression(operatorResultPrecedence);
 							if (alternative == null) {
 								this.createDiagnostic("Expected alternative expression for conditional operator");
 								return null;
