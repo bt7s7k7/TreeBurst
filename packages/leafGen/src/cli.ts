@@ -86,9 +86,11 @@ export const cli = new Cli("leaf-gen")
             const builder = new DocumentationBuilder(project, db)
             builder.sortSymbols()
 
-            const docsPath = join(project.path, project.docsPath)
+            const docsPath = project.getDocsPath()
             await rm(docsPath, { recursive: true, force: true })
             await mkdir(docsPath, { recursive: true })
+
+            await project.copyResourcesToDocsFolder()
 
             if (markdown) {
                 for (const page of builder.buildMarkdown()) {

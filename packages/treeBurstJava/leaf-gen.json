@@ -14,5 +14,13 @@
 	],
 	"inserts": {
 		"index.*": "docs/index.md"
-	}
+	},
+	"resources": [
+		{
+			"path": "docs",
+			"include": [
+				"*.png"
+			]
+		}
+	]
 }

@@ -77,16 +77,20 @@ export class MarkdownPageBuilder {
         }
 
         if (symbol.summary) {
-            const summary = symbol.summary.join("\n")
-                .replace(/\{@link\s?([\w.]+)\}/g, (_, name) => {
-                    const symbol = this.owner.db.tryGetSymbol(name)
-                    if (!symbol) return `\`${name}\``
-                    return `<code>${this.tryMakeLink(symbol)}</code>`
-                })
+            const summary = this.resolveLinkMacros(symbol.summary.join("\n"))
+
             this._result.push(summary + "\n")
         }
 
         this._result.push("<hr/>")
+    }
+
+    public resolveLinkMacros(source: string) {
+        return source.replace(/\{@link\s?([\w.]+)\}/g, (_, name) => {
+            const symbol = this.owner.db.tryGetSymbol(name)
+            if (!symbol) return `\`${name}\``
+            return `<code>${this.tryMakeLink(symbol)}</code>`
+        })
     }
 
     public addSymbol(symbol: SymbolHandle, from: SymbolHandle | null) {
@@ -158,6 +162,7 @@ export class DocumentationBuilder {
                 for (const child of symbol.children) {
                     if (child == prototype) continue
                     page.staticSymbols.push(child)
+                    this.markPrintedSymbol(child, page)
                 }
 
                 if (prototype) {
@@ -166,6 +171,7 @@ export class DocumentationBuilder {
 
                     for (const child of prototype.children) {
                         page.instanceSymbols.push(child)
+                        this.markPrintedSymbol(child, page)
                     }
 
                     symbol.summary.push(...prototype.summary)
@@ -211,7 +217,7 @@ export class DocumentationBuilder {
             const inserts = this.project.getInsertsForFilename(builder.filename, ".md")
 
             if (page == this.globalPage) {
-                builder.add(inserts.join("\n"))
+                builder.add(builder.resolveLinkMacros(inserts.join("\n")))
                 builder.addHeading(builder.makeAnchoredText("Reference"))
             } else {
                 builder.add("[Back](index.html)")
@@ -224,7 +230,7 @@ export class DocumentationBuilder {
                 }
 
                 builder.addSymbolInfo(page.rootSymbol)
-                builder.add(inserts.join("\n"))
+                builder.add(builder.resolveLinkMacros(inserts.join("\n")))
 
                 if (page.rootPrototypeSymbol) builder.addSymbolInfo(page.rootPrototypeSymbol)
             }
@@ -273,7 +279,7 @@ export class DocumentationBuilder {
 
         for (const markdown of this.buildMarkdown(extension)) {
 
-            const parser = new MmlParser(markdown.build(), {})
+            const parser = new MmlParser(markdown.build().replace(/\t/g, "    "), {})
 
             const root = parser.parseDocument()
 
@@ -282,8 +288,8 @@ export class DocumentationBuilder {
             const html = inserts.join("\n") + "\n" + renderer.render(root)
 
             const output = templateHtml
-                .replace(/{{BODY}}/, html)
-                .replace(/{{TITLE}}/, markdown.title)
+                .replace(/{{BODY}}/, () => html)
+                .replace(/{{TITLE}}/, () => markdown.title)
 
             yield { filename: markdown.filename, html: output }
         }

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
-import { readdir, readFile, writeFile } from "node:fs/promises"
-import { extname, join, relative } from "node:path"
+import { cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises"
+import { dirname, extname, join, relative } from "node:path"
 import { EMPTY_ARRAY } from "../comTypes/const"
 import { ensureKey } from "../comTypes/util"
 import { Struct } from "../struct/Struct"
@@ -9,6 +9,7 @@ import { FileParser } from "./FileParser"
 import { SymbolDatabase } from "./SymbolDatabase"
 import { UserError } from "./UserError"
 import { printInfo } from "./print"
+import { matchesGlob } from "./support"
 
 export class SymbolFactoryDefinition extends Struct.define("SymbolFactoryDefinition", {
     pattern: Type.string,
@@ -28,6 +29,10 @@ export class Project extends Struct.define("Project", {
     excludedFiles: Type.string.as(Type.array).as(Type.nullable).as(Type.withDefault, () => []),
     symbolFactories: SymbolFactoryDefinition.ref().as(Type.array).as(Type.nullable).as(Type.withDefault, () => []),
     inserts: Type.string.as(Type.map).as(Type.nullable).as(Type.withDefault, () => new Map() as never),
+    resources: Type.object({
+        path: Type.string,
+        include: Type.string.as(Type.array),
+    }).as(Type.array).as(Type.nullable),
 }) {
     public path: string = null!
 
@@ -49,6 +54,28 @@ export class Project extends Struct.define("Project", {
         }
 
         return files
+    }
+
+    public getDocsPath() {
+        return join(this.path, this.docsPath)
+    }
+
+    public async copyResourcesToDocsFolder() {
+        if (this.resources == null) return
+
+        const docsPath = this.getDocsPath()
+        for (const { path, include } of this.resources) {
+            const resourceFolderPath = join(this.path, path)
+            for (const dirent of await readdir(resourceFolderPath, { withFileTypes: true, recursive: true })) {
+                if (dirent.isFile() && include.some(v => matchesGlob(dirent.name, v))) {
+                    const resourcePath = join(dirent.path ?? dirent.parentPath, dirent.name)
+                    const relativePath = relative(resourceFolderPath, resourcePath)
+                    const outputPath = join(docsPath, relativePath)
+                    await mkdir(dirname(outputPath), { recursive: true })
+                    await cp(resourcePath, outputPath)
+                }
+            }
+        }
     }
 
     public async parseFiles() {
@@ -75,21 +102,12 @@ export class Project extends Struct.define("Project", {
 
         const result: string[] = []
 
-        for (const [key, value] of this.inserts) {
-            const insertExtension = extname(value)
+        for (const [glob, insertPath] of this.inserts) {
+            const insertExtension = extname(insertPath)
             if (insertExtension != extension) continue
+            if (!matchesGlob(filename, glob)) continue
 
-            if (key.startsWith("*") && key.endsWith("*")) {
-                if (!filename.includes(key)) continue
-            } else if (key.startsWith("*")) {
-                if (!filename.endsWith(key.slice(1))) continue
-            } else if (key.endsWith("*")) {
-                if (!filename.startsWith(key.slice(0, -1))) continue
-            } else {
-                if (filename != key) continue
-            }
-
-            const content = ensureKey(this._cachedInserts, value, () => readFileSync(join(this.path, value), "utf-8"))
+            const content = ensureKey(this._cachedInserts, insertPath, () => readFileSync(join(this.path, insertPath), "utf-8"))
             result.push(content)
         }
 
