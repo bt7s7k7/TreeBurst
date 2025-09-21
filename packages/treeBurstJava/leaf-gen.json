@@ -2,6 +2,7 @@
 	"title": "TreeBurst",
 	"sourceRoot": "src/main/java/bt7s7k7/treeburst",
 	"docsPath": "docs-build",
+	"emitSymbolDatabase": true,
 	"excludedFiles": [
 		"src/main/java/bt7s7k7/treeburst/standard/NativeHandleWrapper.java"
 	],

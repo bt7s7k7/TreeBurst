@@ -33,6 +33,8 @@ export class Project extends Struct.define("Project", {
         path: Type.string,
         include: Type.string.as(Type.array),
     }).as(Type.array).as(Type.nullable),
+    emitSymbolDatabase: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
+    externalReferences: Type.string.as(Type.array).as(Type.nullable),
 }) {
     public path: string = null!
 
@@ -54,6 +56,27 @@ export class Project extends Struct.define("Project", {
         }
 
         return files
+    }
+
+    protected _externalReferences = new Map<string, string>()
+    public async fetchExternalReferences() {
+        if (this.externalReferences == null) return
+
+        for (let reference of this.externalReferences) {
+            if (!reference.endsWith("/")) reference += "/"
+            printInfo("Fetching external reference: " + reference)
+
+            const symbolFile = new URL("symbols.json", reference)
+            const symbols: any = await fetch(symbolFile).then(v => v.json())
+            for (const [symbol, path] of Object.entries(symbols)) {
+                const symbolPage = new URL(path as string, reference)
+                this._externalReferences.set(symbol, symbolPage.href)
+            }
+        }
+    }
+
+    public findExternalReference(name: string) {
+        return this._externalReferences.get(name) ?? null
     }
 
     public getDocsPath() {

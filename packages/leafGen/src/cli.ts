@@ -81,6 +81,7 @@ export const cli = new Cli("leaf-gen")
         async callback({ path, markdown }) {
             path ??= process.cwd()
             const project = await Project.load(path)
+            await project.fetchExternalReferences()
 
             const db = await project.parseFiles()
             const builder = new DocumentationBuilder(project, db)
@@ -100,7 +101,7 @@ export const cli = new Cli("leaf-gen")
             } else {
                 for (const page of builder.buildHtml()) {
                     printInfo("Writing: " + page.filename)
-                    await writeFile(join(docsPath, page.filename), page.html)
+                    await writeFile(join(docsPath, page.filename), page.content)
                 }
             }
         },

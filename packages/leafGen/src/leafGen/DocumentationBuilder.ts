@@ -1,7 +1,7 @@
 import { relative } from "node:path"
 import syntaxFile from "../../../../extension/syntaxes/tb.tmLanguage.json"
 import templateHtml from "../../template.html"
-import { createSortFunction, ensureKey, isAlpha, iteratorNth } from "../comTypes/util"
+import { createSortFunction, ensureKey, isAlpha, iteratorNth, Predicate } from "../comTypes/util"
 import { MmlHtmlRenderer } from "../miniML/MmlHtmlRenderer"
 import { MmlParser } from "../miniML/MmlParser"
 import { SyntaxNode } from "../miniML/SyntaxNode"
@@ -251,7 +251,12 @@ export class DocumentationBuilder {
 
     public findLinkToSymbol(symbol: SymbolHandle, extension: string) {
         const prints = this.printedSymbols.get(symbol)
-        if (prints == null) return null
+        if (prints == null) {
+            const externalReference = this.project.findExternalReference(symbol.name)
+            if (externalReference != null) return externalReference
+
+            return null
+        }
 
         const page = iteratorNth(prints)
         const symbolHeading = this.symbolNameToAnchor(symbol.name)
@@ -366,7 +371,19 @@ export class DocumentationBuilder {
                 .replace(/\/\*STYLE\*\//, () => style)
                 .replace(/{{BODY}}/, () => html)
 
-            yield { filename: markdown.filename, html: output }
+            yield { filename: markdown.filename, content: output }
+        }
+
+        if (this.project.emitSymbolDatabase) {
+            yield {
+                filename: "symbols.json",
+                content: JSON.stringify(Object.fromEntries([...this.printedSymbols].map(([symbol, pages]): [string, string] | null => {
+                    const link = this.findLinkToSymbol(symbol, ".html")
+                    if (link == null) return null
+
+                    return [symbol.name, link]
+                }).filter(Predicate.notNull()))),
+            }
         }
     }
 
