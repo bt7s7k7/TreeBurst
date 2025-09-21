@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>String - TreeBurst</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            max-width: 1050px;
+            width: 100%;
+            margin: 0 auto 0 auto;
+        }
+
+        h1,
+        h2 {
+            font-weight: 400;
+        }
+
+        blockquote {
+            margin: 0;
+            color: #57606a;
+            padding-left: 1em;
+            border-left: 5px solid #d0d7de;
+        }
+
+        ul>li::marker {
+            content: "-   ";
+        }
+
+        li>p {
+            margin-bottom: 0;
+        }
+
+        li>p:first-child {
+            margin-top: 0;
+        }
+
+        code {
+            border: 1px solid #d0d7de;
+            padding: 0.2em;
+            border-radius: 0.2em;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+
+        pre {
+            border: 1px solid #d0d7de;
+            padding: 0.4em;
+            border-radius: 0.2em;
+        }
+
+        pre>code {
+            border: none;
+            padding: 0;
+        }
+
+        code {
+            color: #313131;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        a[href]:hover,
+        a[href]:focus-visible {
+            text-decoration: underline;
+        }
+
+        a[href].as-button {
+            text-decoration: none;
+        }
+
+        table,
+        table th,
+        table td {
+            border: black 1px solid;
+            border-collapse: collapse;
+        }
+
+        table td {
+            padding: var(--size-int);
+        }
+
+        table p,
+        table ul,
+        table il {
+            margin: 0;
+        }
+
+        sub {
+            font-size: x-small;
+            opacity: 0.5;
+            vertical-align: middle;
+        }
+
+        .token-comment { color: #247d01; }
+.token-const { color: #01258f; }
+.token-function { color: #7d0303; }
+.token-keyword { color: #995d00; }
+.token-number { color: #d90156; }
+.token-string { color: #3f3f3f; }
+.token-type { color: #016d41; }
+.token-variable { color: #101000; }
+.token-property { color: #007a81; }
+    </style>
+</head>
+
+<body>
+    
+<p><a href="index.html">Back</a></p><h1><a id="string">String</a></h1><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:128<br>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:127<br>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:191</sub></p><p>Represents a string of characters.</p><p><hr></hr></p><p><hr></hr></p><h3><code><a id="string-prototype-k_add">String.prototype.k_add</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:232</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_add</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">left</span>: <a href="String.html#string">String</a>, <span class="token-variable">right</span>: <a href="String.html#string">String</a>)</code></p></li><li><p><code><span class="token-function">k_add</span>(<span class="token-variable">this</span>: <a href="String.html#string">String</a>, <span class="token-variable">right</span>: <a href="String.html#string">String</a>)</code></p></li></ul><p>Concatenates two strings together.</p><p><hr></hr></p><h3><code><a id="string-prototype-k_dump">String.prototype.k_dump</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:248</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_dump</span>(<span class="token-variable">this</span>: <a href="String.html#string">String</a>, <span class="token-variable">depth?</span>: <a href="Number.html#number">Number</a>)</code></p></li></ul><p>Formats the string into a textual form, which is surrounded by <code>&quot;</code> characters and all special characters are escaped.</p><p><hr></hr></p><h3><code><a id="string-prototype-k_mul">String.prototype.k_mul</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:254</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_mul</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">left</span>: <a href="String.html#string">String</a>, <span class="token-variable">right</span>: <a href="Number.html#number">Number</a>)</code></p></li><li><p><code><span class="token-function">k_mul</span>(<span class="token-variable">this</span>: <a href="String.html#string">String</a>, <span class="token-variable">right</span>: <a href="Number.html#number">Number</a>)</code></p></li></ul><p>Creates a new string that is the input string repeated <code>n</code> times.</p><p><hr></hr></p><h3><code><a id="string-prototype-k_string">String.prototype.k_string</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:243</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_string</span>(<span class="token-variable">this</span>: <a href="String.html#string">String</a>)</code></p></li></ul><p>Returns the string unchanged.</p><p><hr></hr></p><h3><code><a id="string-prototype-pad">String.prototype.pad</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:270</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">pad</span>(<span class="token-variable">this</span>: <a href="String.html#string">String</a>, <span class="token-variable">length</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">fill?</span>: <a href="String.html#string">String</a>)</code></p></li></ul><p>If the string is shorter that <code>length</code>, creates a new string that is padded with the <code>fill</code> character (or space character if not provided) to reach the desired length. The string is padded to be right aligned, use <code><a href="String.html#string-prototype-padleft">String.prototype.padLeft</a></code> for left alignment.</p><p><hr></hr></p><h3><code><a id="string-prototype-padleft">String.prototype.padLeft</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:296</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">padLeft</span>(<span class="token-variable">this</span>: <a href="String.html#string">String</a>, <span class="token-variable">length</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">fill?</span>: <a href="String.html#string">String</a>)</code></p></li></ul><p>If the string is shorter that <code>length</code>, creates a new string that is padded with the <code>fill</code> character (or space character if not provided) to reach the desired length. The resulting string is left aligned.</p><p><hr></hr></p><h2> Inherited Properties</h2><h3><code><a id="table-prototype-k_and">Table.prototype.@k_and</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:322</sub></p><p><strong>Inherited from:</strong> <code><a href="Table.html#table">Table</a></code></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-keyword">@k_and</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">other</span>: <span class="token-type">Expression</span>)</code></p></li></ul><p>This object is converted to a <code><a href="Boolean.html#boolean">Boolean</a></code>. If the result is <code>true</code>, the <code>other</code> expression is evaluated and the result retuned, otherwise this object is returned.</p><p><hr></hr></p><h3><code><a id="table-prototype-k_coalesce">Table.prototype.@k_coalesce</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:352</sub></p><p><strong>Inherited from:</strong> <code><a href="Table.html#table">Table</a></code></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-keyword">@k_coalesce</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">other</span>: <span class="token-type">Expression</span>)</code></p></li></ul><p>If this object is not <code><a href="index.html#symbol-null">null</a></code> or <code><a href="index.html#void">void</a></code>, it is returned, otherwise the <code>other</code> expression is evaluated and the result retuned.</p><p><hr></hr></p><h3><code><a id="table-prototype-k_else">Table.prototype.@k_else</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:366</sub></p><p><strong>Inherited from:</strong> <code><a href="Table.html#table">Table</a></code></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-keyword">@k_else</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">other</span>: <span class="token-type">Expression</span>)</code></p></li></ul><p>If this object is not <code><a href="index.html#void">void</a></code>, it is returned, otherwise the <code>other</code> expression is evaluated and the result retuned.</p><p><hr></hr></p><h3><code><a id="table-prototype-k_or">Table.prototype.@k_or</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:337</sub></p><p><strong>Inherited from:</strong> <code><a href="Table.html#table">Table</a></code></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-keyword">@k_or</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">other</span>: <span class="token-type">Expression</span>)</code></p></li></ul><p>This object is converted to a <code><a href="Boolean.html#boolean">Boolean</a></code>. If the result is <code>true</code> this object is retuned, otherwise the <code>other</code> expression is evaluated and the result retuned.</p><p><hr></hr></p><h3><code><a id="table-prototype-k_boolean">Table.prototype.k_boolean</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:380</sub></p><p><strong>Inherited from:</strong> <code><a href="Table.html#table">Table</a></code></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_boolean</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>)</code></p></li></ul><p>This object is converted to a <code><a href="Boolean.html#boolean">Boolean</a></code>.</p><p><hr></hr></p><h3><code><a id="table-prototype-k_is">Table.prototype.k_is</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/runtime/GlobalScope.java:391</sub></p><p><strong>Inherited from:</strong> <code><a href="Table.html#table">Table</a></code></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_is</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">other</span>: <span class="token-type">any</span>)</code></p></li></ul><p>Returns <code>true</code> if this object is equal by reference to the other object. This function returns inconsistent results for objects of type <code><a href="String.html#string">String</a></code> and <code><a href="Number.html#number">Number</a></code>, and should not be used with them. The intended use is for reference comparisons between compound objects and <code><a href="index.html#symbol-null">null</a></code> or <code><a href="index.html#void">void</a></code>, without using their overload of the <code>k_eq</code> operator.</p><p><hr></hr></p>
+</body>
+
+</html>
