@@ -1,11 +1,14 @@
 import { relative } from "node:path"
+import syntaxFile from "../../../../extension/syntaxes/tb.tmLanguage.json"
 import templateHtml from "../../template.html"
 import { createSortFunction, ensureKey, isAlpha, iteratorNth } from "../comTypes/util"
 import { MmlHtmlRenderer } from "../miniML/MmlHtmlRenderer"
 import { MmlParser } from "../miniML/MmlParser"
+import { SyntaxNode } from "../miniML/SyntaxNode"
 import { Project } from "./Project"
 import { SymbolDatabase } from "./SymbolDatabase"
 import { SymbolHandle } from "./SymbolHandle"
+import { ColorTheme, LanguageDefinition, SyntaxHighlighter } from "./SyntaxHighlighter"
 
 export class Page {
     public readonly instanceSymbols: SymbolHandle[] = []
@@ -59,13 +62,18 @@ export class MarkdownPageBuilder {
             this._result.push("**Overloads:**")
 
             for (const overload of symbol.overloads) {
-                const formattedParameters: string[] = overload.parameters.map((v, i) => `${v}: ${this.tryMakeLink(overload.types?.at(i) ?? this.owner.db.getSymbol("any"))}`)
+                const formattedParameters: string[] = overload.parameters.map((v, i) =>
+                    `<span class="token-variable">${v}</span>: `
+                    + `${this.tryMakeLink(overload.types?.at(i) ?? this.owner.db.getSymbol("any"))}`)
 
                 if (overload.isVariadic) {
                     formattedParameters.push("...")
                 }
 
-                this._result.push(`  - <code>${shortName}(${formattedParameters.join(", ")})</code>`)
+                this._result.push(`  - <code>`
+                    + `<span class="${shortName.startsWith("@") ? "token-keyword" : "token-function"}">${shortName}</span>`
+                    + `(${formattedParameters.join(", ")})`
+                    + `</code>`)
             }
 
             this._result.push("")
@@ -115,7 +123,7 @@ export class MarkdownPageBuilder {
     public tryMakeLink(symbol: SymbolHandle) {
         const link = this.owner.findLinkToSymbol(symbol, this.extension)
         if (link) return `[${symbol.name}](${link})`
-        return `${symbol.name}`
+        return `<span class="token-type">${symbol.name}</span>`
     }
 
     public build() {
@@ -129,6 +137,53 @@ export class MarkdownPageBuilder {
         public readonly filename: string,
     ) { }
 }
+
+let _languageDefinition: LanguageDefinition | null = null
+function _getLanguageDefinition() {
+    return _languageDefinition ?? LanguageDefinition.deserialize(syntaxFile)
+}
+
+const _colorTheme = new ColorTheme({
+    colors: new Map(Object.entries({
+        "comment": "#247d01",
+        "const": "#01258f",
+        "function": "#7d0303",
+        "keyword": "#995d00",
+        "number": "#d90156",
+        "string": "#3f3f3f",
+        "type": "#016d41",
+        "variable": "#101000",
+        "property": "#007a81",
+    } as Record<string, string>)),
+    styles: new Map(Object.entries({
+        "comment.block.tree-burst": "comment",
+        "comment.line.double-slash.tree-burst": "comment",
+        "constant.character.escape.tree-burst": "string",
+        "constant.language.tree-burst": "const",
+        "constant.numeric.decimal.tree-burst": "number",
+        "entity.name.function.tree-burst": "function",
+        // "entity.name.label.tree-burst": "other",
+        "keyword.control.tree-burst": "keyword",
+        // "meta.array-literal.tree-burst": "other",
+        // "meta.function.tree-burst": "other",
+        // "meta.group.tree-burst": "other",
+        // "meta.objectliteral.tree-burst": "other",
+        // "meta.template.expression.tree-burst": "other",
+        "punctuation.definition.template-expression.begin.tree-burst": "const",
+        "punctuation.definition.template-expression.end.tree-burst": "const",
+        "storage.type.format.tree-burst": "keyword",
+        "storage.type.function.tree-burst": "keyword",
+        "string.quoted.double.tree-burst": "string",
+        "string.quoted.other.tree-burst": "string",
+        "string.quoted.single.tree-burst": "string",
+        "support.class.tree-burst": "type",
+        "support.type.property-name.implicit.tree-burst": "property",
+        "support.type.property-name.tree-burst": "property",
+        "variable.constant.tree-burst": "variable",
+        "variable.other.tree-burst": "variable",
+        "variable.parameter.tree-burst": "variable",
+    } as Record<string, string>)),
+})
 
 export class DocumentationBuilder {
     public readonly globalPage = new Page(this, this.db.globalScope, null)
@@ -275,7 +330,24 @@ export class DocumentationBuilder {
     }
 
     public *buildHtml(extension = ".html") {
-        const renderer = new MmlHtmlRenderer()
+        const renderer = new class extends MmlHtmlRenderer {
+            protected _renderCodeBlock(node: SyntaxNode.CodeBlock): string {
+                if (node.lang == null) return super._renderCodeBlock(node)
+
+                const children: string[] = []
+
+                const highlighter = new SyntaxHighlighter(node.content, _getLanguageDefinition(), _colorTheme)
+                for (const token of highlighter.getTokens()) {
+                    if (token.style != null) {
+                        children.push(this._renderElementRaw("span", new Map([["class", token.style]]), this._renderText(token.text)))
+                    } else {
+                        children.push(this._renderText(token.text))
+                    }
+                }
+
+                return this._renderElementRaw("pre", null, this._renderElementRaw("code", null, children.join("")))
+            }
+        }()
 
         for (const markdown of this.buildMarkdown(extension)) {
 
@@ -285,11 +357,14 @@ export class DocumentationBuilder {
 
             const inserts = this.project.getInsertsForFilename(markdown.filename, ".html")
 
+            let style = _colorTheme.generateCSS()
+
             const html = inserts.join("\n") + "\n" + renderer.render(root)
 
             const output = templateHtml
-                .replace(/{{BODY}}/, () => html)
                 .replace(/{{TITLE}}/, () => markdown.title)
+                .replace(/\/\*STYLE\*\//, () => style)
+                .replace(/{{BODY}}/, () => html)
 
             yield { filename: markdown.filename, html: output }
         }
