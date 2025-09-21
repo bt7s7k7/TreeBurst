@@ -1,6 +1,6 @@
 # ![TreeBurst Icon](./packages/treeBurstJava/docs/TreeBurst.png) TreeBurst
 
-TreeBurst is a small, dynamically typed, embeddable programming language. Currently very work in progress.
+TreeBurst is a small, dynamically typed, embeddable programming language. Currently very work in progress. [Documentation is available here](https://bt7s7k7.github.io/TreeBurst/).
 
 Features:
 
