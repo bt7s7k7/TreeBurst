@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Array - TreeBurst</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            max-width: 1050px;
+            width: 100%;
+            margin: 0 auto 0 auto;
+        }
+
+        h1,
+        h2 {
+            font-weight: 400;
+        }
+
+        blockquote {
+            margin: 0;
+            color: #57606a;
+            padding-left: 1em;
+            border-left: 5px solid #d0d7de;
+        }
+
+        ul>li::marker {
+            content: "-   ";
+        }
+
+        li>p {
+            margin-bottom: 0;
+        }
+
+        li>p:first-child {
+            margin-top: 0;
+        }
+
+        code {
+            border: 1px solid #d0d7de;
+            padding: 0.2em;
+            border-radius: 0.2em;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+
+        pre {
+            border: 1px solid #d0d7de;
+            padding: 0.4em;
+            border-radius: 0.2em;
+        }
+
+        pre>code {
+            border: none;
+            padding: 0;
+        }
+
+        code {
+            color: #313131;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        a[href]:hover,
+        a[href]:focus-visible {
+            text-decoration: underline;
+        }
+
+        a[href].as-button {
+            text-decoration: none;
+        }
+
+        table,
+        table th,
+        table td {
+            border: black 1px solid;
+            border-collapse: collapse;
+        }
+
+        table td {
+            padding: var(--size-int);
+        }
+
+        table p,
+        table ul,
+        table il {
+            margin: 0;
+        }
+
+        sub {
+            font-size: x-small;
+            opacity: 0.5;
+            vertical-align: middle;
+        }
+
+        .token-comment { color: #247d01; }
+.token-const { color: #01258f; }
+.token-function { color: #7d0303; }
+.token-keyword { color: #995d00; }
+.token-number { color: #d90156; }
+.token-string { color: #3f3f3f; }
+.token-type { color: #016d41; }
+.token-variable { color: #101000; }
+.token-property { color: #007a81; }
+    </style>
+</head>
+
+<body>
+    
+<p><a href="index.html">Back</a></p><h1><a id="array">Array</a></h1><p><sub>src/main/java/bt7s7k7/treeburst/runtime/Realm.java:167<br>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:35</sub></p><p>Allows the storage of an ordered list of elements, each indexed by a number starting from <code>0</code>.</p><p><hr></hr></p><p><hr></hr></p><h3><code><a id="array-prototype-foreach">Array.prototype.@foreach</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:485</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-keyword">@foreach</span>(<span class="token-variable">this</span>: <span class="token-type">Expression</span>, <span class="token-variable">function</span>: <span class="token-type">Expression.FunctionDeclaration</span>)</code></p></li></ul><p>Equivalent to the <code><a href="Array.html#array-prototype-foreach">Array.prototype.foreach</a></code> function, except this macro inlines the <code>function</code>, allowing you to share the scope and use control flow functions like <code><a href="index.html#return">return</a></code> and <code><a href="index.html#goto">goto</a></code>.</p><p><hr></hr></p><h3><code><a id="array-prototype-append">Array.prototype.append</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:322</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">append</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">elements</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Appends the provided elements to the end of the array. Returns the current array.</p><p><hr></hr></p><h3><code><a id="array-prototype-clear">Array.prototype.clear</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:229</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">clear</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Removes all elements in the array.</p><p><hr></hr></p><h3><code><a id="array-prototype-clone">Array.prototype.clone</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:223</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">clone</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Creates a copy of the array.</p><p><hr></hr></p><h3><code><a id="array-prototype-filter">Array.prototype.filter</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:458</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">filter</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">function</span>: <a href="Function.html#function">Function</a>)</code></p></li></ul><p>Creates a new array with only the elements for which <code>function</code> returned <code>true</code>. The function is called with <code>value</code> of the element, the <code>index</code> of the element and a reference to this <code>array</code>.</p><p><hr></hr></p><h3><code><a id="array-prototype-foreach">Array.prototype.foreach</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:441</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">foreach</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">function</span>: <a href="Function.html#function">Function</a>)</code></p></li></ul><p>Calls a function for every element of this array. The function is called with <code>value</code> of the element, the <code>index</code> of the element and a reference to this <code>array</code>. Returns this array.</p><p><hr></hr></p><h3><code><a id="array-prototype-join">Array.prototype.join</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:516</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">join</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">separator</span>: <a href="String.html#string">String</a>)</code></p></li></ul><p>Creates a <code><a href="String.html#string">String</a></code> as that is a concatenation of all elements of the array. Elements that are not strings are converted to strings using their <code>k_string</code> method.</p><p><hr></hr></p><h3><code><a id="array-prototype-k_add">Array.prototype.k_add</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:542</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_add</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">left</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">right</span>: <a href="Array.html#array">Array</a>)</code></p></li><li><p><code><span class="token-function">k_add</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">right</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Creates a new array that is a concatenation of the two input arrays.</p><p><hr></hr></p><h3><code><a id="array-prototype-k_at">Array.prototype.k_at</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:101</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_at</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">index</span>: <a href="Number.html#number">Number</a>)</code></p></li><li><p><code><span class="token-function">k_at</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">index</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">value</span>: <span class="token-type">any</span>)</code></p></li></ul><p>Gets or sets an element at the requested index. If an index outside the array is specified, an exception is generated. As always, the index may be negative to index from the end of the array, where <code>-1</code> is the last element and so on.</p><p><hr></hr></p><h3><code><a id="array-prototype-k_dump">Array.prototype.k_dump</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:396</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_dump</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">depth?</span>: <a href="Number.html#number">Number</a>)</code></p></li></ul><p>Formats the array into a textual form.</p><p><hr></hr></p><h3><code><a id="array-prototype-k_mul">Array.prototype.k_mul</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:557</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">k_mul</span>(<span class="token-variable">this</span>: <span class="token-type">any</span>, <span class="token-variable">left</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">right</span>: <a href="Number.html#number">Number</a>)</code></p></li><li><p><code><span class="token-function">k_mul</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">right</span>: <a href="Number.html#number">Number</a>)</code></p></li></ul><p>Creates a new array that is the input array repeated <code>n</code> times.</p><p><hr></hr></p><h3><code><a id="array-prototype-map">Array.prototype.map</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:415</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">map</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">function</span>: <a href="Function.html#function">Function</a>)</code></p></li></ul><p>Creates a new array with the results of calling <code>function</code> on every element. The function is called with <code>value</code> of the element, the <code>index</code> of the element and a reference to this <code>array</code>. If <code>function</code> returns <code><a href="index.html#void">void</a></code>, the element is discarded and the resulting array is shorter.</p><p><hr></hr></p><h3><code><a id="array-prototype-pop">Array.prototype.pop</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:338</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">pop</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Removes the last element of the array and returns it. If the array is empty returns <code><a href="index.html#void">void</a></code>.</p><p><hr></hr></p><h3><code><a id="array-prototype-prepend">Array.prototype.prepend</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:330</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">prepend</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">elements</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Prepends the provided elements before the start of the array. Returns the current array.</p><p><hr></hr></p><h3><code><a id="array-prototype-push">Array.prototype.push</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:360</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">push</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Adds an element after the end of the array. Returns the last added value.</p><p><hr></hr></p><h3><code><a id="array-prototype-shift">Array.prototype.shift</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:349</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">shift</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Removes the first element of the array and returns it. If the array is empty returns <code><a href="index.html#void">void</a></code>.</p><p><hr></hr></p><h3><code><a id="array-prototype-slice">Array.prototype.slice</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:236</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">slice</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">from</span>: <a href="Number.html#number">Number</a>)</code></p></li><li><p><code><span class="token-function">slice</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">from</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">to</span>: <a href="Number.html#number">Number</a>)</code></p></li></ul><p>Creates a copy of a section of the array starting at <code>from</code> and ending at <code>to</code> (or the end of the array if not provided). As always, the index may be negative to index from the end of the array, where <code>-1</code> is the last element and so on.</p><p><hr></hr></p><h3><code><a id="array-prototype-splice">Array.prototype.splice</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:286</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">splice</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">index</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">delete</span>: <a href="Number.html#number">Number</a>)</code></p></li><li><p><code><span class="token-function">splice</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">index</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">delete</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">insert</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Removes a section of the array at <code>index</code> of length <code>delete</code>. Optionally replacing this section with the elements of <code>insert</code>. If the <code>delete</code> argument is <code>0</code>, this function is equivalent to an insertion function; in this case the <code>index</code> may point to just after the end of the array. As always, the index may be negative to index from the end of the array, where <code>-1</code> is the last element and so on.</p><p><hr></hr></p><h3><code><a id="array-prototype-truncate">Array.prototype.truncate</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:197</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">truncate</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">length</span>: <a href="Number.html#number">Number</a>)</code></p></li></ul><p>Sets the length of the array to the provided value. If the new length is shorter, elements at the end are discarded. If the length is longer, new elements are filled with <code><a href="index.html#symbol-null">null</a></code>. Returns a reference to this array.</p><p><hr></hr></p><h3><code><a id="array-prototype-tryat">Array.prototype.tryAt</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:141</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">tryAt</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">index</span>: <a href="Number.html#number">Number</a>)</code></p></li><li><p><code><span class="token-function">tryAt</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">index</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">value</span>: <span class="token-type">any</span>)</code></p></li></ul><p>Gets or sets an element at the requested index. If an index outside the array is specified, it returns <code><a href="index.html#void">void</a></code> when reading or the length of array is extended on writing (all added elements are filled with <code><a href="index.html#symbol-null">null</a></code>). As always, the index may be negative to index from the end of the array, where <code>-1</code> is the last element and so on.</p><p><hr></hr></p><h3><code><a id="array-prototype-unshift">Array.prototype.unshift</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:378</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">unshift</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>)</code></p></li></ul><p>Adds an element before the start of the array. Returns the last added value.</p><p><hr></hr></p><h3><code><a id="array-prototype-view">Array.prototype.view</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/ArrayPrototype.java:261</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">view</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">from</span>: <a href="Number.html#number">Number</a>)</code></p></li><li><p><code><span class="token-function">view</span>(<span class="token-variable">this</span>: <a href="Array.html#array">Array</a>, <span class="token-variable">from</span>: <a href="Number.html#number">Number</a>, <span class="token-variable">to</span>: <a href="Number.html#number">Number</a>)</code></p></li></ul><p>Creates a view of a section of the array starting at <code>from</code> and ending at <code>to</code> (or the end of the array if not provided). As always, the index may be negative to index from the end of the array, where <code>-1</code> is the last element and so on.</p><p><hr></hr></p>
+</body>
+
+</html>

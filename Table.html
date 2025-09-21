@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Table - TreeBurst</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            max-width: 1050px;
+            width: 100%;
+            margin: 0 auto 0 auto;
+        }
+
+        h1,
+        h2 {
+            font-weight: 400;
+        }
+
+        blockquote {
+            margin: 0;
+            color: #57606a;
+            padding-left: 1em;
+            border-left: 5px solid #d0d7de;
+        }
+
+        ul>li::marker {
+            content: "-   ";
+        }
+
+        li>p {
+            margin-bottom: 0;
+        }
+
+        li>p:first-child {
+            margin-top: 0;
+        }
+
+        code {
+            border: 1px solid #d0d7de;
+            padding: 0.2em;
+            border-radius: 0.2em;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+        }
+
+        pre {
+            border: 1px solid #d0d7de;
+            padding: 0.4em;
+            border-radius: 0.2em;
+        }
+
+        pre>code {
+            border: none;
+            padding: 0;
+        }
+
+        code {
+            color: #313131;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        a[href]:hover,
+        a[href]:focus-visible {
+            text-decoration: underline;
+        }
+
+        a[href].as-button {
+            text-decoration: none;
+        }
+
+        table,
+        table th,
+        table td {
+            border: black 1px solid;
+            border-collapse: collapse;
+        }
+
+        table td {
+            padding: var(--size-int);
+        }
+
+        table p,
+        table ul,
+        table il {
+            margin: 0;
+        }
+
+        sub {
+            font-size: x-small;
+            opacity: 0.5;
+            vertical-align: middle;
+        }
+
+        .token-comment { color: #247d01; }
+.token-const { color: #01258f; }
+.token-function { color: #7d0303; }
+.token-keyword { color: #995d00; }
+.token-number { color: #d90156; }
+.token-string { color: #3f3f3f; }
+.token-type { color: #016d41; }
+.token-variable { color: #101000; }
+.token-property { color: #007a81; }
+    </style>
+</head>
+
+<body>
+    
+<p><a href="index.html">Back</a></p><h1><a id="table">Table</a></h1><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:21<br>src/main/java/bt7s7k7/treeburst/runtime/Realm.java:152<br>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:30</sub></p><p>Represents an object with properties.</p><p><hr></hr></p><p><hr></hr></p><h3><code><a id="table-getname">Table.getName</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:109</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">getName</span>(<span class="token-variable">object</span>: <span class="token-type">ManagedObject</span>)</code></p></li></ul><p>Returns the name of the object or <code><a href="index.html#void">void</a></code> if it is not named.</p><p><hr></hr></p><h3><code><a id="table-getnameorinheritedname">Table.getNameOrInheritedName</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:115</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">getNameOrInheritedName</span>(<span class="token-variable">object</span>: <span class="token-type">ManagedObject</span>)</code></p></li></ul><p>Returns the name of the object, of the object&#039;s prototype or <code><a href="index.html#void">void</a></code> if it is not named.</p><p><hr></hr></p><h3><code><a id="table-getproperty">Table.getProperty</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:96</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">getProperty</span>(<span class="token-variable">object</span>: <span class="token-type">any</span>, <span class="token-variable">property</span>: <a href="String.html#string">String</a>, <span class="token-variable">receiver?</span>: <span class="token-type">any</span>)</code></p></li></ul><p>If the <code>object</code> contains property named <code>property</code>, returns its value. Otherwise returns <code><a href="index.html#void">void</a></code>. If the <code>receiver</code> arguments is specified, it will be provided to any possible getters.</p><p><hr></hr></p><h3><code><a id="table-getprototype">Table.getPrototype</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:138</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">getPrototype</span>(<span class="token-variable">value</span>: <span class="token-type">any</span>)</code></p></li></ul><p>Returns the prototype of the value or <code><a href="index.html#void">void</a></code> if it does not have a prototype.</p><p><hr></hr></p><h3><code><a id="table-instanceof">Table.instanceOf</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:145</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">instanceOf</span>(<span class="token-variable">value</span>: <span class="token-type">any</span>, <span class="token-variable">type</span>: <span class="token-type">any</span>)</code></p></li></ul><p>Returns if the value is an instance of a type, that is if it has a prototype that is equal to the <code>type</code> prototype property. The only exception is the <code><a href="index.html#void">void</a></code> and <code><a href="index.html#symbol-null">null</a></code> values, which are singletons and instances of themselves.</p><p><hr></hr></p><h3><code><a id="table-new">Table.new</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:32</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">new</span>(<span class="token-variable">this</span>: <a href="Table.html#table">Table</a>, <span class="token-variable">properties</span>: <a href="Map.html#map">Map</a>)</code></p></li></ul><p>Creates a new object that inherits from this table&#039;s <code>prototype</code> property, assuming it exists. Otherwise an exception is generated.</p><p><hr></hr></p><h3><code><a id="table-setname">Table.setName</a></code></h3><p><sub>src/main/java/bt7s7k7/treeburst/standard/TableApi.java:122</sub></p><p><strong>Overloads:</strong></p><ul><li><p><code><span class="token-function">setName</span>(<span class="token-variable">object</span>: <span class="token-type">ManagedObject</span>, <span class="token-variable">name</span>: <a href="String.html#string">String</a>)</code></p></li></ul><p>Sets the name of the object. The <code>name</code> argument can also be set to <code><a href="index.html#void">void</a></code>, in which case the name is cleared. Returns the object.</p><p><hr></hr></p>
+</body>
+
+</html>
