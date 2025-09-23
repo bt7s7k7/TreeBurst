@@ -14,6 +14,7 @@ import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.runtime.Scope;
+import bt7s7k7.treeburst.runtime.Variable;
 
 public class ManagedValueUtils {
 	public static boolean verifyArguments(List<ManagedValue> args, List<String> names, ExpressionResult result) {
@@ -261,5 +262,34 @@ public class ManagedValueUtils {
 		}
 
 		return new BinaryOperatorOperands(args.get(0), args.get(1));
+	}
+
+	public static Variable getVariableReference(Expression expression, Scope scope, ExpressionResult result) {
+		if (expression instanceof Expression.VariableDeclaration declaration) {
+			if (declaration.declaration() instanceof Expression.Identifier identifier) {
+				var variable = scope.declareVariable(identifier.name());
+
+				if (variable == null) {
+					result.setException(new Diagnostic("Duplicate declaration of variable \"" + identifier.name() + "\"", identifier.position()));
+					return null;
+				}
+
+				return variable;
+			}
+		} else if (expression instanceof Expression.Identifier identifier) {
+			if (identifier.name().equals("_")) return null;
+
+			var variable = scope.findVariable(identifier.name());
+
+			if (variable == null) {
+				result.setException(new Diagnostic("Cannot find variable \"" + identifier.name() + "\"", identifier.position()));
+				return null;
+			}
+
+			return variable;
+		}
+
+		result.setException(new Diagnostic("Invalid variable reference", expression.position()));
+		return null;
 	}
 }

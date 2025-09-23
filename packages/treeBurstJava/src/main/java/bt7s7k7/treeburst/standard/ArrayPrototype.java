@@ -1,5 +1,6 @@
 package bt7s7k7.treeburst.standard;
 
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.BINARY_OPERATOR_PARAMETERS;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
@@ -398,6 +400,57 @@ public class ArrayPrototype extends LazyTable {
 			}
 
 			result.value = output;
+		}));
+
+		this.declareProperty("@foreach", new NativeFunction(this.globalScope.FunctionPrototype, List.of("this", "element", "index", "body"), (args, scope, result) -> {
+			// @summary[[For every element in this array, executes the `body` expression. If they
+			// are provided, the `element` and `index` expressions should contain a variable
+			// declaration or a variable identifier. The `element` variable will be assigned the
+			// current element and the `index` variable will be assigned the index of the element.
+			// This function returns this array.]]
+			ManagedArray self;
+			Expression elementExpr = null;
+			Expression indexExpr = null;
+			Expression bodyExpr;
+
+			if (args.size() == 2) {
+				args = ensureArgumentTypes(args, List.of("this", "body"), List.of(ManagedArray.class, Expression.class), scope, result);
+				if (result.label != null) return;
+
+				self = args.get(0).getArrayValue();
+				bodyExpr = args.get(1).getNativeValue(Expression.class);
+			} else if (args.size() == 3) {
+				args = ensureArgumentTypes(args, List.of("this", "element", "body"), List.of(ManagedArray.class, Expression.class, Expression.class), scope, result);
+				if (result.label != null) return;
+
+				self = args.get(0).getArrayValue();
+				elementExpr = args.get(1).getNativeValue(Expression.class);
+				bodyExpr = args.get(2).getNativeValue(Expression.class);
+			} else {
+				args = ensureArgumentTypes(args, List.of("this", "element", "index", "body"), List.of(ManagedArray.class, Expression.class, Expression.class, Expression.class), scope, result);
+				if (result.label != null) return;
+
+				self = args.get(0).getArrayValue();
+				elementExpr = args.get(1).getNativeValue(Expression.class);
+				indexExpr = args.get(2).getNativeValue(Expression.class);
+				bodyExpr = args.get(3).getNativeValue(Expression.class);
+			}
+
+			var elementVariable = elementExpr == null ? null : ManagedValueUtils.getVariableReference(elementExpr, scope, result);
+			if (result.label != null) return;
+			var indexVariable = indexExpr == null ? null : ManagedValueUtils.getVariableReference(indexExpr, scope, result);
+			if (result.label != null) return;
+
+			var index = 0;
+			for (var element : self) {
+				if (elementVariable != null) elementVariable.value = element;
+				if (indexVariable != null) indexVariable.value = Primitive.from(index++);
+
+				evaluateExpression(bodyExpr, scope, result);
+				if (result.label != null) return;
+			}
+
+			result.value = self;
 		}));
 
 		this.declareProperty("join", NativeFunction.simple(this.globalScope, List.of("this", "separator"), List.of(ManagedArray.class, Primitive.String.class), (args, scope, result) -> {

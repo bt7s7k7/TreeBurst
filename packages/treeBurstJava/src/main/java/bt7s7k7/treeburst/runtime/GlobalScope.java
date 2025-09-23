@@ -5,17 +5,20 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.BINARY_OPERATOR_PARAMETERS;
+import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.prepareBinaryOperator;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.verifyArguments;
 
+import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.RandomAccess;
 
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
@@ -113,6 +116,31 @@ public class GlobalScope extends Scope {
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHL, (a, b) -> Primitive.from((int) a << (int) b)); // @summary: Shifts the bits in the first number left by the value of the second number, calculated using 32-bit signed integers.
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHR, (a, b) -> Primitive.from((int) a >> (int) b)); // @summary: Shifts the bits in the first number right by the value of the second number, calculated using 32-bit signed integers.
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_SHR_UNSIGNED, (a, b) -> Primitive.from((int) a >>> (int) b)); // @summary: Shifts the bits in the first number right by the value of the second number, calculated using 32-bit unsigned integers.
+	}
+
+	private class RangeList extends AbstractList<ManagedValue> implements RandomAccess {
+		public final int min;
+		public final int max;
+
+		public RangeList(int min, int max) {
+			this.min = min;
+			this.max = max;
+		}
+
+		public RangeList(int max) {
+			this.min = 0;
+			this.max = max;
+		}
+
+		@Override
+		public int size() {
+			return this.max - this.min;
+		}
+
+		@Override
+		public ManagedValue get(int index) {
+			return Primitive.from(this.min + index);
+		}
 	}
 
 	public final ManagedTable TablePrototype = new ManagedTable(null);
@@ -442,6 +470,34 @@ public class GlobalScope extends Scope {
 			// @summary: Specifies that this portion of the code should not be reachable in standard operation. If it is reached an exception is generated.
 			result.setException(new Diagnostic("Reached unreachable code", Position.INTRINSIC));
 			return;
+		}));
+
+		this.declareGlobal("range", new NativeFunction(this.FunctionPrototype, List.of("min", "max"), (args, scope, result) -> {
+			if (args.size() == 1) {
+				args = ensureArgumentTypes(args, List.of("length"), List.of(Primitive.Number.class), scope, result);
+				if (result.label != null) return;
+
+				var length = (int) args.get(0).getNumberValue();
+				if (length < 0) {
+					result.setException(new Diagnostic("Length cannot be < 0", Position.INTRINSIC));
+					return;
+				}
+
+				result.value = ManagedArray.fromImmutableList(this.ArrayPrototype, new RangeList(length));
+				return;
+			}
+
+			args = ensureArgumentTypes(args, List.of("min", "max"), List.of(Primitive.Number.class, Primitive.Number.class), scope, result);
+			if (result.label != null) return;
+
+			var min = (int) args.get(0).getNumberValue();
+			var max = (int) args.get(1).getNumberValue();
+			if (max < min) {
+				result.setException(new Diagnostic("Argument max cannot be < min", Position.INTRINSIC));
+				return;
+			}
+
+			result.value = ManagedArray.fromImmutableList(this.ArrayPrototype, new RangeList(min, max));
 		}));
 
 		this.declareGlobal("@if", new NativeFunction(this.FunctionPrototype, Collections.emptyList(), (args, scope, result) -> {
