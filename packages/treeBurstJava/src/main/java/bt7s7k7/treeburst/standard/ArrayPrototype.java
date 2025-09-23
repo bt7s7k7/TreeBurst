@@ -66,9 +66,9 @@ public class ArrayPrototype extends LazyTable {
 			if (result.label != null) return;
 
 			if (value == null) {
-				result.value = self.elements.get(index);
+				result.value = self.get(index);
 			} else {
-				self.elements.set(index, value);
+				self.set(index, value);
 				result.value = value;
 			}
 		}));
@@ -104,7 +104,7 @@ public class ArrayPrototype extends LazyTable {
 			}
 
 			if (index < 0) {
-				index = self.elements.size() + index;
+				index = self.getLength() + index;
 
 				if (index < 0) {
 					result.setException(new Diagnostic("Cannot use negative indices for an array", Position.INTRINSIC));
@@ -113,24 +113,26 @@ public class ArrayPrototype extends LazyTable {
 			}
 
 			if (value == null) {
-				if (index >= self.elements.size()) {
+				if (index >= self.getLength()) {
 					result.value = Primitive.VOID;
 					return;
 				}
 
-				result.value = self.elements.get(index);
+				result.value = self.get(index);
 			} else {
-				if (index >= self.elements.size()) {
-					self.elements.addAll(Collections.nCopies(index + 1 - self.elements.size(), Primitive.NULL));
+				if (index >= self.getLength()) {
+					self.getElementsMutable().addAll(Collections.nCopies(index + 1 - self.getLength(), Primitive.NULL));
 				}
 
-				self.elements.set(index, value);
+				self.set(index, value);
 				result.value = value;
 			}
 		}));
 
 		this.declareProperty("truncate", NativeFunction.simple(this.globalScope, List.of("this", "length"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
-			// @summary: Sets the length of the array to the provided value. If the new length is shorter, elements at the end are discarded. If the length is longer, new elements are filled with {@link null}.
+			// @summary[[Sets the length of the array to the provided value. If the new length is
+			// shorter, elements at the end are discarded. If the length is longer, new elements are
+			// filled with {@link null}. Returns a reference to this array.]]
 			var self = args.get(0).getArrayValue();
 			var length = (int) args.get(1).getNumberValue();
 
@@ -139,25 +141,30 @@ public class ArrayPrototype extends LazyTable {
 				return;
 			}
 
-			if (length < self.elements.size()) {
-				self.elements.subList(length, self.elements.size()).clear();
-			} else if (length > self.elements.size()) {
-				self.elements.addAll(Collections.nCopies(length - self.elements.size(), Primitive.NULL));
+			if (length < self.getLength()) {
+				self.getElementsMutable().subList(length, self.getLength()).clear();
+			} else if (length > self.getLength()) {
+				if (self instanceof ManagedArray.ListBackedArray listBacked && listBacked.getLength() == 0) {
+					listBacked.immutable = true;
+					listBacked.elements = Collections.nCopies(length - self.getLength(), Primitive.NULL);
+				} else {
+					self.getElementsMutable().addAll(Collections.nCopies(length - self.getLength(), Primitive.NULL));
+				}
 			}
 
-			return;
+			result.value = self;
 		}));
 
 		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Creates a copy of the array.
 			var self = args.get(0).getArrayValue();
-			result.value = new ManagedArray(self.prototype, new ArrayList<>(self.elements));
+			result.value = self.makeCopy();
 		}));
 
 		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Removes all elements in the array.
 			var self = args.get(0).getArrayValue();
-			self.elements.clear();
+			self.clear();
 			result.value = Primitive.VOID;
 		}));
 
@@ -175,7 +182,7 @@ public class ArrayPrototype extends LazyTable {
 			if (result.label != null) return;
 			var self = args.get(0).getArrayValue();
 			var from = (int) args.get(1).getNumberValue();
-			var to = args.size() == 2 ? self.elements.size() : (int) args.get(2).getNumberValue();
+			var to = args.size() == 2 ? self.getLength() : (int) args.get(2).getNumberValue();
 
 			from = self.normalizeIndex(from, result);
 			if (result.label != null) return;
@@ -183,7 +190,32 @@ public class ArrayPrototype extends LazyTable {
 			to = self.normalizeLimit(to, result);
 			if (result.label != null) return;
 
-			result.value = new ManagedArray(self.prototype, new ArrayList<>(self.elements.subList(from, to)));
+			result.value = self.makeView(from, to).makeCopy();
+		}));
+
+		this.declareProperty("view", NativeFunction.simple(this.globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
+			// @summary[[Creates a view of a section of the array starting at `from` and ending at
+			// `to` (or the end of the array if not provided). As always, the index may be
+			// negative to index from the end of the array, where `-1` is the last element and so
+			// on.]]
+			if (args.size() == 2) {
+				args = ensureArgumentTypes(args, List.of("this", "from"), List.of(ManagedArray.class, Primitive.Number.class), scope, result);
+			} else {
+				args = ensureArgumentTypes(args, List.of("this", "from", "to"), List.of(ManagedArray.class, Primitive.Number.class, Primitive.Number.class), scope, result);
+			}
+
+			if (result.label != null) return;
+			var self = args.get(0).getArrayValue();
+			var from = (int) args.get(1).getNumberValue();
+			var to = args.size() == 2 ? self.getLength() : (int) args.get(2).getNumberValue();
+
+			from = self.normalizeIndex(from, result);
+			if (result.label != null) return;
+
+			to = self.normalizeLimit(to, result);
+			if (result.label != null) return;
+
+			result.value = self.makeView(from, to);
 		}));
 
 		this.declareProperty("splice", NativeFunction.simple(this.globalScope, List.of("this", "index", "delete", "insert?"), (args, scope, result) -> {
@@ -208,15 +240,15 @@ public class ArrayPrototype extends LazyTable {
 			index = self.normalizeLimit(index, result);
 			if (result.label != null) return;
 
-			if (index + delete > self.elements.size()) {
-				result.setException(new Diagnostic("Too many elements to delete, deleting " + delete + " at index " + index + " in array of size " + self.elements.size(), Position.INTRINSIC));
+			if (index + delete > self.getLength()) {
+				result.setException(new Diagnostic("Too many elements to delete, deleting " + delete + " at index " + index + " in array of size " + self.getLength(), Position.INTRINSIC));
 				return;
 			}
 
-			var range = self.elements.subList(index, index + delete);
+			var range = self.getElementsMutable().subList(index, index + delete);
 			range.clear();
 			if (insert != null) {
-				range.addAll(insert.elements);
+				range.addAll(insert.getElementsReadOnly());
 			}
 
 			result.value = Primitive.VOID;
@@ -226,7 +258,7 @@ public class ArrayPrototype extends LazyTable {
 			// @summary: Appends the provided elements to the end of the array. Returns the current array.
 			var self = args.get(0).getArrayValue();
 			var elements = args.get(1);
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, elements), scope, result);
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.getLength()), Primitive.ZERO, elements), scope, result);
 			result.value = self;
 		}));
 
@@ -241,7 +273,7 @@ public class ArrayPrototype extends LazyTable {
 		this.declareProperty("pop", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Removes the last element of the array and returns it. If the array is empty returns {@link void}.
 			var self = args.get(0).getArrayValue();
-			var removedValue = self.elements.size() > 0 ? self.elements.getLast() : Primitive.VOID;
+			var removedValue = self.getLength() > 0 ? self.get(self.getLength() - 1) : Primitive.VOID;
 
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(-1), Primitive.from(1)), scope, result);
 			if (result.label != null) return;
@@ -252,7 +284,7 @@ public class ArrayPrototype extends LazyTable {
 		this.declareProperty("shift", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Removes the first element of the array and returns it. If the array is empty returns {@link void}.
 			var self = args.get(0).getArrayValue();
-			var removedValue = self.elements.size() > 0 ? self.elements.getFirst() : Primitive.VOID;
+			var removedValue = self.getLength() > 0 ? self.get(0) : Primitive.VOID;
 
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.from(1)), scope, result);
 			if (result.label != null) return;
@@ -273,8 +305,8 @@ public class ArrayPrototype extends LazyTable {
 				return;
 			}
 
-			var elementsToAdd = new ManagedArray(this, args.subList(1, args.size()));
-			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.elements.size()), Primitive.ZERO, elementsToAdd), scope, result);
+			var elementsToAdd = ManagedArray.withElements(this, args.subList(1, args.size()));
+			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.from(self.getLength()), Primitive.ZERO, elementsToAdd), scope, result);
 			result.value = args.getLast();
 		}));
 
@@ -291,7 +323,7 @@ public class ArrayPrototype extends LazyTable {
 				return;
 			}
 
-			var elementsToAdd = new ManagedArray(this, args.subList(1, args.size()));
+			var elementsToAdd = ManagedArray.withElements(this, args.subList(1, args.size()));
 			evaluateInvocation(self, self, "splice", Position.INTRINSIC, List.of(Primitive.ZERO, Primitive.ZERO, elementsToAdd), scope, result);
 			result.value = args.getLast();
 		}));
@@ -304,7 +336,7 @@ public class ArrayPrototype extends LazyTable {
 			if (depth > 0) {
 				var dump = ManagedValueUtils.<ManagedValue>dumpCollection(
 						self.getNameOrInheritedName(), true, "[", "]",
-						self.elements, null, null, Function.identity(), (int) depth - 1, scope, result);
+						self.getElementsReadOnly(), null, null, Function.identity(), (int) depth - 1, scope, result);
 				if (dump == null) return;
 
 				result.value = Primitive.from(dump);
@@ -323,10 +355,11 @@ public class ArrayPrototype extends LazyTable {
 			var self = args.get(0).getArrayValue();
 			var function = args.get(1).getFunctionValue();
 
-			var output = new ManagedArray(this.globalScope.ArrayPrototype);
+			var output = ManagedArray.withCapacity(this.globalScope.ArrayPrototype, self.getLength());
+			var outputElements = output.getElementsMutable();
 
-			for (int i = 0; i < self.elements.size(); i++) {
-				var element = self.elements.get(i);
+			for (int i = 0; i < self.getLength(); i++) {
+				var element = self.get(i);
 
 				evaluateInvocation(Primitive.VOID, Primitive.VOID, function, Position.INTRINSIC, List.of(element, Primitive.from(i), self), scope, result);
 				if (result.label != null) return;
@@ -334,7 +367,7 @@ public class ArrayPrototype extends LazyTable {
 				var resultElement = result.value;
 				if (result.value == Primitive.VOID) continue;
 
-				output.elements.add(resultElement);
+				outputElements.add(resultElement);
 			}
 
 			result.value = output;
@@ -347,10 +380,11 @@ public class ArrayPrototype extends LazyTable {
 			var self = args.get(0).getArrayValue();
 			var function = args.get(1).getFunctionValue();
 
-			var output = new ManagedArray(this.globalScope.ArrayPrototype);
+			var output = ManagedArray.empty(this.globalScope.ArrayPrototype);
+			var outputElements = output.getElementsMutable();
 
-			for (int i = 0; i < self.elements.size(); i++) {
-				var element = self.elements.get(i);
+			for (int i = 0; i < self.getLength(); i++) {
+				var element = self.get(i);
 
 				evaluateInvocation(Primitive.VOID, Primitive.VOID, function, Position.INTRINSIC, List.of(element, Primitive.from(i), self), scope, result);
 				if (result.label != null) return;
@@ -359,7 +393,7 @@ public class ArrayPrototype extends LazyTable {
 				if (result.label != null) return;
 
 				if (resultElement.value) {
-					output.elements.add(element);
+					outputElements.add(element);
 				}
 			}
 
@@ -377,7 +411,7 @@ public class ArrayPrototype extends LazyTable {
 			var builder = new StringBuilder();
 
 			var first = true;
-			for (var element : self.elements) {
+			for (var element : self) {
 				if (first) {
 					first = false;
 				} else {
@@ -399,12 +433,12 @@ public class ArrayPrototype extends LazyTable {
 
 			var left = operands.left().getArrayValue();
 			var right = operands.right().getArrayValue();
-			var output = new ArrayList<ManagedValue>(left.elements.size() + right.elements.size());
+			var output = new ArrayList<ManagedValue>(left.getLength() + right.getLength());
 
-			output.addAll(left.elements);
-			output.addAll(right.elements);
+			output.addAll(left.getElementsReadOnly());
+			output.addAll(right.getElementsReadOnly());
 
-			result.value = new ManagedArray(scope.globalScope.ArrayPrototype, output);
+			result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, output);
 		}));
 
 		this.declareProperty(OperatorConstants.OPERATOR_MUL, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
@@ -413,14 +447,15 @@ public class ArrayPrototype extends LazyTable {
 			if (result.label != null) return;
 
 			var left = operands.left().getArrayValue();
+			var elements = left.getElementsReadOnly();
 			var right = (int) operands.right().getNumberValue();
-			var output = new ArrayList<ManagedValue>(left.elements.size() * right);
+			var output = new ArrayList<ManagedValue>(left.getLength() * right);
 
 			for (int i = 0; i < right; i++) {
-				output.addAll(left.elements);
+				output.addAll(elements);
 			}
 
-			result.value = new ManagedArray(scope.globalScope.ArrayPrototype, output);
+			result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, output);
 		}));
 	}
 }

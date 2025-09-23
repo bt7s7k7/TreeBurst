@@ -171,22 +171,22 @@ public class NativeHandleWrapper<T> {
 				if (importKey != null) {
 					this.addMethod("keys", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.keySet().stream().map(importKey).collect(Collectors.toCollection(ArrayList::new)));
+						result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, map.keySet().stream().map(importKey).collect(Collectors.toCollection(ArrayList::new)));
 					});
 				}
 
 				if (importValue != null) {
 					this.addMethod("values", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.values().stream().map(importValue).collect(Collectors.toCollection(ArrayList::new)));
+						result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, map.values().stream().map(importValue).collect(Collectors.toCollection(ArrayList::new)));
 					});
 				}
 
 				if (importValue != null && importKey != null) {
 					this.addMethod("entries", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						result.value = new ManagedArray(scope.globalScope.ArrayPrototype, map.entrySet().stream()
-								.map(kv -> new ManagedArray(scope.globalScope.ArrayPrototype, List.of(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()))))
+						result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, map.entrySet().stream()
+								.map(kv -> ManagedArray.fromImmutableList(scope.globalScope.ArrayPrototype, List.of(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()))))
 								.collect(Collectors.toCollection(ArrayList::new)));
 					});
 

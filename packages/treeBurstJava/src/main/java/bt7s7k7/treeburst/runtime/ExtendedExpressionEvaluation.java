@@ -219,7 +219,7 @@ public class ExtendedExpressionEvaluation {
 					parameters.add(parameter);
 				}
 
-				Parameter.destructure(parameters, false, array.elements, this.scope, this.result);
+				Parameter.destructure(parameters, false, array.getElementsReadOnly(), this.scope, this.result);
 				return this.result.label == null;
 			};
 

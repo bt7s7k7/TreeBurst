@@ -2,7 +2,6 @@ package bt7s7k7.treeburst.standard;
 
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,22 +81,23 @@ public class MapPrototype extends LazyTable {
 		this.declareProperty("keys", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing keys of all the entries in the map.
 			var self = args.get(0).getMapValue();
-			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.keySet()));
+			result.value = ManagedArray.withElements(this.globalScope.ArrayPrototype, self.entries.keySet());
 		}));
 
 		this.declareProperty("values", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing values of all the entries in the map.
 			var self = args.get(0).getMapValue();
-			result.value = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.values()));
+			result.value = ManagedArray.withElements(this.globalScope.ArrayPrototype, self.entries.values());
 		}));
 
 		this.declareProperty("entries", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing all the entries in the map.
 			var self = args.get(0).getMapValue();
-			var entries = new ManagedArray(this.globalScope.ArrayPrototype, new ArrayList<>(self.entries.size()));
+			var entries = ManagedArray.withCapacity(this.globalScope.ArrayPrototype, self.entries.size());
+			var entriesElements = entries.getElementsMutable();
 
 			for (var kv : self.entries.entrySet()) {
-				entries.elements.add(new ManagedArray(this.globalScope.ArrayPrototype, List.of(kv.getKey(), kv.getValue())));
+				entriesElements.add(ManagedArray.fromImmutableList(this.globalScope.ArrayPrototype, List.of(kv.getKey(), kv.getValue())));
 			}
 
 			result.value = entries;

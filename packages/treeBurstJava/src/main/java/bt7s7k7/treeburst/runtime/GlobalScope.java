@@ -433,7 +433,7 @@ public class GlobalScope extends Scope {
 			// @summary: Calls the function with the specified receiver and arguments, returning its return value.
 			var self = args.get(0).getFunctionValue();
 			var receiver = args.get(1);
-			var arguments = args.size() == 2 ? Collections.<ManagedValue>emptyList() : args.get(2).getArrayValue().elements;
+			var arguments = args.size() == 2 ? Collections.<ManagedValue>emptyList() : args.get(2).getArrayValue().getElementsReadOnly();
 
 			evaluateInvocation(receiver, Primitive.VOID, self, Position.INTRINSIC, arguments, scope, result);
 		}));

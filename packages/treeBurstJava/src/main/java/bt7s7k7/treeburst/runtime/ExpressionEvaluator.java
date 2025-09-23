@@ -29,7 +29,7 @@ public class ExpressionEvaluator {
 				}
 
 				// No need to check excludeVoid, arrays cannot have void elements
-				results.addAll(array.elements);
+				results.addAll(array.getElementsReadOnly());
 				continue;
 			}
 
@@ -316,7 +316,7 @@ public class ExpressionEvaluator {
 		if (expression instanceof Expression.ArrayLiteral arrayLiteral) {
 			var elements = evaluateExpressions(arrayLiteral.elements(), true, scope, result);
 			if (elements == null) return;
-			result.value = new ManagedArray(scope.globalScope.ArrayPrototype, elements);
+			result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, elements);
 			return;
 		}
 

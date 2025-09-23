@@ -2,7 +2,6 @@ package bt7s7k7.treeburst.support;
 
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import bt7s7k7.treeburst.parsing.Expression;
@@ -100,7 +99,7 @@ public class Parameter {
 			if (parameter.isSpread) {
 				if (parameters.size() == 1) {
 					if (variable == null) continue;
-					variable.value = new ManagedArray(scope.globalScope.ArrayPrototype, inputs);
+					variable.value = ManagedArray.fromImmutableList(scope.globalScope.ArrayPrototype, inputs);
 					continue;
 				}
 
@@ -109,11 +108,12 @@ public class Parameter {
 				var inputsToConsume = inputs.size() - (parameters.size() - 1);
 				if (inputsToConsume <= 0) {
 					if (variable == null) continue;
-					variable.value = new ManagedArray(scope.globalScope.ArrayPrototype);
+					variable.value = ManagedArray.empty(scope.globalScope.ArrayPrototype);
 					continue;
 				}
 
-				var consumed = new ManagedArray(scope.globalScope.ArrayPrototype, new ArrayList<>(inputsToConsume));
+				var consumed = ManagedArray.withCapacity(scope.globalScope.ArrayPrototype, inputsToConsume);
+				var consumedElements = consumed.getElementsMutable();
 				var maxIndex = inputIndex + inputsToConsume;
 
 				if (variable == null) {
@@ -122,7 +122,7 @@ public class Parameter {
 				}
 
 				while (inputIndex < maxIndex) {
-					consumed.elements.add(inputs.get(inputIndex++));
+					consumedElements.add(inputs.get(inputIndex++));
 				}
 
 				variable.value = consumed;

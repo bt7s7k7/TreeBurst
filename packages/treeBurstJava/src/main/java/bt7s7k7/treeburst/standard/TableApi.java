@@ -48,21 +48,21 @@ public class TableApi extends LazyTable {
 			if (args.size() == 2) {
 				if (args.get(1) instanceof ManagedArray entries) {
 					int index = -1;
-					for (var element : entries.elements) {
+					for (var element : entries) {
 						index++;
 
-						if (!(element instanceof ManagedArray kv) || kv.elements.size() > 2) {
+						if (!(element instanceof ManagedArray kv) || kv.getLength() > 2) {
 							result.setException(new Diagnostic("Entry at index " + index + " is not a pair", Position.INTRINSIC));
 							return;
 						}
 
 						// In this case, either the key or value was set to void, so don't add this entry
-						if (kv.elements.size() < 2) continue;
+						if (kv.getLength() < 2) continue;
 
-						var key = ensureString(kv.elements.get(0), scope, result).value;
+						var key = ensureString(kv.get(0), scope, result).value;
 						if (result.label != null) return;
 
-						var value = kv.elements.get(1);
+						var value = kv.get(1);
 
 						// If the property already exists overwrite it
 						if (!table.declareProperty(key, value)) {
