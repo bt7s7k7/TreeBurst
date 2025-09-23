@@ -746,6 +746,13 @@ $array = []
 assertEqual(array[0], "element")
 assertEqual(array |> Table.getProperty("length"), 1)
 
+// Test: pipeline advanced placeholder
+$add = \? + ?
+$args = [1, 2]
+assertEqual(args |> add(...?), 3)
+
+assertEqual((args |> [0, ...?]).k_string(), "[0, 1, 2]")
+
 // Test: conditional operator
 assertEqual(true ? "a" : "b", "a")
 assertEqual(false ? "a" : 5 + 7, 12)

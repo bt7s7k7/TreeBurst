@@ -793,39 +793,40 @@ public class TreeBurstParser extends GenericParser {
 
 						target = new Expression.Assignment(nextOpInstance.position, target, operand);
 					} else if (infixOperator.type == OperatorType.PIPELINE) {
-						if (operand instanceof Expression.Invocation invocation) {
-							var replacement = target;
+						var replacement = target;
 
-							var visitor = new ExpressionVisitor() {
-								public boolean applied = false;
+						var visitor = new ExpressionVisitor() {
+							public boolean applied = false;
 
-								@Override
-								public Expression visit(Expression expression) {
-									if (this.applied) return expression;
-									if (expression instanceof Expression.FunctionDeclaration) return expression;
+							@Override
+							public Expression visit(Expression expression) {
+								if (this.applied) return expression;
+								if (expression instanceof Expression.FunctionDeclaration) return expression;
 
-									if (expression instanceof Expression.Placeholder) {
-										this.applied = true;
-										return replacement;
-									}
-
-									return super.visit(expression);
+								if (expression instanceof Expression.Placeholder) {
+									this.applied = true;
+									return replacement;
 								}
-							};
 
-							var invocationWithPlaceholderReplaced = visitor.visit(invocation);
+								return super.visit(expression);
+							}
+						};
 
-							if (visitor.applied) {
-								target = invocationWithPlaceholderReplaced;
-							} else {
+						var tranformed = visitor.visit(operand);
+
+						if (operand != tranformed) {
+							target = tranformed;
+						} else {
+							if (operand instanceof Expression.Invocation invocation) {
 								// If the transformation was not applied
 								target = invocation.withFirstArgument(target);
+							} else {
+								target = new Expression.Assignment(nextOpInstance.position, operand, target);
 							}
-
-							continue;
 						}
 
-						target = new Expression.Assignment(nextOpInstance.position, operand, target);
+						continue;
+
 					} else if (infixOperator.type == OperatorType.SPECIAL_SYNTAX) {
 						if (nextOpInstance.token.equals("?")) {
 							var joinToken = this.peekToken();
