@@ -621,9 +621,13 @@ public class TreeBurstParser extends GenericParser {
 
 				// Detect the use of placeholders and replace them with newly created parameters.
 				// For example the function `\? + 1` will be converted to `\(_p_0) _p_0 + 1`.
-				body = body.transform(new Expression.Transformer() {
+				var visitor = new ExpressionVisitor() {
 					@Override
-					public Expression apply(Expression expression) {
+					public Expression visit(Expression expression) {
+						// Prevent from visiting child function declarations. They would have
+						// replaced their own placeholders anyway.
+						if (expression instanceof Expression.FunctionDeclaration) return expression;
+
 						if (expression instanceof Expression.Placeholder) {
 							var index = parameters.size();
 							var name = "_p_" + index;
@@ -631,16 +635,11 @@ public class TreeBurstParser extends GenericParser {
 							return new Expression.Identifier(expression.position(), name);
 						}
 
-						return expression;
-					}
+						return super.visit(expression);
+					};
+				};
 
-					@Override
-					public boolean canApply(Expression expression) {
-						// Prevent from visiting child function declarations. They would have
-						// replaced their own placeholders anyway.
-						return !(expression instanceof Expression.FunctionDeclaration);
-					}
-				});
+				body = visitor.visit(body);
 			}
 
 			this._token = new Expression.FunctionDeclaration(this.getPosition(start), parameters, body);
@@ -797,27 +796,26 @@ public class TreeBurstParser extends GenericParser {
 						if (operand instanceof Expression.Invocation invocation) {
 							var replacement = target;
 
-							var transformer = new Expression.Transformer() {
+							var visitor = new ExpressionVisitor() {
 								public boolean applied = false;
 
 								@Override
-								public Expression apply(Expression expression) {
+								public Expression visit(Expression expression) {
+									if (this.applied) return expression;
+									if (expression instanceof Expression.FunctionDeclaration) return expression;
+
 									if (expression instanceof Expression.Placeholder) {
 										this.applied = true;
 										return replacement;
 									}
 
-									return expression;
-								}
-
-								@Override
-								public boolean canApply(Expression expression) {
-									return !this.applied && !(expression instanceof Expression.FunctionDeclaration);
+									return super.visit(expression);
 								}
 							};
 
-							var invocationWithPlaceholderReplaced = invocation.transform(transformer);
-							if (transformer.applied) {
+							var invocationWithPlaceholderReplaced = visitor.visit(invocation);
+
+							if (visitor.applied) {
 								target = invocationWithPlaceholderReplaced;
 							} else {
 								// If the transformation was not applied
