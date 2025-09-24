@@ -2,9 +2,10 @@ package bt7s7k7.treeburst.standard;
 
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.GlobalScope;
@@ -36,12 +37,7 @@ public class MapPrototype extends LazyTable {
 				var self = args.get(0).getMapValue();
 				var index = args.get(1);
 
-				var content = self.entries.get(index);
-				if (content == null) {
-					result.value = Primitive.VOID;
-				} else {
-					result.value = content;
-				}
+				result.value = self.get(index);
 			} else {
 				args = ensureArgumentTypes(args, List.of("this", "index", "value"), List.of(ManagedMap.class, ManagedValue.class, ManagedValue.class), scope, result);
 				if (result.label != null) return;
@@ -55,12 +51,7 @@ public class MapPrototype extends LazyTable {
 					return;
 				}
 
-				if (value == Primitive.VOID) {
-					self.entries.remove(index);
-				} else {
-					self.entries.put(index, value);
-				}
-
+				self.set(index, value);
 				result.value = value;
 			}
 		}));
@@ -68,35 +59,35 @@ public class MapPrototype extends LazyTable {
 		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Creates a copy of the map.
 			var self = args.get(0).getMapValue();
-			result.value = new ManagedMap(self.prototype, new HashMap<>(self.entries));
+			result.value = self.makeCopy();
 		}));
 
 		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Removes all entries in the map.
 			var self = args.get(0).getMapValue();
-			self.entries.clear();
+			self.clear();
 			result.value = Primitive.VOID;
 		}));
 
 		this.declareProperty("keys", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing keys of all the entries in the map.
 			var self = args.get(0).getMapValue();
-			result.value = ManagedArray.withElements(this.globalScope.ArrayPrototype, self.entries.keySet());
+			result.value = ManagedArray.fromMutableList(this.globalScope.ArrayPrototype, self.getKeys().collect(Collectors.toCollection(ArrayList::new)));
 		}));
 
 		this.declareProperty("values", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing values of all the entries in the map.
 			var self = args.get(0).getMapValue();
-			result.value = ManagedArray.withElements(this.globalScope.ArrayPrototype, self.entries.values());
+			result.value = ManagedArray.withElements(this.globalScope.ArrayPrototype, self.getValues().collect(Collectors.toCollection(ArrayList::new)));
 		}));
 
 		this.declareProperty("entries", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing all the entries in the map.
 			var self = args.get(0).getMapValue();
-			var entries = ManagedArray.withCapacity(this.globalScope.ArrayPrototype, self.entries.size());
+			var entries = ManagedArray.withCapacity(this.globalScope.ArrayPrototype, self.getLength());
 			var entriesElements = entries.getElementsMutable();
 
-			for (var kv : self.entries.entrySet()) {
+			for (var kv : self) {
 				entriesElements.add(ManagedArray.fromImmutableList(this.globalScope.ArrayPrototype, List.of(kv.getKey(), kv.getValue())));
 			}
 
@@ -111,7 +102,7 @@ public class MapPrototype extends LazyTable {
 			if (depth > 0) {
 				var dump = ManagedValueUtils.dumpCollection(
 						self.getNameOrInheritedName(), true, "{", "}",
-						self.entries.entrySet(), Map.Entry::getKey, null, Map.Entry::getValue, (int) depth - 1, scope, result);
+						self, Map.Entry::getKey, null, Map.Entry::getValue, (int) depth - 1, scope, result);
 				if (dump == null) return;
 				result.value = Primitive.from(dump);
 				return;

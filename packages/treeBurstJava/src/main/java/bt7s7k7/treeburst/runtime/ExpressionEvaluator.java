@@ -321,7 +321,7 @@ public class ExpressionEvaluator {
 		}
 
 		if (expression instanceof Expression.MapLiteral mapLiteral) {
-			var map = new ManagedMap(scope.globalScope.MapPrototype);
+			var map = ManagedMap.empty(scope.globalScope.MapPrototype);
 
 			for (var entry : mapLiteral.entries) {
 				var keyExpression = entry.getKey();
@@ -341,7 +341,7 @@ public class ExpressionEvaluator {
 				var value = result.value;
 				if (value == Primitive.VOID) continue;
 
-				map.entries.put(key, value);
+				map.set(key, value);
 			}
 
 			result.value = map;

@@ -75,7 +75,7 @@ public class TableApi extends LazyTable {
 
 					var entries = args.get(1).getMapValue();
 
-					for (var kv : entries.entries.entrySet()) {
+					for (var kv : entries) {
 						var key = ensureString(kv.getKey(), scope, result).value;
 						if (result.label != null) return;
 
