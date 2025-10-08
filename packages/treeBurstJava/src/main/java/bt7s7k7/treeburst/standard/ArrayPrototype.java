@@ -375,6 +375,23 @@ public class ArrayPrototype extends LazyTable {
 			result.value = output;
 		}));
 
+		this.declareProperty("foreach", NativeFunction.simple(this.globalScope, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
+			// @summary[[Calls a function for every element of this array. The function is called
+			// with `value` of the element, the `index` of the element and a reference to this
+			// `array`. Returns this array.]]
+			var self = args.get(0).getArrayValue();
+			var function = args.get(1).getFunctionValue();
+
+			for (int i = 0; i < self.getLength(); i++) {
+				var element = self.get(i);
+
+				evaluateInvocation(Primitive.VOID, Primitive.VOID, function, Position.INTRINSIC, List.of(element, Primitive.from(i), self), scope, result);
+				if (result.label != null) return;
+			}
+
+			result.value = self;
+		}));
+
 		this.declareProperty("filter", NativeFunction.simple(this.globalScope, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
 			// @summary[[Creates a new array with only the elements for which `function` returned
 			// `true`. The function is called with `value` of the element, the `index` of the
