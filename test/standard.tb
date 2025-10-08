@@ -786,6 +786,13 @@ assertEqual(false ? "a" : 5 + 7, 12)
 assertEqual(false ? "a" : true ? 5 + 7 : 4 / 2, 12)
 assertEqual(false ? "a" : false ? 5 + 7 : 4 / 2, 2)
 
+$anchor = 1
+
+assertEqual(anchor == 0 ? "zero"
+    : anchor == 1 ? "one"
+    : anchor == 2 ? "two"
+    : "other", "one")
+
 // Test: placeholder
 $table = Table.new()
 $table.value = 5

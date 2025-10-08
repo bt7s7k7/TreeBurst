@@ -107,8 +107,8 @@ public class TreeBurstParser extends GenericParser {
 
 		_INFIX_OPERATORS = new LinkedHashMap<>();
 		_INFIX_OPERATORS.put("=", new Operator(0, OperatorType.ASSIGNMENT).withResultPrecedence(0));
-		_INFIX_OPERATORS.put("?", new Operator(1, OperatorType.SPECIAL_SYNTAX));
-		_INFIX_OPERATORS.put(":", new Operator(1, OperatorType.SPECIAL_SYNTAX).withResultPrecedence(1));
+		_INFIX_OPERATORS.put("?", new Operator(1, OperatorType.SPECIAL_SYNTAX).withResultPrecedence(1));
+		_INFIX_OPERATORS.put(":", new Operator(1, OperatorType.SPECIAL_SYNTAX));
 		_INFIX_OPERATORS.put("|>", new Operator(2, OperatorType.PIPELINE));
 		_INFIX_OPERATORS.put("&&", new Operator(2, OperatorConstants.OPERATOR_AND));
 		_INFIX_OPERATORS.put("||", new Operator(2, OperatorConstants.OPERATOR_OR));
