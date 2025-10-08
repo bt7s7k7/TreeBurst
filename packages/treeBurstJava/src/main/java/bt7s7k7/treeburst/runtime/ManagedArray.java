@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
+import java.util.stream.Stream;
 
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
@@ -46,6 +47,10 @@ public abstract class ManagedArray extends ManagedObject implements Iterable<Man
 	@Override
 	public Spliterator<ManagedValue> spliterator() {
 		return this.getElementsReadOnly().spliterator();
+	}
+
+	public Stream<ManagedValue> stream() {
+		return this.getElementsReadOnly().stream();
 	}
 
 	public int normalizeIndex(int index, ExpressionResult result) {
