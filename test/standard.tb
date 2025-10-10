@@ -885,3 +885,17 @@ assertEqual(String.fromCharCode("as".getCharCode(-1)), "s")
 assertEqual(58.15.k_string(10), "58")
 assertEqual(58.k_string(16), "3a")
 assertEqual(58.k_string(2), "111010")
+
+// Test: object get/set name
+$x = Table.new({ a: 1, b: 2 })
+
+assertEqual(x.k_string(), "Table(a: 1, b: 2)")
+assertEqual(x |> Table.getName(), void)
+Table.setName(x, "x")
+
+assertEqual(x.k_string(), "::x(a: 1, b: 2)")
+assertEqual(x |> Table.getName(), "x")
+
+$x.c = [3]
+
+assertEqual(x.k_dump(5), "::x(a: 1, b: 2, c: ::x.c [3])")

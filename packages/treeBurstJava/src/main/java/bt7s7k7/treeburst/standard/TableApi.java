@@ -104,6 +104,35 @@ public class TableApi extends LazyTable {
 				result.value = Primitive.VOID;
 			}
 		}));
+
+		this.declareProperty("getName", NativeFunction.simple(this.globalScope, List.of("object"), List.of(ManagedObject.class), (args, scope, result) -> {
+			// @summary: Returns the name of the object or {@link void} if it is not named.
+			var object = (ManagedObject) args.get(0);
+			result.value = object.name == null ? Primitive.VOID : Primitive.from(object.name);
+		}));
+
+		this.declareProperty("getNameOrInheritedName", NativeFunction.simple(this.globalScope, List.of("object"), List.of(ManagedObject.class), (args, scope, result) -> {
+			// @summary: Returns the name of the object, of the object's prototype or {@link void} if it is not named.
+			var object = (ManagedObject) args.get(0);
+			var name = object.getNameOrInheritedName();
+			result.value = name == null ? Primitive.VOID : Primitive.from(name);
+		}));
+
+		this.declareProperty("setName", NativeFunction.simple(this.globalScope, List.of("object", "name"), List.of(ManagedObject.class, ManagedValue.class), (args, scope, result) -> {
+			// @summary: Sets the name of the object. The `name` argument can also be set to {@link void}, in which case the name is cleared. Returns the object.
+			var object = (ManagedObject) args.get(0);
+			var name = args.get(1);
+
+			if (name == Primitive.VOID) {
+				object.name = null;
+			} else {
+				args = ensureArgumentTypes(args, 2, List.of("object", "name"), List.of(ManagedObject.class, Primitive.String.class), scope, result);
+				if (result.label != null) return;
+				object.name = name.getStringValue();
+			}
+
+			result.value = object;
+		}));
 	}
 
 }

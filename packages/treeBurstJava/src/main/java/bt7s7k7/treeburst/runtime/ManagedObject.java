@@ -43,7 +43,7 @@ public abstract class ManagedObject extends ManagedValue {
 		if (name == null) {
 			return this.kind();
 		} else {
-			return "::" + this.kind() + (name == null ? "" : " " + name);
+			return name + " " + this.kind();
 		}
 	}
 

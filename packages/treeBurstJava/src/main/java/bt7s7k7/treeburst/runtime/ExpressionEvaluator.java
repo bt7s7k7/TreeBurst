@@ -171,9 +171,6 @@ public class ExpressionEvaluator {
 
 			variable.value = value;
 			result.value = variable.value;
-			if (value instanceof ManagedObject managedObject && managedObject.name == null) {
-				managedObject.name = identifier.name();
-			}
 			return;
 		} else if (declaration instanceof Expression.MemberAccess memberAccess) {
 			if (value == Primitive.VOID) {
