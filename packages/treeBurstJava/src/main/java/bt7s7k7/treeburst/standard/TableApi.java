@@ -6,6 +6,7 @@ import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 
 import java.util.List;
 
+import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedMap;
@@ -132,6 +133,36 @@ public class TableApi extends LazyTable {
 			}
 
 			result.value = object;
+		}));
+
+		this.declareProperty("getPrototype", NativeFunction.simple(this.globalScope, List.of("value"), (args, scope, result) -> {
+			// @summary: Returns the prototype of the value or {@link void} if it does not have a prototype.
+			var value = args.get(0);
+			var prototype = ExpressionEvaluator.getPrototype(value, scope);
+			result.value = prototype == null ? Primitive.VOID : prototype;
+		}));
+
+		this.declareProperty("instanceOf", NativeFunction.simple(this.globalScope, List.of("value", "type"), (args, scope, result) -> {
+			// @summary[[Returns if the value is an instance of a type, that is if it has a
+			// prototype that is equal to the `type` prototype property. The only exception is the
+			// {@link void} and {@link null} values, which are singletons and instances of
+			// themselves.]]
+			var value = args.get(0);
+			var type = args.get(1);
+
+			if (value == Primitive.VOID || value == Primitive.NULL
+					|| type == Primitive.VOID || type == Primitive.NULL) {
+				result.value = Primitive.from(value == type);
+				return;
+			}
+
+			if (!findProperty(type, type, "prototype", scope, result)) {
+				result.setException(new Diagnostic("The type argument does not have a prototype", Position.INTRINSIC));
+				return;
+			}
+
+			var prototype = result.value;
+			result.value = Primitive.from(ExpressionEvaluator.getPrototype(value, scope) == prototype);
 		}));
 	}
 

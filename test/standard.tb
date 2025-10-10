@@ -899,3 +899,23 @@ assertEqual(x |> Table.getName(), "x")
 $x.c = [3]
 
 assertEqual(x.k_dump(5), "::x(a: 1, b: 2, c: ::x.c [3])")
+
+// Test: object get prototype
+assertEqual(Table.getPrototype(void), Table.prototype)
+assertEqual(Table.getPrototype(null), Table.prototype)
+assertEqual(Table.getPrototype(12), Number.prototype)
+assertEqual(Table.getPrototype(true), Boolean.prototype)
+assertEqual(Table.getPrototype("fas"), String.prototype)
+assertEqual(Table.getPrototype([]), Array.prototype)
+assertEqual(Table.getPrototype({}), Map.prototype)
+assertEqual(Table.getPrototype(Table.new()), Table.prototype)
+
+// Test: object instanceOf
+assert(Table.instanceOf(void, void))
+assert(Table.instanceOf(null, null))
+assert(Table.instanceOf(12, Number))
+assert(Table.instanceOf(true, Boolean))
+assert(Table.instanceOf("fas", String))
+assert(Table.instanceOf([], Array))
+assert(Table.instanceOf({}, Map))
+assert(Table.instanceOf(Table.new(), Table))

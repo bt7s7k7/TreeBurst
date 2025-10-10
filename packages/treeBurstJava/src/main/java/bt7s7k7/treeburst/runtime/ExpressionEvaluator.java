@@ -78,33 +78,41 @@ public class ExpressionEvaluator {
 		}
 	}
 
+	public static ManagedObject getPrototype(ManagedValue value, Scope scope) {
+		if (value.equals(Primitive.NULL) || value.equals(Primitive.VOID)) {
+			return scope.globalScope.TablePrototype;
+		}
+
+		if (value instanceof Primitive.Number) {
+			return scope.globalScope.NumberPrototype;
+		}
+
+		if (value instanceof Primitive.String) {
+			return scope.globalScope.StringPrototype;
+		}
+
+		if (value instanceof Primitive.Boolean) {
+			return scope.globalScope.BooleanPrototype;
+		}
+
+		if (value instanceof ManagedObject managedObject) {
+			return managedObject.prototype;
+		}
+
+		throw new IllegalArgumentException("Cannot find prototype of " + value.getClass());
+	}
+
 	public static boolean findProperty(ManagedValue receiver, ManagedValue container, String name, Scope scope, ExpressionResult result) {
-		if (container.equals(Primitive.NULL) || container.equals(Primitive.VOID)) {
-			return getProperty(receiver, scope.globalScope.TablePrototype, name, scope, result);
-		}
-
-		if (container instanceof Primitive.Number) {
-			return getProperty(receiver, scope.globalScope.NumberPrototype, name, scope, result);
-		}
-
-		if (container instanceof Primitive.String string) {
-			if (name.equals("length")) {
-				result.value = Primitive.from(string.value.length());
-				return true;
-			}
-
-			return getProperty(receiver, scope.globalScope.StringPrototype, name, scope, result);
-		}
-
-		if (container instanceof Primitive.Boolean) {
-			return getProperty(receiver, scope.globalScope.BooleanPrototype, name, scope, result);
-		}
-
 		if (container instanceof ManagedObject managedObject) {
 			return getProperty(receiver, managedObject, name, scope, result);
 		}
 
-		return false;
+		if (container instanceof Primitive.String string && name.equals("length")) {
+			result.value = Primitive.from(string.value.length());
+			return true;
+		}
+
+		return getProperty(receiver, getPrototype(container, scope), name, scope, result);
 	}
 
 	public static boolean getProperty(ManagedValue receiver, ManagedObject container, String name, Scope scope, ExpressionResult result) {
