@@ -880,3 +880,8 @@ assertEqual(String.fromCharCode("as".getCharCode()), "a")
 assertEqual(String.fromCharCode("as".getCharCode(0)), "a")
 assertEqual(String.fromCharCode("as".getCharCode(1)), "s")
 assertEqual(String.fromCharCode("as".getCharCode(-1)), "s")
+
+// Test: number radix
+assertEqual(58.15.k_string(10), "58")
+assertEqual(58.k_string(16), "3a")
+assertEqual(58.k_string(2), "111010")

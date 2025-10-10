@@ -575,8 +575,15 @@ public class TreeBurstParser extends GenericParser {
 			numberText.append(this.readWhile((v, i) -> Character.isDigit(v.at(i))));
 
 			if (this.consume(".")) {
-				numberText.append(".");
-				numberText.append(this.readWhile((v, i) -> Character.isDigit(v.at(i))));
+				var decimalRollback = this.index - 1;
+				var decimalDigits = this.readWhile((v, i) -> Character.isDigit(v.at(i)));
+
+				if (decimalDigits.isEmpty()) {
+					this.index = decimalRollback;
+				} else {
+					numberText.append(".");
+					numberText.append(decimalDigits);
+				}
 			}
 
 			try {

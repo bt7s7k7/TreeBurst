@@ -246,6 +246,33 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(string);
 		}));
 
+		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this.globalScope, List.of("this", "radix?"), List.of(Primitive.Number.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary[[Formats the number into a textual form. If the `radix` parameter is
+			// provided, it is used as the base for representing the number value. In this case the
+			// number is converted to an integer by rounding down.]]
+			var self = args.get(0).getNumberValue();
+
+			if (args.size() != 1) {
+				var radix = (int) args.get(1).getNumberValue();
+
+				if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX) {
+					result.setException(new Diagnostic("Radix argument " + radix + " is not between " + Character.MIN_RADIX + " and " + Character.MAX_RADIX, Position.INTRINSIC));
+					return;
+				}
+
+				var value = (long) Math.floor(self);
+				result.value = Primitive.from(Long.toString(value, radix));
+				return;
+			}
+
+			var string = Double.toString(self);
+			if (string.endsWith(".0")) {
+				string = string.substring(0, string.length() - 2);
+			}
+
+			result.value = Primitive.from(string);
+		}));
+
 		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_NOT, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(Primitive.Boolean.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Returns an inverted value of the boolean.
 			result.value = Primitive.from(!((Primitive.Boolean) args.get(0)).value);
