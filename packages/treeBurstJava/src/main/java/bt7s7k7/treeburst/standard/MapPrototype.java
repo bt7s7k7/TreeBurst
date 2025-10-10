@@ -2,7 +2,6 @@ package bt7s7k7.treeburst.standard;
 
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,7 +67,7 @@ public class MapPrototype extends LazyTable {
 		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Creates a copy of the map.
 			var self = args.get(0).getMapValue();
-			result.value = new ManagedMap(self.prototype, new HashMap<>(self.entries));
+			result.value = ManagedMap.withEntries(self.prototype, self.entries);
 		}));
 
 		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {

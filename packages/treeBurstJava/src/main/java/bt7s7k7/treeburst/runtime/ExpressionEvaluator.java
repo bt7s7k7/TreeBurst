@@ -318,7 +318,7 @@ public class ExpressionEvaluator {
 		}
 
 		if (expression instanceof Expression.MapLiteral mapLiteral) {
-			var map = new ManagedMap(scope.globalScope.MapPrototype);
+			var map = ManagedMap.empty(scope.globalScope.MapPrototype);
 
 			for (var entry : mapLiteral.entries) {
 				var keyExpression = entry.getKey();

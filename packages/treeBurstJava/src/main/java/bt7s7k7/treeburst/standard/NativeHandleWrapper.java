@@ -192,7 +192,7 @@ public class NativeHandleWrapper<T> {
 
 					this.addMethod("map", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						var managedMap = new ManagedMap(scope.globalScope.MapPrototype);
+						var managedMap = ManagedMap.empty(scope.globalScope.MapPrototype);
 
 						for (var kv : map.entrySet()) {
 							managedMap.entries.put(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()));
