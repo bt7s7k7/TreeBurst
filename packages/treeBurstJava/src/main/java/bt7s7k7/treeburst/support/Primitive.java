@@ -44,7 +44,7 @@ public abstract class Primitive extends ManagedValue {
 		}
 	}
 
-	public static class String extends Primitive {
+	public static class String extends Primitive implements ValueWithLength {
 		public final java.lang.String value;
 
 		@Override
@@ -57,6 +57,11 @@ public abstract class Primitive extends ManagedValue {
 		@Override
 		public int hashCode() {
 			return this.value.hashCode();
+		}
+
+		@Override
+		public int getLength() {
+			return this.value.length();
 		}
 
 		private static final Pattern STRING_ESCAPE_CHARACTERS = Pattern.compile("[\\\\\\t" + Pattern.quote("\b") + "\\n\\r\\f\"]");

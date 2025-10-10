@@ -347,6 +347,37 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(builder.toString());
 		}));
 
+		this.String.declareProperty("fromCharCode", NativeFunction.simple(this.globalScope, List.of("code"), List.of(Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Returns a string containing a character with the provided character code. The codepage is implementation dependent, but it's probably UTF-16.
+			var code = (int) args.get(0).getNumberValue();
+			var charString = "" + (char) code;
+			result.value = Primitive.from(charString);
+		}));
+
+		this.StringPrototype.declareProperty("getCharCode", NativeFunction.simple(this.globalScope, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Returns the code for a character in the string. If `index` is not provided, returns the code for the first character.
+			var self = (Primitive.String) args.get(0);
+			var index = args.size() == 1 ? 0 : (int) args.get(1).getNumberValue();
+
+			index = self.normalizeIndex(index, result);
+			if (result.label != null) return;
+
+			var code = self.value.charAt(index);
+			result.value = Primitive.from(code);
+		}));
+
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
+			// @summary: Returns the a character from the string at an `index`. The return value is a string of length `1`, containing the selected character.
+			var self = (Primitive.String) args.get(0);
+			var index = args.size() == 1 ? 0 : (int) args.get(1).getNumberValue();
+
+			index = self.normalizeIndex(index, result);
+			if (result.label != null) return;
+
+			var code = self.value.charAt(index);
+			result.value = Primitive.from("" + code);
+		}));
+
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
 			// @summary: This object is converted to a {@link Boolean}. If the result is `true`, the `other` expression is evaluated and the result retuned, otherwise this object is returned.
 			var predicateResult = args.get(0);

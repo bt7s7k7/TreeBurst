@@ -874,3 +874,9 @@ assertEqual({a, b, c}.k_dump(5), "{a: 1, b: [2], c: 3}")
 
 [a, ...b, c] = [1, 2, 3, 4]
 assertEqual({a, b, c}.k_dump(5), "{a: 1, b: [2, 3], c: 4}")
+
+// Test: string character code
+assertEqual(String.fromCharCode("as".getCharCode()), "a")
+assertEqual(String.fromCharCode("as".getCharCode(0)), "a")
+assertEqual(String.fromCharCode("as".getCharCode(1)), "s")
+assertEqual(String.fromCharCode("as".getCharCode(-1)), "s")

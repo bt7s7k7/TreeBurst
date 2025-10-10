@@ -8,17 +8,17 @@ import java.util.List;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
-import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
-import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
+import bt7s7k7.treeburst.support.ValueWithLength;
 
-public abstract class ManagedArray extends ManagedObject implements Iterable<ManagedValue> {
+public abstract class ManagedArray extends ManagedObject implements Iterable<ManagedValue>, ValueWithLength {
 
 	public ManagedArray(ManagedObject prototype) {
 		super(prototype);
 	}
 
+	@Override
 	public abstract int getLength();
 
 	public ManagedValue get(int index) {
@@ -51,32 +51,6 @@ public abstract class ManagedArray extends ManagedObject implements Iterable<Man
 
 	public Stream<ManagedValue> stream() {
 		return this.getElementsReadOnly().stream();
-	}
-
-	public int normalizeIndex(int index, ExpressionResult result) {
-		if (index < 0) {
-			index = this.getLength() + index;
-		}
-
-		if (index < 0 || index >= this.getLength()) {
-			result.setException(new Diagnostic("Index " + index + " out of range of array of length " + this.getLength(), Position.INTRINSIC));
-			return 0;
-		}
-
-		return index;
-	}
-
-	public int normalizeLimit(int limit, ExpressionResult result) {
-		if (limit < 0) {
-			limit = this.getLength() + limit;
-		}
-
-		if (limit < 0 || limit > this.getLength()) {
-			result.setException(new Diagnostic("Index " + limit + " out of range of array of length " + this.getLength(), Position.INTRINSIC));
-			return 0;
-		}
-
-		return limit;
 	}
 
 	@Override
