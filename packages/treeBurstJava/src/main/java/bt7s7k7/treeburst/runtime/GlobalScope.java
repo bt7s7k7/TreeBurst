@@ -382,7 +382,9 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.StringPrototype.declareProperty("getCharCode", NativeFunction.simple(this.globalScope, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
-			// @summary: Returns the code for a character in the string. If `index` is not provided, returns the code for the first character.
+			// @summary[[Returns the code for a character in the string. If `index` is not provided,
+			// returns the code for the first character. As always, the index may be negative to
+			// index from the end of the string, where `-1` is the last character and so on.]]
 			var self = (Primitive.String) args.get(0);
 			var index = args.size() == 1 ? 0 : (int) args.get(1).getNumberValue();
 
@@ -394,7 +396,10 @@ public class GlobalScope extends Scope {
 		}));
 
 		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
-			// @summary: Returns the a character from the string at an `index`. The return value is a string of length `1`, containing the selected character.
+			// @summary[[Returns the a character from the string at an `index`. The return value is
+			// a string of length `1`, containing the selected character. As always, the index may
+			// be negative to index from the end of the string, where `-1` is the last character and
+			// so on.]]
 			var self = (Primitive.String) args.get(0);
 			var index = args.size() == 1 ? 0 : (int) args.get(1).getNumberValue();
 
@@ -403,6 +408,59 @@ public class GlobalScope extends Scope {
 
 			var code = self.value.charAt(index);
 			result.value = Primitive.from("" + code);
+		}));
+
+		this.StringPrototype.declareProperty("slice", NativeFunction.simple(this.globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
+			// @summary[[Gets a section of the string starting at `from` and ending at `to` (or the
+			// end of the string if not provided). As always, the index may be negative to index
+			// from the end of the string, where `-1` is the last character and so on.]]
+			if (args.size() == 2) {
+				args = ensureArgumentTypes(args, List.of("this", "from"), List.of(Primitive.String.class, Primitive.Number.class), scope, result);
+			} else {
+				args = ensureArgumentTypes(args, List.of("this", "from", "to"), List.of(Primitive.String.class, Primitive.Number.class, Primitive.Number.class), scope, result);
+			}
+
+			if (result.label != null) return;
+			var self = (Primitive.String) args.get(0);
+			var from = (int) args.get(1).getNumberValue();
+			var to = args.size() == 2 ? self.value.length() : (int) args.get(2).getNumberValue();
+
+			from = self.normalizeIndex(from, result);
+			if (result.label != null) return;
+
+			to = self.normalizeLimit(to, result);
+			if (result.label != null) return;
+
+			result.value = Primitive.from(self.value.substring(from, to));
+		}));
+
+		this.StringPrototype.declareProperty("startsWith", NativeFunction.simple(this.globalScope, List.of("this", "substring", "index?"), (args, scope, result) -> {
+			// @summary[[Tests if the string starts with the substring. If `index` is provided, the
+			// substring is expected at this position. As always, the index may be negative to index
+			// from the end of the string, where `-1` is the last character and so on.]]
+			if (args.size() == 2) {
+				args = ensureArgumentTypes(args, List.of("this", "substring"), List.of(Primitive.String.class, Primitive.String.class), scope, result);
+			} else {
+				args = ensureArgumentTypes(args, List.of("this", "substring", "to"), List.of(Primitive.String.class, Primitive.String.class, Primitive.Number.class), scope, result);
+			}
+
+			if (result.label != null) return;
+			var self = (Primitive.String) args.get(0);
+			var substring = args.get(1).getStringValue();
+			var index = args.size() == 2 ? 0 : (int) args.get(2).getNumberValue();
+
+			index = self.normalizeIndex(index, result);
+			if (result.label != null) return;
+
+			result.value = Primitive.from(self.value.startsWith(substring, index));
+		}));
+
+		this.StringPrototype.declareProperty("endsWith", NativeFunction.simple(this.globalScope, List.of("this", "substring"), List.of(Primitive.String.class, Primitive.String.class), (args, scope, result) -> {
+			// @summary[[Tests if the string ends with the substring.]]
+			var self = (Primitive.String) args.get(0);
+			var substring = args.get(1).getStringValue();
+
+			result.value = Primitive.from(self.value.endsWith(substring));
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {

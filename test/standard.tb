@@ -881,6 +881,23 @@ assertEqual(String.fromCharCode("as".getCharCode(0)), "a")
 assertEqual(String.fromCharCode("as".getCharCode(1)), "s")
 assertEqual(String.fromCharCode("as".getCharCode(-1)), "s")
 
+// Test: string slice
+assertEqual("12345".slice(0, 1), "1")
+assertEqual("12345".slice(2, 5), "345")
+assertEqual("12345".slice(1, -1), "234")
+
+// Test: string startsWith
+assertEqual("12345".startsWith("123"), true)
+assertEqual("12345".startsWith("12345"), true)
+assertEqual("12345".startsWith("45"), false)
+assertEqual("12345".startsWith("45", 3), true)
+assertEqual("12345".startsWith("45", -2), true)
+
+// Test: string endsWith
+assertEqual("12345".endsWith("12"), false)
+assertEqual("12345".endsWith("45"), true)
+assertEqual("12345".endsWith("12345"), true)
+
 // Test: number radix
 assertEqual(58.15.k_string(10), "58")
 assertEqual(58.k_string(16), "3a")
