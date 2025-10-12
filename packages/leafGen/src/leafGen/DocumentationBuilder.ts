@@ -1,10 +1,14 @@
-import { relative } from "node:path"
+import { readFileSync } from "node:fs"
+import { normalize, relative, resolve } from "node:path"
 import syntaxFile from "../../../../extension/syntaxes/tb.tmLanguage.json"
 import templateHtml from "../../template.html"
-import { createSortFunction, ensureKey, isAlpha, iteratorNth, Predicate } from "../comTypes/util"
+import { createSortFunction, ensureKey, isAlpha, iteratorNth, Predicate, unreachable } from "../comTypes/util"
 import { MmlHtmlRenderer } from "../miniML/MmlHtmlRenderer"
 import { MmlParser } from "../miniML/MmlParser"
+import { MmlWidget } from "../miniML/MmlWidget"
 import { SyntaxNode } from "../miniML/SyntaxNode"
+import { Struct } from "../struct/Struct"
+import { Type } from "../struct/Type"
 import { Project } from "./Project"
 import { SymbolDatabase } from "./SymbolDatabase"
 import { SymbolHandle } from "./SymbolHandle"
@@ -27,6 +31,35 @@ export class Page {
         public readonly rootSymbol: SymbolHandle,
         public readonly rootPrototypeSymbol: SymbolHandle | null,
     ) { }
+}
+
+const _PENDING = Symbol.for("leafGen.include.pending")
+
+export abstract class IncludeWidget extends Struct.define("Include", {
+    path: Type.string,
+}, MmlWidget) {
+    public abstract builder: MarkdownPageBuilder
+
+    public getValue(parser: MmlParser, content_1: SyntaxNode[]): SyntaxNode.Inline | null {
+        const path = parser.path ?? unreachable()
+        const targetPath = normalize(resolve(path, this.path))
+        const existing = this.builder.owner.includeCache.get(targetPath)
+
+        if (existing == _PENDING) {
+            throw new Error("Detected circular reference while including " + targetPath)
+        } else if (existing) {
+            return existing
+        }
+
+        this.builder.owner.includeCache.set(targetPath, _PENDING)
+
+        const content = this.builder.resolveLinkMacros(readFileSync(targetPath, "utf-8").replace(/\t/g, "    "))
+        const parsed = new MmlParser(content, { path: targetPath, widgets: [this.constructor as any] }).parseDocument()
+
+        const node = new SyntaxNode.Span({ content: [parsed] })
+        this.builder.owner.includeCache.set(targetPath, node)
+        return node
+    }
 }
 
 export class MarkdownPageBuilder {
@@ -93,14 +126,6 @@ export class MarkdownPageBuilder {
         this._result.push("<hr/>")
     }
 
-    public resolveLinkMacros(source: string) {
-        return source.replace(/\{@link\s?([\w.]+)\}/g, (_, name) => {
-            const symbol = this.owner.db.tryGetSymbol(name)
-            if (!symbol) return `\`${name}\``
-            return `<code>${this.tryMakeLink(symbol)}</code>`
-        })
-    }
-
     public addSymbol(symbol: SymbolHandle, from: SymbolHandle | null) {
         this.addSymbolHeading(symbol)
 
@@ -120,6 +145,14 @@ export class MarkdownPageBuilder {
         this._result.push("<sub>" + sites.map(site => relative(this.owner.project.path, site)).join("\\\n") + "</sub>\n")
     }
 
+    public resolveLinkMacros(source: string) {
+        return source.replace(/\{@link\s?([\w.]+)\}/g, (_, name) => {
+            const symbol = this.owner.db.tryGetSymbol(name)
+            if (!symbol) return `\`${name}\``
+            return `<code>${this.tryMakeLink(symbol)}</code>`
+        })
+    }
+
     public tryMakeLink(symbol: SymbolHandle) {
         const link = this.owner.findLinkToSymbol(symbol, this.extension)
         if (link) return `[${symbol.name}](${link})`
@@ -128,6 +161,14 @@ export class MarkdownPageBuilder {
 
     public build() {
         return this._result.join("\n") + "\n"
+    }
+
+    public makeIncludeWidget() {
+        const self = this
+
+        return class extends IncludeWidget {
+            public override builder: MarkdownPageBuilder = self
+        }
     }
 
     constructor(
@@ -190,6 +231,7 @@ export class DocumentationBuilder {
     public readonly pages: Page[] = [this.globalPage]
     public readonly printedSymbols = new Map<SymbolHandle, Set<Page>>()
     public readonly rootSymbols = new Map<SymbolHandle, Page>()
+    public readonly includeCache = new Map<string, SyntaxNode.Inline | typeof _PENDING>()
 
     public markPrintedSymbol(symbol: SymbolHandle, page: Page) {
         ensureKey(this.printedSymbols, symbol, () => new Set()).add(page)
@@ -355,8 +397,10 @@ export class DocumentationBuilder {
         }()
 
         for (const markdown of this.buildMarkdown(extension)) {
-
-            const parser = new MmlParser(markdown.build().replace(/\t/g, "    "), {})
+            const parser = new MmlParser(markdown.build().replace(/\t/g, "    "), {
+                path: this.project.path,
+                widgets: [markdown.makeIncludeWidget()],
+            })
 
             const root = parser.parseDocument()
 
