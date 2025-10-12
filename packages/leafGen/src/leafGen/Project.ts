@@ -31,6 +31,7 @@ export class Project extends Struct.define("Project", {
     inserts: Type.string.as(Type.map).as(Type.nullable).as(Type.withDefault, () => new Map() as never),
     resources: Type.object({
         path: Type.string,
+        prefix: Type.string.as(Type.nullable, { skipNullSerialize: true }),
         include: Type.string.as(Type.array),
     }).as(Type.array).as(Type.nullable),
     emitSymbolDatabase: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
@@ -87,12 +88,17 @@ export class Project extends Struct.define("Project", {
         if (this.resources == null) return
 
         const docsPath = this.getDocsPath()
-        for (const { path, include } of this.resources) {
+        for (const { path, include, prefix } of this.resources) {
             const resourceFolderPath = join(this.path, path)
             for (const dirent of await readdir(resourceFolderPath, { withFileTypes: true, recursive: true })) {
                 if (dirent.isFile() && include.some(v => matchesGlob(dirent.name, v))) {
                     const resourcePath = join(dirent.path ?? dirent.parentPath, dirent.name)
-                    const relativePath = relative(resourceFolderPath, resourcePath)
+
+                    let relativePath = relative(resourceFolderPath, resourcePath)
+                    if (prefix != null) {
+                        relativePath = join(prefix, relativePath)
+                    }
+
                     const outputPath = join(docsPath, relativePath)
                     await mkdir(dirname(outputPath), { recursive: true })
                     await cp(resourcePath, outputPath)
