@@ -819,10 +819,10 @@ public class TreeBurstParser extends GenericParser {
 							}
 						};
 
-						var tranformed = visitor.visit(operand);
+						var transformed = visitor.visit(operand);
 
-						if (operand != tranformed) {
-							target = tranformed;
+						if (operand != transformed) {
+							target = transformed;
 						} else {
 							if (operand instanceof Expression.Invocation invocation) {
 								// If the transformation was not applied
