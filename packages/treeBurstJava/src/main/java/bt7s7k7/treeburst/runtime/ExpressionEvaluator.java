@@ -264,13 +264,8 @@ public class ExpressionEvaluator {
 			}
 		}
 
-		if (expression instanceof Expression.NumberLiteral literal) {
-			result.value = Primitive.from(literal.value());
-			return;
-		}
-
-		if (expression instanceof Expression.StringLiteral literal) {
-			result.value = Primitive.from(literal.value());
+		if (expression instanceof Expression.Literal literal) {
+			result.value = literal.value();
 			return;
 		}
 

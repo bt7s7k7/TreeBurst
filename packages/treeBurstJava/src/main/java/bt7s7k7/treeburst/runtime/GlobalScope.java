@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.RandomAccess;
 
+import bt7s7k7.treeburst.bytecode.BytecodeEmitter;
+import bt7s7k7.treeburst.bytecode.BytecodeInstruction;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.standard.ArrayPrototype;
@@ -463,19 +465,27 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(self.value.endsWith(substring));
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(ManagedValue.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary: This object is converted to a {@link Boolean}. If the result is `true`, the `other` expression is evaluated and the result retuned, otherwise this object is returned.
-			var predicateResult = args.get(0);
-			var predicateValue = ensureBoolean(predicateResult, scope, result);
+			var a = args.get(0).getNativeValue(Expression.class);
+			var b = args.get(1).getNativeValue(Expression.class);
+
+			var emitter = args.get(2).getNativeValue(BytecodeEmitter.class);
+			var position = emitter.nextPosition;
+
+			emitter.compile(a, result);
 			if (result.label != null) return;
 
-			var alternative = args.get(1).getNativeValue(Expression.class);
+			var label = emitter.getNextLabel() + "_true";
 
-			if (predicateValue.value) {
-				evaluateExpression(alternative, scope, result);
-			} else {
-				result.value = predicateResult;
-			}
+			emitter.emit(BytecodeInstruction.Duplicate.VALUE);
+			emitter.emit(new BytecodeInstruction.Conditional(label, false, position));
+			emitter.emit(BytecodeInstruction.Discard.VALUE);
+			emitter.compile(b, result);
+			if (result.label != null) return;
+			emitter.label(label);
+
+			result.value = Primitive.VOID;
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_OR, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {

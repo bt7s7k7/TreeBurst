@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
+import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
 
@@ -58,9 +59,7 @@ public interface Expression extends Token {
 		return this;
 	}
 
-	public record NumberLiteral(Position position, double value) implements Expression {}
-
-	public record StringLiteral(Position position, String value) implements Expression {}
+	public record Literal(Position position, ManagedValue value) implements Expression {}
 
 	public record ArrayLiteral(Position position, List<Expression> elements) implements Expression {
 		@Override

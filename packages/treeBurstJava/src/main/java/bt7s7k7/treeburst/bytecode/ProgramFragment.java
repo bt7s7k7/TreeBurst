@@ -3,18 +3,31 @@ package bt7s7k7.treeburst.bytecode;
 import static bt7s7k7.treeburst.bytecode.BytecodeInstruction.STATUS_BREAK;
 
 import java.util.List;
+import java.util.Map;
 
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.runtime.ExecutionLimitReachedException;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
+import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.runtime.Scope;
 
 public class ProgramFragment {
 	protected Expression expression;
 	protected List<BytecodeInstruction> instructions;
+	protected Map<String, Integer> labels;
 
 	public ProgramFragment(Expression expression) {
 		this.expression = expression;
+	}
+
+	public ProgramFragment(List<BytecodeInstruction> instructions, Map<String, Integer> labels) {
+		this.instructions = instructions;
+		this.labels = labels;
+	}
+
+	public ProgramFragment(BytecodeEmitter.BuildResult build) {
+		this.instructions = build.instructions();
+		this.labels = build.labels();
 	}
 
 	public Expression getExpression() {
@@ -24,6 +37,7 @@ public class ProgramFragment {
 	public void setExpression(Expression expression) {
 		this.expression = expression;
 		this.instructions = null;
+		this.labels = null;
 	}
 
 	public boolean isCompiled() {
@@ -37,16 +51,19 @@ public class ProgramFragment {
 		emitter.compile(this.expression, result);
 		if (result.label != null) return;
 
-		this.instructions = emitter.build();
+		var build = emitter.build();
+		this.instructions = build.instructions();
+		this.labels = build.labels();
 	}
 
 	public void evaluate(Scope scope, ExpressionResult result) {
+		this.evaluate(0, new ValueStack(), new ArgumentStack(), scope, result);
+	}
+
+	public void evaluate(int pc, ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
 		this.compile(scope, result);
 
-		var values = new ValueStack();
-		var arguments = new ArgumentStack();
-
-		for (int pc = 0; pc < this.instructions.size(); pc++) {
+		for (; pc < this.instructions.size(); pc++) {
 			if (result.executionLimit != Integer.MAX_VALUE) {
 				result.executionCounter++;
 				if (result.executionCounter > result.executionLimit) {
@@ -55,14 +72,24 @@ public class ProgramFragment {
 			}
 
 			var instruction = this.instructions.get(pc);
+			if (instruction == BytecodeInstruction.Reflect.VALUE) {
+				values.push(new NativeHandle(scope.globalScope.TablePrototype, this));
+				continue;
+			}
+
 			var status = instruction.executeInstruction(values, arguments, scope, result);
 			if (status >= 0) {
-				pc = status;
+				pc = status - 1;
 				continue;
 			}
 
 			if (status == STATUS_BREAK) {
-				return;
+				var target = this.labels.get(result.label);
+				// If the label is not part of this fragment, move higher the execution stack
+				if (target == null) return;
+
+				pc = (int) target - 1;
+				continue;
 			}
 		}
 
@@ -76,6 +103,6 @@ public class ProgramFragment {
 			return this.expression.toString();
 		}
 
-		return BytecodeInstruction.format(this.instructions);
+		return BytecodeInstruction.format(this.instructions, this.labels);
 	}
 }

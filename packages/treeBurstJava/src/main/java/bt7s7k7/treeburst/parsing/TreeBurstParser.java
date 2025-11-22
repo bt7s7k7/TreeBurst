@@ -15,6 +15,7 @@ import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.InputDocument;
 import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
+import bt7s7k7.treeburst.support.Primitive;
 
 public class TreeBurstParser extends GenericParser {
 	public enum OperatorType {
@@ -307,7 +308,7 @@ public class TreeBurstParser extends GenericParser {
 		};
 	}
 
-	public Expression.StringLiteral parseString(String term) {
+	public Expression.Literal parseString(String term) {
 		var value = new StringBuilder();
 		var start = this.index - 1;
 
@@ -323,7 +324,7 @@ public class TreeBurstParser extends GenericParser {
 			value.append(c);
 		}
 
-		return new Expression.StringLiteral(this.getPosition(start), value.toString());
+		return new Expression.Literal(this.getPosition(start), Primitive.from(value.toString()));
 	}
 
 	public Expression parseTemplate(String term) {
@@ -357,7 +358,7 @@ public class TreeBurstParser extends GenericParser {
 				if (statements.isEmpty()) continue;
 
 				if (fragment != null) {
-					fragments.add(new Expression.StringLiteral(this.getPosition(fragmentStart), fragment.toString()));
+					fragments.add(new Expression.Literal(this.getPosition(fragmentStart), Primitive.from(fragment.toString())));
 					fragment = null;
 				}
 
@@ -379,11 +380,11 @@ public class TreeBurstParser extends GenericParser {
 		}
 
 		if (fragment != null) {
-			fragments.add(new Expression.StringLiteral(this.getPosition(fragmentStart), fragment.toString()));
+			fragments.add(new Expression.Literal(this.getPosition(fragmentStart), Primitive.from(fragment.toString())));
 			fragment = null;
 		}
 
-		return Expression.Invocation.makeMethodCall(resultArray.position(), resultArray, "join", List.of(new Expression.StringLiteral(resultArray.position(), "")));
+		return Expression.Invocation.makeMethodCall(resultArray.position(), resultArray, "join", List.of(new Expression.Literal(resultArray.position(), Primitive.EMPTY_STRING)));
 	}
 
 	public Token peekToken() {
@@ -537,7 +538,7 @@ public class TreeBurstParser extends GenericParser {
 					if (staticName.isEmpty()) {
 						return false;
 					} else {
-						key = new Expression.StringLiteral(this.getPosition(entryStart), staticName);
+						key = new Expression.Literal(this.getPosition(entryStart), Primitive.from(staticName));
 					}
 				}
 
@@ -588,7 +589,7 @@ public class TreeBurstParser extends GenericParser {
 
 			try {
 				double number = Double.parseDouble(numberText.toString());
-				this._token = new Expression.NumberLiteral(this.getPosition(start), number);
+				this._token = new Expression.Literal(this.getPosition(start), Primitive.from(number));
 				this._tokenStart = start;
 				return this._token;
 			} catch (NumberFormatException e) {
@@ -861,7 +862,7 @@ public class TreeBurstParser extends GenericParser {
 							var index = operand;
 
 							if (index instanceof Expression.Identifier identifier) {
-								index = new Expression.StringLiteral(identifier.position(), identifier.name());
+								index = new Expression.Literal(identifier.position(), Primitive.from(identifier.name()));
 							}
 
 							target = Expression.Invocation.makeMethodCall(nextOpInstance.position(), target, OperatorConstants.OPERATOR_AT, List.of(index));
@@ -882,13 +883,13 @@ public class TreeBurstParser extends GenericParser {
 				if (precedence > 100) return target;
 				target = Expression.Invocation.makeMethodCall(arrayLiteral.position(), target, OperatorConstants.OPERATOR_AT, arrayLiteral.elements());
 				this.nextToken();
-			} else if (!this._skippedNewline && next instanceof Expression.StringLiteral stringLiteral) {
+			} else if (!this._skippedNewline && next instanceof Expression.Literal literal && literal.value() instanceof Primitive.String) {
 				if (precedence > 100) return target;
 
 				if (target instanceof Expression.Invocation invocation) {
-					target = invocation.withArgument(stringLiteral);
+					target = invocation.withArgument(literal);
 				} else {
-					target = new Expression.Invocation(stringLiteral.position(), target, List.of(stringLiteral));
+					target = new Expression.Invocation(literal.position(), target, List.of(literal));
 				}
 
 				this.nextToken();
