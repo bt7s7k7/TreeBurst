@@ -66,4 +66,24 @@ class BytecodeTest {
 		var result = CodeResult.get("true && 3");
 		assertEquals("[number 3.0]", result.value.toString());
 	}
+
+	@Test
+	public void ifTest() {
+		var result = CodeResult.get("false ? 'a' : true ? 5 + 7 : 4 / 2");
+		assertEquals("[number 12.0]", result.value.toString());
+	}
+
+	@Test
+	public void whileTest() {
+		var result = CodeResult.get("""
+				$list = [1, 2, 3]
+				$i = 0
+
+				@while(i < list.length, (
+				    i = i + 1
+				))
+
+				i""");
+		assertEquals("[number 3.0]", result.value.toString());
+	}
 }

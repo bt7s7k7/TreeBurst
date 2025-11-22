@@ -4,6 +4,7 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateDeclaration;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpressions;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.findProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.setProperty;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import bt7s7k7.treeburst.bytecode.BytecodeInstruction;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
@@ -121,16 +123,10 @@ public class ExtendedExpressionEvaluation {
 		return true;
 	}
 
-	/** Dataflow: (functionName, argumentExpressions) -> (argumentValues) */
+	/** Dataflow: (functionName, argumentExpressions) -> (argumentValues ?? argumentExpressions) */
 	public boolean prepareArguments() {
 		if (this.functionName.startsWith("@")) {
-			var mappedArgs = new ArrayList<ManagedValue>();
-
-			for (var v : this.argumentExpressions) {
-				mappedArgs.add(new NativeHandle(this.scope.globalScope.TablePrototype, v));
-			}
-
-			this.argumentValues = mappedArgs;
+			// Do nothing
 		} else {
 			var argValues = evaluateExpressions(this.argumentExpressions, false, this.scope, this.result);
 			if (argValues == null) return false;
@@ -141,8 +137,28 @@ public class ExtendedExpressionEvaluation {
 		return true;
 	}
 
-	/** Dataflow: (targetValue, functionValue ?? functionName, argumentValues) -> (result) */
+	/** Dataflow: (targetValue, functionValue ?? functionName, argumentValues ?? argumentExpressions) -> (result) */
 	public boolean executeInvocation() {
+		if (this.argumentValues == null) {
+			if (this.functionValue == null) {
+				if (!findProperty(this.targetValue, this.targetValue, this.functionName, this.scope, this.result)) {
+					this.result.setException(new Diagnostic("Cannot find method \"" + getValueName(this.targetValue) + "." + this.functionName + "\"", this.position));
+					return false;
+				}
+
+				this.functionValue = this.result.value;
+			}
+
+			if (!(this.functionValue instanceof ManagedFunction function)) {
+				this.result.setException(new Diagnostic("Target \"" + getValueName(this.functionValue) + "\" is not callable", this.position));
+				return false;
+			}
+
+			BytecodeInstruction.InvokeKeywordFallback.execute(function, function.hasThisArgument() ? this.targetValue : null, this.argumentExpressions, this.scope, this.result, this.position);
+			if (this.result.value == null) return false;
+			return true;
+		}
+
 		if (this.functionValue == null) {
 			this.functionValue = Primitive.from(this.functionName);
 		}

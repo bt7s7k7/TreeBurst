@@ -33,7 +33,7 @@ public class BytecodeEmitter {
 	protected Map<String, Integer> labels = new HashMap<>();
 
 	public String getNextLabel() {
-		return "_" + this.nextId;
+		return "_" + this.nextId++;
 	}
 
 	public void emit(BytecodeInstruction instruction) {
@@ -93,14 +93,14 @@ public class BytecodeEmitter {
 			var argumentCount = invocation.args().size();
 			var isKeyword = name != null && name.startsWith("@");
 
-			if (isKeyword) argumentCount++;
+			if (isKeyword) argumentCount = 0;
 
 			this.emit(new BytecodeInstruction.PrepareInvoke(argumentCount, method, invocation.position()));
 
-			if (isKeyword) this.emit(BytecodeInstruction.Reflect.VALUE);
-
-			this.compileBlock(invocation.args(), result);
-			if (result.label != null) return;
+			if (!isKeyword) {
+				this.compileBlock(invocation.args(), result);
+				if (result.label != null) return;
+			}
 
 			if (isKeyword) {
 				this.emit(new BytecodeInstruction.InvokeKeywordFallback(invocation.position(), invocation.args()));

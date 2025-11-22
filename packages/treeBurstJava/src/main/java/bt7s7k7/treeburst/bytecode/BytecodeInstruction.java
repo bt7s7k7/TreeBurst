@@ -15,6 +15,7 @@ import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedFunction;
 import bt7s7k7.treeburst.runtime.Scope;
 import bt7s7k7.treeburst.support.Diagnostic;
+import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.ManagedValueUtils;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
@@ -28,14 +29,21 @@ public interface BytecodeInstruction {
 	public static String format(List<BytecodeInstruction> instructions, Map<String, Integer> labels) {
 		var result = new StringBuilder();
 		var labelPoints = labels.entrySet().stream()
-				.collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+				.collect(Collectors.groupingBy(
+						Map.Entry::getValue, // Group by the original value (New Key)
+						Collectors.mapping(
+								Map.Entry::getKey, // Map the original key
+								Collectors.toList() // Collect them into a List
+						)));
 
 		for (int i = 0; i <= instructions.size(); i++) {
-			var label = labelPoints.get(i);
-			if (label != null) {
-				result.append("==== ");
-				result.append(label);
-				result.append(" ====\n");
+			var foundLabels = labelPoints.get(i);
+			if (foundLabels != null) {
+				for (var label : foundLabels) {
+					result.append("==== ");
+					result.append(label);
+					result.append(" ====\n");
+				}
 			}
 
 			if (i == instructions.size()) break;
@@ -175,23 +183,27 @@ public interface BytecodeInstruction {
 			var callArguments = values.getArguments(argumentCount);
 			var function = (ManagedFunction) values.pop();
 
-			var emitter = new BytecodeEmitter(scope);
-			Expression receiverExpression = null;
-			if (function.hasThisArgument() && !callArguments.isEmpty()) {
-				receiverExpression = new Expression.Literal(Position.INTRINSIC, callArguments.get(0));
-			}
-
-			var compilationArgs = emitter.prepareArgumentsForCompilationStageKeywordExecution(receiverExpression, this.expressionArguments);
-			emitter.nextPosition = this.position;
-			function.invoke(compilationArgs, scope, result);
+			execute(function, function.hasThisArgument() && !callArguments.isEmpty() ? callArguments.get(0) : null, this.expressionArguments, scope, result, this.position);
 			if (result.label != null) return STATUS_BREAK;
+
+			values.push(result.value);
+
+			return STATUS_NORMAL;
+		}
+
+		public static void execute(ManagedFunction function, ManagedValue receiver, List<Expression> expressionArguments, Scope scope, ExpressionResult result, Position position) {
+			var emitter = new BytecodeEmitter(scope);
+			var receiverExpression = receiver == null ? null : new Expression.Literal(Position.INTRINSIC, receiver);
+
+			var compilationArgs = emitter.prepareArgumentsForCompilationStageKeywordExecution(receiverExpression, expressionArguments);
+			emitter.nextPosition = position;
+			function.invoke(compilationArgs, scope, result);
+			if (result.label != null) return;
 			if (result.value != Primitive.VOID) throw new IllegalStateException("Compilation stage execution of '" + function.toString() + "' returned a value");
 
 			var createdProgram = new ProgramFragment(emitter.build());
 			createdProgram.evaluate(scope, result);
-			if (result.label != null) return STATUS_BREAK;
-
-			return STATUS_NORMAL;
+			if (result.label != null) return;
 		}
 
 		@Override

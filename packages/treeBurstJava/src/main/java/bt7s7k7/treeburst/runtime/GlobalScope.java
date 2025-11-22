@@ -1,12 +1,10 @@
 package bt7s7k7.treeburst.runtime;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.BINARY_OPERATOR_PARAMETERS;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
-import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureBoolean;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureExpression;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.prepareBinaryOperator;
@@ -20,8 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.RandomAccess;
 
+import bt7s7k7.treeburst.bytecode.ArgumentStack;
 import bt7s7k7.treeburst.bytecode.BytecodeEmitter;
 import bt7s7k7.treeburst.bytecode.BytecodeInstruction;
+import bt7s7k7.treeburst.bytecode.ValueStack;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.standard.ArrayPrototype;
@@ -465,8 +465,31 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(self.value.endsWith(substring));
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(ManagedValue.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary: This object is converted to a {@link Boolean}. If the result is `true`, the `other` expression is evaluated and the result retuned, otherwise this object is returned.
+			var a = args.get(0).getNativeValue(Expression.class);
+			var b = args.get(1).getNativeValue(Expression.class);
+
+			var emitter = args.get(2).getNativeValue(BytecodeEmitter.class);
+			var position = emitter.nextPosition;
+
+			emitter.compile(a, result);
+			if (result.label != null) return;
+
+			var label = emitter.getNextLabel() + "_false";
+
+			emitter.emit(BytecodeInstruction.Duplicate.VALUE);
+			emitter.emit(new BytecodeInstruction.Conditional(label, false, position));
+			emitter.emit(BytecodeInstruction.Discard.VALUE);
+			emitter.compile(b, result);
+			if (result.label != null) return;
+			emitter.label(label);
+
+			result.value = Primitive.VOID;
+		}));
+
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_OR, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+			// @summary: This object is converted to a {@link Boolean}. If the result is `true` this object is retuned, otherwise the `other` expression is evaluated and the result retuned.
 			var a = args.get(0).getNativeValue(Expression.class);
 			var b = args.get(1).getNativeValue(Expression.class);
 
@@ -479,6 +502,43 @@ public class GlobalScope extends Scope {
 			var label = emitter.getNextLabel() + "_true";
 
 			emitter.emit(BytecodeInstruction.Duplicate.VALUE);
+			emitter.emit(new BytecodeInstruction.Conditional(label, true, position));
+			emitter.emit(BytecodeInstruction.Discard.VALUE);
+			emitter.compile(b, result);
+			if (result.label != null) return;
+			emitter.label(label);
+
+			result.value = Primitive.VOID;
+		}));
+
+		var COALESCE_INSTRUCTION = new BytecodeInstruction() {
+			@Override
+			public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+				var value = values.peek();
+				values.push(value == Primitive.NULL || value == Primitive.VOID ? Primitive.TRUE : Primitive.FALSE);
+				return STATUS_NORMAL;
+			}
+
+			@Override
+			public java.lang.String toString() {
+				return "Coalesce";
+			}
+		};
+
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_COALESCE, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+			// @summary: If this object is not {@link null} or {@link void}, it is returned, otherwise the `other` expression is evaluated and the result retuned.
+			var a = args.get(0).getNativeValue(Expression.class);
+			var b = args.get(1).getNativeValue(Expression.class);
+
+			var emitter = args.get(2).getNativeValue(BytecodeEmitter.class);
+			var position = emitter.nextPosition;
+
+			emitter.compile(a, result);
+			if (result.label != null) return;
+
+			var label = emitter.getNextLabel() + "_not_null_or_void";
+
+			emitter.emit(COALESCE_INSTRUCTION);
 			emitter.emit(new BytecodeInstruction.Conditional(label, false, position));
 			emitter.emit(BytecodeInstruction.Discard.VALUE);
 			emitter.compile(b, result);
@@ -488,47 +548,41 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.VOID;
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_OR, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
-			// @summary: This object is converted to a {@link Boolean}. If the result is `true` this object is retuned, otherwise the `other` expression is evaluated and the result retuned.
-			var predicateResult = args.get(0);
-			var predicateValue = ensureBoolean(predicateResult, scope, result);
-			if (result.label != null) return;
-
-			var alternative = args.get(1).getNativeValue(Expression.class);
-
-			if (!predicateValue.value) {
-				evaluateExpression(alternative, scope, result);
-			} else {
-				result.value = predicateResult;
+		var ELSE_INSTRUCTION = new BytecodeInstruction() {
+			@Override
+			public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+				var value = values.peek();
+				values.push(value == Primitive.VOID ? Primitive.TRUE : Primitive.FALSE);
+				return STATUS_NORMAL;
 			}
-		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_COALESCE, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
-			// @summary: If this object is not {@link null} or {@link void}, it is returned, otherwise the `other` expression is evaluated and the result retuned.
-			var predicateResult = args.get(0);
-			if (result.label != null) return;
-
-			var alternative = args.get(1).getNativeValue(Expression.class);
-
-			if (predicateResult == Primitive.NULL || predicateResult == Primitive.VOID) {
-				evaluateExpression(alternative, scope, result);
-			} else {
-				result.value = predicateResult;
+			@Override
+			public java.lang.String toString() {
+				return "Else";
 			}
-		}));
+		};
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_ELSE, NativeFunction.simple(this.globalScope, List.of("this", "other"), List.of(ManagedValue.class, Expression.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_ELSE, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary: If this object is not {@link void}, it is returned, otherwise the `other` expression is evaluated and the result retuned.
-			var predicateResult = args.get(0);
+			var a = args.get(0).getNativeValue(Expression.class);
+			var b = args.get(1).getNativeValue(Expression.class);
+
+			var emitter = args.get(2).getNativeValue(BytecodeEmitter.class);
+			var position = emitter.nextPosition;
+
+			emitter.compile(a, result);
 			if (result.label != null) return;
 
-			var alternative = args.get(1).getNativeValue(Expression.class);
+			var label = emitter.getNextLabel() + "_not_void";
 
-			if (predicateResult == Primitive.VOID) {
-				evaluateExpression(alternative, scope, result);
-			} else {
-				result.value = predicateResult;
-			}
+			emitter.emit(ELSE_INSTRUCTION);
+			emitter.emit(new BytecodeInstruction.Conditional(label, false, position));
+			emitter.emit(BytecodeInstruction.Discard.VALUE);
+			emitter.compile(b, result);
+			if (result.label != null) return;
+			emitter.label(label);
+
+			result.value = Primitive.VOID;
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_BOOLEAN, NativeFunction.simple(this.globalScope, List.of("this"), (args, scope, result) -> {
@@ -635,11 +689,23 @@ public class GlobalScope extends Scope {
 			// evaluation of the `result` is skipped and the next pair is evaluated. Optionally, a
 			// fallback expression may be added as the last argument, which will be evaluated and
 			// returned if no conditions return `true`.]]
-			for (int i = 0; i < args.size(); i += 2) {
-				if (args.size() - i < 2) {
+
+			var emitter = args.getLast().getNativeValue(BytecodeEmitter.class);
+			var position = emitter.nextPosition;
+
+			var endLabel = emitter.getNextLabel() + "_end_if";
+
+			for (int i = 0; i < args.size() - 1; i += 2) {
+				if (args.size() - i - 1 < 2) {
 					var elseValue = ensureExpression(args.get(i), result);
 					if (result.label != null) return;
-					evaluateExpression(elseValue, scope, result);
+
+					emitter.compile(elseValue, result);
+					if (result.label != null) return;
+
+					emitter.label(endLabel);
+
+					result.value = Primitive.VOID;
 					return;
 				}
 
@@ -648,22 +714,25 @@ public class GlobalScope extends Scope {
 				var thenValue = ensureExpression(args.get(i + 1), result);
 				if (result.label != null) return;
 
-				evaluateExpression(predicate, scope, result);
+				emitter.compile(predicate, result);
 				if (result.label != null) return;
 
-				var predicateValue = ensureBoolean(result.value, scope, result);
+				var elseLabel = emitter.getNextLabel() + "_else";
+				emitter.emit(new BytecodeInstruction.Conditional(elseLabel, false, position));
+				emitter.compile(thenValue, result);
 				if (result.label != null) return;
-
-				if (predicateValue.value) {
-					evaluateExpression(thenValue, scope, result);
-					return;
-				}
+				emitter.emit(new BytecodeInstruction.Jump(endLabel));
+				emitter.label(elseLabel);
 			}
+
+			// If there is no final else clause, return `void`
+			emitter.emit(Primitive.VOID);
+			emitter.label(endLabel);
 
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareGlobal("@while", NativeFunction.simple(this.globalScope, List.of("predicate", "body"), List.of(Expression.class, Expression.class), (args, scope, result) -> {
+		this.declareGlobal("@while", NativeFunction.simple(this.globalScope, List.of("predicate", "body", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary[[Repeatedly evaluates the `predicate` expression, which is expected to
 			// return a {@link Boolean} or be convertible to such. If `true` is returned, the `body`
 			// expression is executed, otherwise the cycle is terminated.]]
@@ -671,18 +740,21 @@ public class GlobalScope extends Scope {
 			var body = args.get(1).getNativeValue(Expression.class);
 			if (result.label != null) return;
 
-			while (true) {
-				evaluateExpression(predicate, scope, result);
-				if (result.label != null) return;
+			var emitter = args.getLast().getNativeValue(BytecodeEmitter.class);
+			var position = emitter.nextPosition;
 
-				var predicateValue = ensureBoolean(result.value, scope, result);
-				if (result.label != null) return;
+			var continueLabel = emitter.getNextLabel() + "_continue";
+			var breakLabel = emitter.getNextLabel() + "_end_while";
 
-				if (!predicateValue.value) break;
+			emitter.label(continueLabel);
+			emitter.compile(predicate, result);
+			if (result.label != null) return;
+			emitter.emit(new BytecodeInstruction.Conditional(breakLabel, false, position));
+			emitter.compile(body, result);
+			if (result.label != null) return;
+			emitter.label(breakLabel);
 
-				evaluateExpression(body, scope, result);
-				if (result.label != null) return;
-			}
+			emitter.emit(Primitive.VOID);
 
 			result.value = Primitive.VOID;
 		}));
