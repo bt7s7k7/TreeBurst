@@ -633,7 +633,13 @@ public interface BytecodeInstruction {
 		@Override
 		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
 			var elements = values.getArguments(arguments.pop());
-			var array = ManagedArray.withElements(scope.globalScope.ArrayPrototype, elements);
+			var array = ManagedArray.withCapacity(scope.globalScope.ArrayPrototype, elements.size());
+
+			var arrayElements = array.getElementsMutable();
+			for (var element : elements) {
+				if (element != Primitive.VOID) arrayElements.add(element);
+			}
+
 			values.push(array);
 			return STATUS_NORMAL;
 		}
