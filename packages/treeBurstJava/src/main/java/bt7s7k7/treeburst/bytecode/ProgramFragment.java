@@ -62,6 +62,7 @@ public class ProgramFragment {
 
 	public void evaluate(int pc, ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
 		this.compile(scope, result);
+		if (result.label != null) return;
 
 		for (; pc < this.instructions.size(); pc++) {
 			if (result.executionLimit != Integer.MAX_VALUE) {
@@ -88,6 +89,7 @@ public class ProgramFragment {
 				// If the label is not part of this fragment, move higher the execution stack
 				if (target == null) return;
 
+				result.label = null;
 				pc = (int) target - 1;
 				continue;
 			}

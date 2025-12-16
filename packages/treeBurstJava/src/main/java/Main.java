@@ -1,5 +1,3 @@
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
-
 import java.io.IOException;
 
 import org.jline.reader.EndOfFileException;
@@ -50,7 +48,7 @@ public class Main {
 					}
 
 					var result = new ExpressionResult();
-					evaluateExpression(root, scope, result);
+					root.evaluate(scope, result);
 					var diagnostic = result.terminate();
 					if (diagnostic != null) {
 						terminal.writer().println(diagnostic.format());

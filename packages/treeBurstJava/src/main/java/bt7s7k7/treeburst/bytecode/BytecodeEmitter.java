@@ -120,9 +120,16 @@ public class BytecodeEmitter {
 					first = false;
 				}
 
+				// A label without a target will not push anything so we shouldn't discard
+				if (child instanceof Expression.Label label && label.target() == null) first = true;
+
 				this.compile(child, result);
 				if (result.label != null) return;
 			}
+
+			// Nothing will be pushed, but all expressions need to push something, so push a constant void
+			if (first) this.emit(Primitive.VOID);
+
 			return;
 		}
 
@@ -135,8 +142,8 @@ public class BytecodeEmitter {
 
 		if (expression instanceof Expression.Label label) {
 			var target = label.target();
-			if (target == null) return;
 			this.label(label.name());
+			if (target == null) return;
 			this.compile(target, result);
 			return;
 		}
@@ -184,7 +191,7 @@ public class BytecodeEmitter {
 		}
 
 		if (function != null) {
-			// Execute compilation stage of keyword function
+			// Execute compilation stage of macro function
 			var arguments = this.prepareArgumentsForCompilationStageMacroExecution(receiver, invocation.args());
 			this.nextPosition = invocation.position();
 			function.invoke(arguments, this.scope, result);

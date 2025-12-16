@@ -94,6 +94,6 @@ class ParsingTest {
 				        ]
 				    ]
 				]""",
-				root.toFormattedString());
+				root.getExpression().toFormattedString());
 	}
 }

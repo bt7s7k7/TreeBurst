@@ -11,6 +11,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import bt7s7k7.treeburst.bytecode.ProgramFragment;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.InputDocument;
 import bt7s7k7.treeburst.support.Parameter;
@@ -899,8 +900,7 @@ public class TreeBurstParser extends GenericParser {
 		}
 	}
 
-	public Expression.Group parse() {
-		return new Expression.Group(this.getPosition(), this.parseBlock());
+	public ProgramFragment parse() {
+		return new ProgramFragment(new Expression.Group(this.getPosition(), this.parseBlock()));
 	}
-
 }

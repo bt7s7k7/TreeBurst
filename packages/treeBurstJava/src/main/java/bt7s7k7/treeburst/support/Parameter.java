@@ -99,7 +99,7 @@ public class Parameter {
 			if (parameter.isSpread) {
 				if (parameters.size() == 1) {
 					if (variable == null) continue;
-					variable.value = ManagedArray.fromImmutableList(scope.globalScope.ArrayPrototype, inputs);
+					variable.value = ManagedArray.withElements(scope.globalScope.ArrayPrototype, inputs);
 					continue;
 				}
 

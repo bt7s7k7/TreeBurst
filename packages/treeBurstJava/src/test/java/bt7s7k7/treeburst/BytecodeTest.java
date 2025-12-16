@@ -30,16 +30,15 @@ class BytecodeTest {
 
 			var globalScope = new GlobalScope();
 
-			var fragment = new ProgramFragment(root);
 			var result = new ExpressionResult();
-			fragment.evaluate(globalScope, result);
+			root.evaluate(globalScope, result);
 
 			var error = result.terminate();
 			if (error != null) {
 				fail(error.format());
 			}
 
-			return new CodeResult(result.value, fragment);
+			return new CodeResult(result.value, root);
 		}
 	}
 
