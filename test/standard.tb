@@ -217,6 +217,12 @@ assertEqual(x[1], 2)
 assertEqual(x[-1], 3)
 assertEqual(x[-2], 2)
 
+// Test: array void
+$x = [1, void, 2]
+assertEqual(x.length, 2)
+assertEqual(x[0], 1)
+assertEqual(x[1], 2)
+
 // Test: array direct index operator
 $x = [1,2,3]
 assertEqual(x->0, 1)
