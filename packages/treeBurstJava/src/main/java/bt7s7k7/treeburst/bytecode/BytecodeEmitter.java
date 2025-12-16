@@ -233,6 +233,18 @@ public class BytecodeEmitter {
 			return;
 		}
 
+		if (expression instanceof Expression.ArrayLiteral arrayLiteral) {
+			var elementCount = arrayLiteral.elements().size();
+			this.emit(new BytecodeInstruction.PrepareCollectionLiteral(elementCount));
+
+			this.compileBlock(arrayLiteral.elements(), result);
+			if (result.label != null) return;
+
+			this.emit(BytecodeInstruction.BuildArray.INSTANCE);
+
+			return;
+		}
+
 		if (expression instanceof Expression.Label label) {
 			var target = label.target();
 			this.label(label.name());

@@ -607,4 +607,42 @@ public interface BytecodeInstruction {
 			return this.expression.toString();
 		}
 	}
+
+	public static class PrepareCollectionLiteral implements BytecodeInstruction {
+		public final int elementCount;
+
+		public PrepareCollectionLiteral(int elementCount) {
+			this.elementCount = elementCount;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			arguments.push(this.elementCount);
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return "PrepareCollectionLiteral " + this.elementCount;
+		}
+	}
+
+	public static class BuildArray implements BytecodeInstruction {
+		private BuildArray() {}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			var elements = values.getArguments(arguments.pop());
+			var array = ManagedArray.withElements(scope.globalScope.ArrayPrototype, elements);
+			values.push(array);
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return "BuildArray";
+		}
+
+		public static final BuildArray INSTANCE = new BuildArray();
+	}
 }
