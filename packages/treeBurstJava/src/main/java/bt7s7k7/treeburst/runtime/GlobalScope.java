@@ -752,6 +752,7 @@ public class GlobalScope extends Scope {
 			emitter.emit(new BytecodeInstruction.Conditional(breakLabel, false, position));
 			emitter.compile(body, result);
 			if (result.label != null) return;
+			emitter.emit(new BytecodeInstruction.Jump(continueLabel));
 			emitter.label(breakLabel);
 
 			emitter.emit(Primitive.VOID);
