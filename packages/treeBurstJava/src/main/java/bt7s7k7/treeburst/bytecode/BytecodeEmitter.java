@@ -245,6 +245,22 @@ public class BytecodeEmitter {
 			return;
 		}
 
+		if (expression instanceof Expression.MapLiteral mapLiteral) {
+			var entryCount = mapLiteral.entries.size();
+
+			for (var kv : mapLiteral.entries) {
+				this.compile(kv.getKey(), result);
+				if (result.label != null) return;
+
+				this.compile(kv.getValue(), result);
+				if (result.label != null) return;
+			}
+
+			this.emit(new BytecodeInstruction.BuildMap(entryCount));
+
+			return;
+		}
+
 		if (expression instanceof Expression.Label label) {
 			var target = label.target();
 			this.label(label.name());

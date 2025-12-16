@@ -6,6 +6,7 @@ import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.setProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,6 +15,7 @@ import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedFunction;
+import bt7s7k7.treeburst.runtime.ManagedMap;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
 import bt7s7k7.treeburst.runtime.Scope;
@@ -650,5 +652,38 @@ public interface BytecodeInstruction {
 		}
 
 		public static final BuildArray INSTANCE = new BuildArray();
+	}
+
+	public static class BuildMap implements BytecodeInstruction {
+		public final int entryCount;
+
+		public BuildMap(int entryCount) {
+			this.entryCount = entryCount;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			var kvs = values.getArguments(this.entryCount * 2);
+			var entries = new LinkedHashMap<ManagedValue, ManagedValue>();
+
+			for (int i = 0; i < this.entryCount * 2; i += 2) {
+				var key = kvs.get(i);
+				if (key == Primitive.VOID) continue;
+
+				var value = kvs.get(i + 1);
+				if (value == Primitive.VOID) continue;
+
+				entries.put(key, value);
+			}
+
+			var map = ManagedMap.fromMutableEntries(scope.globalScope.MapPrototype, entries);
+			values.push(map);
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return "BuildMap " + this.entryCount;
+		}
 	}
 }
