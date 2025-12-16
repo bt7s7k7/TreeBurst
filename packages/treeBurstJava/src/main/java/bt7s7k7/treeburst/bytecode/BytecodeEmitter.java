@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.ManagedFunction;
 import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.runtime.Scope;
+import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
+import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
@@ -57,6 +60,44 @@ public class BytecodeEmitter {
 			this.compile(child, result);
 			if (result.label != null) return;
 		}
+	}
+
+	public void emitDeclaration(Expression declaration, Consumer<ExpressionResult> valueEmitter, ExpressionResult result) {
+		if (declaration instanceof Expression.Identifier identifier) {
+			valueEmitter.accept(result);
+			if (result.label != null) return;
+			this.emit(new BytecodeInstruction.Declare(identifier.name(), identifier.position()));
+			return;
+		}
+
+		if (declaration instanceof Expression.MemberAccess memberAccess) {
+			this.compile(memberAccess.receiver(), result);
+			if (result.label != null) return;
+			valueEmitter.accept(result);
+			if (result.label != null) return;
+			this.emit(new BytecodeInstruction.DeclareProperty(memberAccess.member(), memberAccess.position()));
+			return;
+		}
+
+		result.setException(new Diagnostic("Invalid declaration target", declaration.position()));
+		return;
+	}
+
+	public List<Parameter> parseParameters(Expression.ArrayLiteral arrayLiteral, ExpressionResult result) {
+		var parameters = new ArrayList<Parameter>(arrayLiteral.elements().size());
+
+		for (var element : arrayLiteral.elements()) {
+			var parameter = Parameter.parse(element);
+
+			if (parameter == null) {
+				result.setException(new Diagnostic("Invalid target for destructuring", element.position()));
+				return null;
+			}
+
+			parameters.add(parameter);
+		}
+
+		return parameters;
 	}
 
 	public void compile(Expression expression, ExpressionResult result) {
@@ -108,6 +149,53 @@ public class BytecodeEmitter {
 				this.emit(new BytecodeInstruction.Invoke(invocation.position()));
 			}
 
+			return;
+		}
+
+		if (expression instanceof Expression.VariableDeclaration declaration) {
+			this.emitDeclaration(declaration.declaration(), __ -> this.emit(Primitive.VOID), result);
+			return;
+		}
+
+		if (expression instanceof Expression.Assignment assignment) {
+			var receiver = assignment.receiver();
+			var value = assignment.value();
+
+			if (receiver instanceof Expression.Identifier identifier) {
+				this.compile(value, result);
+				if (result.label != null) return;
+				this.emit(new BytecodeInstruction.Store(identifier.name(), identifier.position()));
+				return;
+			}
+
+			if (receiver instanceof Expression.VariableDeclaration declaration) {
+				this.emitDeclaration(declaration.declaration(), result_1 -> this.compile(value, result_1), result);
+				return;
+			}
+
+			if (receiver instanceof Expression.ArrayLiteral arrayLiteral) {
+				var parameters = this.parseParameters(arrayLiteral, result);
+				if (result.label != null) return;
+
+				this.compile(value, result);
+				if (result.label != null) return;
+
+				this.emit(new BytecodeInstruction.Destructure(parameters, arrayLiteral.position()));
+				return;
+			}
+
+			if (receiver instanceof Expression.MemberAccess memberAccess) {
+				this.compile(memberAccess.receiver(), result);
+				if (result.label != null) return;
+
+				this.compile(value, result);
+				if (result.label != null) return;
+
+				this.emit(new BytecodeInstruction.Set(memberAccess.member(), memberAccess.position()));
+				return;
+			}
+
+			result.setException(new Diagnostic("Invalid assignment target", receiver.position()));
 			return;
 		}
 

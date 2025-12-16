@@ -3,6 +3,7 @@ package bt7s7k7.treeburst.bytecode;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.findProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
+import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.setProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 
 import java.util.List;
@@ -13,6 +14,8 @@ import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedFunction;
+import bt7s7k7.treeburst.runtime.ManagedObject;
+import bt7s7k7.treeburst.runtime.ManagedTable;
 import bt7s7k7.treeburst.runtime.Scope;
 import bt7s7k7.treeburst.runtime.ScriptFunction;
 import bt7s7k7.treeburst.support.Diagnostic;
@@ -388,6 +391,86 @@ public interface BytecodeInstruction {
 		}
 	}
 
+	public static class Set implements BytecodeInstruction {
+		public final String name;
+		public final Position position;
+
+		public Set(String name, Position position) {
+			this.name = name;
+			this.position = position;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			var value = values.pop();
+			var receiver = values.pop();
+			values.push(value);
+
+			if (!(receiver instanceof ManagedObject container)) {
+				result.setException(new Diagnostic("Cannot set properties on \"" + getValueName(receiver) + "\"", this.position));
+				return STATUS_BREAK;
+			}
+
+			if (value == Primitive.VOID) {
+				result.setException(new Diagnostic("Cannot set a table property to void", this.position));
+				return STATUS_BREAK;
+			}
+
+			if (!setProperty(container, this.name, value, scope, result)) {
+				result.setException(new Diagnostic("Property \"" + this.name + "\" is not defined on \"" + getValueName(receiver) + "\"", this.position));
+				return STATUS_BREAK;
+			}
+
+			values.push(result.value);
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return this.position.format("Get " + this.name, "");
+		}
+	}
+
+	public static class DeclareProperty implements BytecodeInstruction {
+		public final String name;
+		public final Position position;
+
+		public DeclareProperty(String name, Position position) {
+			this.name = name;
+			this.position = position;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			var value = values.pop();
+			var receiver = values.pop();
+			values.push(value);
+
+			if (!(receiver instanceof ManagedTable container)) {
+				result.setException(new Diagnostic("Cannot set properties on \"" + getValueName(receiver) + "\"", this.position));
+				return STATUS_BREAK;
+			}
+
+			if (value == Primitive.VOID) {
+				result.setException(new Diagnostic("Cannot set a table property to void", this.position));
+				return STATUS_BREAK;
+			}
+
+			if (!container.declareProperty(this.name, value)) {
+				result.setException(new Diagnostic("Property \"" + this.name + "\" is already defined", this.position));
+				return STATUS_BREAK;
+			}
+
+			values.push(result.value);
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return this.position.format("Get " + this.name, "");
+		}
+	}
+
 	public static class Load implements BytecodeInstruction {
 		public final String name;
 		public final Position position;
@@ -441,6 +524,63 @@ public interface BytecodeInstruction {
 		@Override
 		public String toString() {
 			return this.position.format("Store " + this.name, "");
+		}
+	}
+
+	public static class Declare implements BytecodeInstruction {
+		public final String name;
+		public final Position position;
+
+		public Declare(String name, Position position) {
+			this.name = name;
+			this.position = position;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			var variable = scope.declareVariable(this.name);
+
+			if (variable == null) {
+				result.setException(new Diagnostic("Duplicate declaration of variable \"" + this.name + "\"", this.position));
+				return STATUS_BREAK;
+			}
+
+			variable.value = values.peek();
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return this.position.format("Store " + this.name, "");
+		}
+	}
+
+	public static class Destructure implements BytecodeInstruction {
+		public final List<Parameter> parameters;
+		public final Position position;
+
+		public Destructure(List<Parameter> parameters, Position position) {
+			this.parameters = parameters;
+			this.position = position;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			var value = values.peek();
+			if (!(value instanceof ManagedArray array)) {
+				result.setException(new Diagnostic("Destructuring is only supported for arrays", this.position));
+				return STATUS_BREAK;
+			}
+
+			Parameter.destructure(this.parameters, false, array.getElementsReadOnly(), scope, result);
+			if (result.label != null) return STATUS_BREAK;
+
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return this.position.format("Destructure", "");
 		}
 	}
 
