@@ -140,6 +140,11 @@ public class BytecodeEmitter {
 			return;
 		}
 
+		if (expression instanceof Expression.FunctionDeclaration functionDeclaration) {
+			this.emit(new BytecodeInstruction.DeclareFunction(new ProgramFragment(functionDeclaration.body()), functionDeclaration.parameters()));
+			return;
+		}
+
 		if (expression instanceof Expression.Label label) {
 			var target = label.target();
 			this.label(label.name());

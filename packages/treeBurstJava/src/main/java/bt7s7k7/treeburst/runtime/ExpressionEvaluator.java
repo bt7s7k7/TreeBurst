@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
+import bt7s7k7.treeburst.bytecode.ProgramFragment;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
@@ -309,7 +310,7 @@ public class ExpressionEvaluator {
 		}
 
 		if (expression instanceof Expression.FunctionDeclaration functionDeclaration) {
-			result.value = new ScriptFunction(scope.globalScope.FunctionPrototype, functionDeclaration.parameters(), functionDeclaration.body(), scope);
+			result.value = new ScriptFunction(scope.globalScope.FunctionPrototype, functionDeclaration.parameters(), new ProgramFragment(functionDeclaration.body()), scope);
 			return;
 		}
 

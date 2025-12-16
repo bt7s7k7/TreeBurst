@@ -14,9 +14,11 @@ import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedFunction;
 import bt7s7k7.treeburst.runtime.Scope;
+import bt7s7k7.treeburst.runtime.ScriptFunction;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.ManagedValueUtils;
+import bt7s7k7.treeburst.support.Parameter;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
@@ -209,6 +211,27 @@ public interface BytecodeInstruction {
 		@Override
 		public String toString() {
 			return this.position.format("InvokeMacroFallback", "");
+		}
+	}
+
+	public static class DeclareFunction implements BytecodeInstruction {
+		public final ProgramFragment body;
+		public final List<Parameter> parameters;
+
+		public DeclareFunction(ProgramFragment body, List<Parameter> parameters) {
+			this.body = body;
+			this.parameters = parameters;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			values.push(new ScriptFunction(scope.globalScope.FunctionPrototype, this.parameters, this.body, scope));
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return "DeclareFunction ?" + this.parameters.toString();
 		}
 	}
 
