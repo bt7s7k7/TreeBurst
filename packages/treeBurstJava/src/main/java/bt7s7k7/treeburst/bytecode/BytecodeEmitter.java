@@ -71,7 +71,7 @@ public class BytecodeEmitter {
 		}
 
 		if (expression instanceof Expression.Invocation invocation) {
-			if (this.tryCompilationStageKeywordExecution(invocation, result)) return;
+			if (this.tryCompilationStageMacroExecution(invocation, result)) return;
 
 			String method = null;
 			String name = null;
@@ -91,19 +91,19 @@ public class BytecodeEmitter {
 			}
 
 			var argumentCount = invocation.args().size();
-			var isKeyword = name != null && name.startsWith("@");
+			var isMacro = name != null && name.startsWith("@");
 
-			if (isKeyword) argumentCount = 0;
+			if (isMacro) argumentCount = 0;
 
 			this.emit(new BytecodeInstruction.PrepareInvoke(argumentCount, method, invocation.position()));
 
-			if (!isKeyword) {
+			if (!isMacro) {
 				this.compileBlock(invocation.args(), result);
 				if (result.label != null) return;
 			}
 
-			if (isKeyword) {
-				this.emit(new BytecodeInstruction.InvokeKeywordFallback(invocation.position(), invocation.args()));
+			if (isMacro) {
+				this.emit(new BytecodeInstruction.InvokeMacroFallback(invocation.position(), invocation.args()));
 			} else {
 				this.emit(new BytecodeInstruction.Invoke(invocation.position()));
 			}
@@ -158,7 +158,7 @@ public class BytecodeEmitter {
 		return new BuildResult(this.instructions, this.labels);
 	}
 
-	public boolean tryCompilationStageKeywordExecution(Expression.Invocation invocation, ExpressionResult result) {
+	public boolean tryCompilationStageMacroExecution(Expression.Invocation invocation, ExpressionResult result) {
 		Expression receiver = null;
 		ManagedFunction function = null;
 
@@ -185,7 +185,7 @@ public class BytecodeEmitter {
 
 		if (function != null) {
 			// Execute compilation stage of keyword function
-			var arguments = this.prepareArgumentsForCompilationStageKeywordExecution(receiver, invocation.args());
+			var arguments = this.prepareArgumentsForCompilationStageMacroExecution(receiver, invocation.args());
 			this.nextPosition = invocation.position();
 			function.invoke(arguments, this.scope, result);
 			if (result.label != null) return true;
@@ -196,7 +196,7 @@ public class BytecodeEmitter {
 		return false;
 	}
 
-	public List<ManagedValue> prepareArgumentsForCompilationStageKeywordExecution(Expression receiver, List<Expression> expressions) {
+	public List<ManagedValue> prepareArgumentsForCompilationStageMacroExecution(Expression receiver, List<Expression> expressions) {
 		var arguments = new ArrayList<ManagedValue>(expressions.size() + (receiver != null ? 2 : 1));
 		if (receiver != null) arguments.add(new NativeHandle(this.scope.globalScope.TablePrototype, receiver));
 

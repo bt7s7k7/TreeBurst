@@ -168,11 +168,11 @@ public interface BytecodeInstruction {
 		}
 	}
 
-	public static class InvokeKeywordFallback implements BytecodeInstruction {
+	public static class InvokeMacroFallback implements BytecodeInstruction {
 		public final Position position;
 		public final List<Expression> expressionArguments;
 
-		public InvokeKeywordFallback(Position position, List<Expression> expressionArguments) {
+		public InvokeMacroFallback(Position position, List<Expression> expressionArguments) {
 			this.position = position;
 			this.expressionArguments = expressionArguments;
 		}
@@ -195,7 +195,7 @@ public interface BytecodeInstruction {
 			var emitter = new BytecodeEmitter(scope);
 			var receiverExpression = receiver == null ? null : new Expression.Literal(Position.INTRINSIC, receiver);
 
-			var compilationArgs = emitter.prepareArgumentsForCompilationStageKeywordExecution(receiverExpression, expressionArguments);
+			var compilationArgs = emitter.prepareArgumentsForCompilationStageMacroExecution(receiverExpression, expressionArguments);
 			emitter.nextPosition = position;
 			function.invoke(compilationArgs, scope, result);
 			if (result.label != null) return;
@@ -208,7 +208,7 @@ public interface BytecodeInstruction {
 
 		@Override
 		public String toString() {
-			return this.position.format("InvokeKeywordFallback", "");
+			return this.position.format("InvokeMacroFallback", "");
 		}
 	}
 

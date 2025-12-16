@@ -154,7 +154,7 @@ public class ExtendedExpressionEvaluation {
 				return false;
 			}
 
-			BytecodeInstruction.InvokeKeywordFallback.execute(function, function.hasThisArgument() ? this.targetValue : null, this.argumentExpressions, this.scope, this.result, this.position);
+			BytecodeInstruction.InvokeMacroFallback.execute(function, function.hasThisArgument() ? this.targetValue : null, this.argumentExpressions, this.scope, this.result, this.position);
 			if (this.result.value == null) return false;
 			return true;
 		}
