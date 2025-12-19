@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import bt7s7k7.treeburst.bytecode.ProgramFragment;
 import bt7s7k7.treeburst.parsing.TreeBurstParser;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
-import bt7s7k7.treeburst.runtime.GlobalScope;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.support.InputDocument;
 import bt7s7k7.treeburst.support.ManagedValue;
 
@@ -28,10 +28,10 @@ class BytecodeTest {
 			var root = parser.parse();
 			assertEquals(0, parser.diagnostics.size());
 
-			var globalScope = new GlobalScope();
+			var scope = new Realm().globalScope;
 
 			var result = new ExpressionResult();
-			root.evaluate(globalScope, result);
+			root.evaluate(scope, result);
 
 			var error = result.terminate();
 			if (error != null) {

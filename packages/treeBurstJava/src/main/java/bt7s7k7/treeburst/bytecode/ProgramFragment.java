@@ -91,7 +91,7 @@ public class ProgramFragment {
 
 			var instruction = this.instructions.get(pc);
 			if (instruction == BytecodeInstruction.Reflect.VALUE) {
-				values.push(new NativeHandle(scope.globalScope.TablePrototype, this));
+				values.push(new NativeHandle(scope.realm.TablePrototype, this));
 				continue;
 			}
 

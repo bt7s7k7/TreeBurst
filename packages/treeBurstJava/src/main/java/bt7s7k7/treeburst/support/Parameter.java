@@ -98,7 +98,7 @@ public class Parameter {
 			if (parameter.isSpread) {
 				if (parameters.size() == 1) {
 					if (variable == null) continue;
-					variable.value = ManagedArray.withElements(scope.globalScope.ArrayPrototype, inputs);
+					variable.value = ManagedArray.withElements(scope.realm.ArrayPrototype, inputs);
 					continue;
 				}
 
@@ -107,11 +107,11 @@ public class Parameter {
 				var inputsToConsume = inputs.size() - (parameters.size() - 1);
 				if (inputsToConsume <= 0) {
 					if (variable == null) continue;
-					variable.value = ManagedArray.empty(scope.globalScope.ArrayPrototype);
+					variable.value = ManagedArray.empty(scope.realm.ArrayPrototype);
 					continue;
 				}
 
-				var consumed = ManagedArray.withCapacity(scope.globalScope.ArrayPrototype, inputsToConsume);
+				var consumed = ManagedArray.withCapacity(scope.realm.ArrayPrototype, inputsToConsume);
 				var consumedElements = consumed.getElementsMutable();
 				var maxIndex = inputIndex + inputsToConsume;
 

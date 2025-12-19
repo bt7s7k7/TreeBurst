@@ -1,17 +1,17 @@
 package bt7s7k7.treeburst.standard;
 
-import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.support.ManagedValue;
 
 public abstract class LazyTable extends ManagedTable {
-	protected final GlobalScope globalScope;
+	protected final Realm realm;
 	protected boolean initialized = false;
 
-	public LazyTable(ManagedObject prototype, GlobalScope globalScope) {
+	public LazyTable(ManagedObject prototype, Realm realm) {
 		super(prototype);
-		this.globalScope = globalScope;
+		this.realm = realm;
 	}
 
 	protected abstract void initialize();

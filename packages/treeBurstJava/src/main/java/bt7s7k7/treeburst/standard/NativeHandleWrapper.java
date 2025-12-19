@@ -14,7 +14,6 @@ import java.util.stream.Stream;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
-import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedFunction;
 import bt7s7k7.treeburst.runtime.ManagedMap;
@@ -22,6 +21,7 @@ import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.runtime.NativeHandle;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.runtime.Scope;
 import bt7s7k7.treeburst.runtime.Variable;
 import bt7s7k7.treeburst.support.ManagedValue;
@@ -41,8 +41,8 @@ public class NativeHandleWrapper<T> {
 	}
 
 	public class Prototype extends LazyTable {
-		public Prototype(ManagedObject prototype, GlobalScope globalScope) {
-			super(prototype, globalScope);
+		public Prototype(ManagedObject prototype, Realm realm) {
+			super(prototype, realm);
 			// Always set get/setter to true because we don't actually know if we have get/setters
 			// before the initialization function is executed. If there is a potential getter, we
 			// must give it a chance to be created when initialization runs.
@@ -60,18 +60,18 @@ public class NativeHandleWrapper<T> {
 				this.hasGetters = false;
 				this.hasSetters = false;
 			}
-			NativeHandleWrapper.this.initializePrototype(this, this.globalScope);
+			NativeHandleWrapper.this.initializePrototype(this, this.realm);
 		}
 	}
 
 	public class InitializationContext {
 		public final ManagedTable prototype;
-		public final GlobalScope globalScope;
+		public final Realm realm;
 
-		public InitializationContext(ManagedTable handle, GlobalScope globalScope) {
+		public InitializationContext(ManagedTable handle, Realm realm) {
 			handle.name = NativeHandleWrapper.this.name;
 			this.prototype = handle;
-			this.globalScope = globalScope;
+			this.realm = realm;
 		}
 
 		@FunctionalInterface
@@ -79,18 +79,18 @@ public class NativeHandleWrapper<T> {
 			public void run(T self, List<ManagedValue> args, Scope scope, ExpressionResult result);
 		}
 
-		public InitializationContext addMethod(String name, Function<GlobalScope, ManagedFunction> factory) {
-			this.prototype.declareProperty(name, factory.apply(this.globalScope));
+		public InitializationContext addMethod(String name, Function<Realm, ManagedFunction> factory) {
+			this.prototype.declareProperty(name, factory.apply(this.realm));
 			return this;
 		}
 
 		public InitializationContext addMethod(String name, List<String> parameters, List<Class<?>> types, MethodImplementation<T> impl) {
-			this.prototype.declareProperty(name, NativeFunction.simple(this.globalScope,
+			this.prototype.declareProperty(name, NativeFunction.simple(this.realm,
 					Stream.concat(Stream.of("this"), parameters.stream()).toList(),
 					Stream.concat(Stream.of(NativeHandleWrapper.this.type), types == null ? Collections.nCopies(parameters.size(), ManagedValue.class).stream() : types.stream()).toList(),
 					(args, scope, result) -> {
 						var self = args.get(0).getNativeValue(NativeHandleWrapper.this.type);
-						impl.run(self, args.subList(1, args.size()), this.globalScope, result);
+						impl.run(self, args.subList(1, args.size()), this.realm.globalScope, result);
 					}));
 
 			return this;
@@ -171,28 +171,28 @@ public class NativeHandleWrapper<T> {
 				if (importKey != null) {
 					this.addMethod("keys", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, map.keySet().stream().map(importKey).collect(Collectors.toCollection(ArrayList::new)));
+						result.value = ManagedArray.fromMutableList(scope.realm.ArrayPrototype, map.keySet().stream().map(importKey).collect(Collectors.toCollection(ArrayList::new)));
 					});
 				}
 
 				if (importValue != null) {
 					this.addMethod("values", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, map.values().stream().map(importValue).collect(Collectors.toCollection(ArrayList::new)));
+						result.value = ManagedArray.fromMutableList(scope.realm.ArrayPrototype, map.values().stream().map(importValue).collect(Collectors.toCollection(ArrayList::new)));
 					});
 				}
 
 				if (importValue != null && importKey != null) {
 					this.addMethod("entries", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, map.entrySet().stream()
-								.map(kv -> ManagedArray.fromImmutableList(scope.globalScope.ArrayPrototype, List.of(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()))))
+						result.value = ManagedArray.fromMutableList(scope.realm.ArrayPrototype, map.entrySet().stream()
+								.map(kv -> ManagedArray.fromImmutableList(scope.realm.ArrayPrototype, List.of(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()))))
 								.collect(Collectors.toCollection(ArrayList::new)));
 					});
 
 					this.addMethod("map", Collections.emptyList(), Collections.emptyList(), (self, args, scope, result) -> {
 						var map = mapGetter.apply(self);
-						var managedMap = ManagedMap.empty(scope.globalScope.MapPrototype);
+						var managedMap = ManagedMap.empty(scope.realm.MapPrototype);
 
 						for (var kv : map.entrySet()) {
 							managedMap.entries.put(importKey.apply(kv.getKey()), importValue.apply(kv.getValue()));
@@ -208,7 +208,7 @@ public class NativeHandleWrapper<T> {
 								map.entrySet(), v -> importKey.apply(v.getKey()), null, v -> importValue.apply(v.getValue()), depth - 1, scope, result);
 					});
 
-					this.prototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(NativeHandleWrapper.this.type, Primitive.Number.class), (args, scope, result) -> {
+					this.prototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.realm, List.of("this", "depth?"), List.of(NativeHandleWrapper.this.type, Primitive.Number.class), (args, scope, result) -> {
 						var self = args.get(0);
 						evaluateInvocation(self, self, "map", Position.INTRINSIC, Collections.emptyList(), scope, result);
 						if (result.label != null) return;
@@ -237,15 +237,15 @@ public class NativeHandleWrapper<T> {
 		}
 	}
 
-	public void initializePrototype(ManagedTable table, GlobalScope globalScope) {
-		this.callback.accept(new InitializationContext(table, globalScope));
+	public void initializePrototype(ManagedTable table, Realm realm) {
+		this.callback.accept(new InitializationContext(table, realm));
 	}
 
-	public ManagedTable buildPrototype(GlobalScope globalScope) {
-		return new Prototype(globalScope.TablePrototype, globalScope);
+	public ManagedTable buildPrototype(Realm realm) {
+		return new Prototype(realm.TablePrototype, realm);
 	}
 
-	public ManagedTable ensurePrototype(GlobalScope globalScope) {
+	public ManagedTable ensurePrototype(Realm realm) {
 		if (this.name == null) throw new NullPointerException("Cannot cache prototype without a name");
 
 		// We need to check if a prototype was already created and if so, we need to make sure it
@@ -254,7 +254,7 @@ public class NativeHandleWrapper<T> {
 		Variable classVariable = null;
 
 		do {
-			classVariable = globalScope.findVariable(this.name);
+			classVariable = realm.globalScope.findVariable(this.name);
 			// Variable not defined, need to define
 			if (classVariable == null) break;
 			// Variable defined, but not correct, need to overwrite
@@ -264,20 +264,20 @@ public class NativeHandleWrapper<T> {
 			if (prototypeValue != null && prototypeValue instanceof ManagedTable prototype) return prototype;
 		} while (false);
 
-		var prototype = this.buildPrototype(globalScope);
+		var prototype = this.buildPrototype(realm);
 
 		if (classVariable == null) {
 			// Variable is not declared
-			classVariable = globalScope.declareVariable(this.name);
+			classVariable = realm.globalScope.declareVariable(this.name);
 		}
 
 		// Overwrite or define variable
-		classVariable.value = new ManagedTable(globalScope.TablePrototype, Map.of("prototype", prototype));
+		classVariable.value = new ManagedTable(realm.TablePrototype, Map.of("prototype", prototype));
 
 		return prototype;
 	}
 
-	public NativeHandle getHandle(T value, GlobalScope globalScope) {
-		return new NativeHandle(this.ensurePrototype(globalScope), value);
+	public NativeHandle getHandle(T value, Realm realm) {
+		return new NativeHandle(this.ensurePrototype(realm), value);
 	}
 }

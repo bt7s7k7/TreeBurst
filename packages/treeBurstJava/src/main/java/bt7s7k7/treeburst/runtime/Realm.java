@@ -33,7 +33,7 @@ import bt7s7k7.treeburst.support.ManagedValueUtils;
 import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
-public class GlobalScope extends Scope {
+public class Realm {
 
 	private static final ArrayList<Map.Entry<String, NativeFunction.Handler>> OPERATOR_FALLBACKS = new ArrayList<>();
 
@@ -145,6 +145,8 @@ public class GlobalScope extends Scope {
 		}
 	}
 
+	public final Scope globalScope = new Scope(null, this);
+
 	public final ManagedTable TablePrototype = new ManagedTable(null);
 	public final ManagedTable Table = this.declareGlobal("Table", new TableApi(this.TablePrototype, this));
 
@@ -167,7 +169,7 @@ public class GlobalScope extends Scope {
 	public final ManagedTable Map = this.declareGlobal("Map", new ManagedTable(this.TablePrototype));
 
 	public <T extends ManagedValue> T declareGlobal(String name, T value) {
-		var variable = this.declareVariable(name);
+		var variable = this.globalScope.declareVariable(name);
 		if (variable == null) {
 			throw new IllegalArgumentException("Duplicate declaration of global \"" + name + "\"");
 		}
@@ -199,16 +201,16 @@ public class GlobalScope extends Scope {
 	}
 
 	public String tryInspect(ManagedValue value, int depth, ExpressionResult result) {
-		evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(depth)), this, result);
+		evaluateInvocation(value, value, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(depth)), this.globalScope, result);
 		if (result.label != null) return null;
 
-		var output = ensureString(result.value, this, result);
+		var output = ensureString(result.value, this.globalScope, result);
 		if (result.label != null) return null;
 
 		return output.value;
 	}
 
-	public GlobalScope() {
+	public Realm() {
 		super();
 
 		this.declareGlobal("true", Primitive.TRUE); // @type: Boolean, @summary: Constant value of `true`
@@ -224,19 +226,19 @@ public class GlobalScope extends Scope {
 		if (!this.Map.declareProperty("prototype", this.MapPrototype)) throw new IllegalStateException();
 
 		for (var kv : OPERATOR_FALLBACKS) {
-			this.TablePrototype.declareProperty(kv.getKey(), NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, kv.getValue()));
+			this.TablePrototype.declareProperty(kv.getKey(), NativeFunction.simple(this, BINARY_OPERATOR_PARAMETERS, kv.getValue()));
 		}
 
 		for (var kv : NUMERIC_OPERATORS) {
-			this.NumberPrototype.declareProperty(kv.getKey(), NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, kv.getValue()));
+			this.NumberPrototype.declareProperty(kv.getKey(), NativeFunction.simple(this, BINARY_OPERATOR_PARAMETERS, kv.getValue()));
 		}
 
-		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_NEG, NativeFunction.simple(this.globalScope, List.of("this"), List.of(Primitive.Number.class), (args, scope, result) -> {
+		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_NEG, NativeFunction.simple(this, List.of("this"), List.of(Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Returns a number with an inverted sign.
 			result.value = Primitive.from(-((Primitive.Number) args.get(0)).value);
 		}));
 
-		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(Primitive.Number.class, Primitive.Number.class), (args, scope, result) -> {
+		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this, List.of("this", "depth?"), List.of(Primitive.Number.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Formats the number into a textual form.
 			var self = args.get(0).getNumberValue();
 
@@ -248,7 +250,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(string);
 		}));
 
-		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this.globalScope, List.of("this", "radix?"), List.of(Primitive.Number.class, Primitive.Number.class), (args, scope, result) -> {
+		this.NumberPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this, List.of("this", "radix?"), List.of(Primitive.Number.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary[[Formats the number into a textual form. If the `radix` parameter is
 			// provided, it is used as the base for representing the number value. In this case the
 			// number is converted to an integer by rounding down.]]
@@ -275,18 +277,18 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(string);
 		}));
 
-		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_NOT, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(Primitive.Boolean.class, Primitive.Number.class), (args, scope, result) -> {
+		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_NOT, NativeFunction.simple(this, List.of("this", "depth?"), List.of(Primitive.Boolean.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Returns an inverted value of the boolean.
 			result.value = Primitive.from(!((Primitive.Boolean) args.get(0)).value);
 		}));
 
-		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this"), List.of(Primitive.Boolean.class), (args, scope, result) -> {
+		this.BooleanPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this, List.of("this"), List.of(Primitive.Boolean.class), (args, scope, result) -> {
 			// @summary: Formats the boolean into a textual form.
 			var self = args.get(0).getBooleanValue();
 			result.value = Primitive.from(java.lang.Boolean.toString(self));
 		}));
 
-		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(this, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
 			// @summary: Concatenates two strings together.
 			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, Primitive.String.class, Primitive.String.class, args, scope, result);
 			if (result.label != null) return;
@@ -297,18 +299,18 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(left + right);
 		}));
 
-		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this.globalScope, List.of("this"), List.of(Primitive.String.class), (args, scope, result) -> {
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this, List.of("this"), List.of(Primitive.String.class), (args, scope, result) -> {
 			// @summary: Returns the string unchanged.
 			result.value = args.get(0);
 		}));
 
-		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this, List.of("this", "depth?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Formats the string into a textual form, which is surrounded by `"` characters and all special characters are escaped.
 			var self = args.get(0).getStringValue();
 			result.value = Primitive.from("\"" + Primitive.String.escapeString(self) + "\"");
 		}));
 
-		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_MUL, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_MUL, NativeFunction.simple(this, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
 			// @summary[[Creates a new string that is the input string repeated `n` times.]]
 			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, Primitive.String.class, Primitive.Number.class, args, scope, result);
 			if (result.label != null) return;
@@ -324,7 +326,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(output.toString());
 		}));
 
-		this.StringPrototype.declareProperty("pad", NativeFunction.simple(this.globalScope, List.of("this", "length", "fill?"), List.of(Primitive.String.class, Primitive.Number.class, Primitive.String.class), (args, scope, result) -> {
+		this.StringPrototype.declareProperty("pad", NativeFunction.simple(this, List.of("this", "length", "fill?"), List.of(Primitive.String.class, Primitive.Number.class, Primitive.String.class), (args, scope, result) -> {
 			// @summary[[If the string is shorter that `length`, creates a new string that is padded
 			// with the `fill` character (or space character if not provided) to reach the desired
 			// length. The string is padded to be right aligned, use {@link String.prototype.padLeft} for left alignment.]]
@@ -350,7 +352,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(builder.toString());
 		}));
 
-		this.StringPrototype.declareProperty("padLeft", NativeFunction.simple(this.globalScope, List.of("this", "length", "fill?"), List.of(Primitive.String.class, Primitive.Number.class, Primitive.String.class), (args, scope, result) -> {
+		this.StringPrototype.declareProperty("padLeft", NativeFunction.simple(this, List.of("this", "length", "fill?"), List.of(Primitive.String.class, Primitive.Number.class, Primitive.String.class), (args, scope, result) -> {
 			// @summary[[If the string is shorter that `length`, creates a new string that is padded
 			// with the `fill` character (or space character if not provided) to reach the desired
 			// length. The resulting string is left aligned.]]
@@ -376,14 +378,14 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(builder.toString());
 		}));
 
-		this.String.declareProperty("fromCharCode", NativeFunction.simple(this.globalScope, List.of("code"), List.of(Primitive.Number.class), (args, scope, result) -> {
+		this.String.declareProperty("fromCharCode", NativeFunction.simple(this, List.of("code"), List.of(Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Returns a string containing a character with the provided character code. The codepage is implementation dependent, but it's probably UTF-16.
 			var code = (int) args.get(0).getNumberValue();
 			var charString = "" + (char) code;
 			result.value = Primitive.from(charString);
 		}));
 
-		this.StringPrototype.declareProperty("getCharCode", NativeFunction.simple(this.globalScope, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
+		this.StringPrototype.declareProperty("getCharCode", NativeFunction.simple(this, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary[[Returns the code for a character in the string. If `index` is not provided,
 			// returns the code for the first character. As always, the index may be negative to
 			// index from the end of the string, where `-1` is the last character and so on.]]
@@ -397,7 +399,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(code);
 		}));
 
-		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
+		this.StringPrototype.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this, List.of("this", "index?"), List.of(Primitive.String.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary[[Returns the a character from the string at an `index`. The return value is
 			// a string of length `1`, containing the selected character. As always, the index may
 			// be negative to index from the end of the string, where `-1` is the last character and
@@ -412,7 +414,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from("" + code);
 		}));
 
-		this.StringPrototype.declareProperty("slice", NativeFunction.simple(this.globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
+		this.StringPrototype.declareProperty("slice", NativeFunction.simple(this, List.of("this", "from", "to?"), (args, scope, result) -> {
 			// @summary[[Gets a section of the string starting at `from` and ending at `to` (or the
 			// end of the string if not provided). As always, the index may be negative to index
 			// from the end of the string, where `-1` is the last character and so on.]]
@@ -436,7 +438,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(self.value.substring(from, to));
 		}));
 
-		this.StringPrototype.declareProperty("startsWith", NativeFunction.simple(this.globalScope, List.of("this", "substring", "index?"), (args, scope, result) -> {
+		this.StringPrototype.declareProperty("startsWith", NativeFunction.simple(this, List.of("this", "substring", "index?"), (args, scope, result) -> {
 			// @summary[[Tests if the string starts with the substring. If `index` is provided, the
 			// substring is expected at this position. As always, the index may be negative to index
 			// from the end of the string, where `-1` is the last character and so on.]]
@@ -457,7 +459,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(self.value.startsWith(substring, index));
 		}));
 
-		this.StringPrototype.declareProperty("endsWith", NativeFunction.simple(this.globalScope, List.of("this", "substring"), List.of(Primitive.String.class, Primitive.String.class), (args, scope, result) -> {
+		this.StringPrototype.declareProperty("endsWith", NativeFunction.simple(this, List.of("this", "substring"), List.of(Primitive.String.class, Primitive.String.class), (args, scope, result) -> {
 			// @summary[[Tests if the string ends with the substring.]]
 			var self = (Primitive.String) args.get(0);
 			var substring = args.get(1).getStringValue();
@@ -465,7 +467,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(self.value.endsWith(substring));
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary: This object is converted to a {@link Boolean}. If the result is `true`, the `other` expression is evaluated and the result retuned, otherwise this object is returned.
 			var a = args.get(0).getNativeValue(Expression.class);
 			var b = args.get(1).getNativeValue(Expression.class);
@@ -488,7 +490,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.VOID;
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_OR, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_OR, NativeFunction.simple(this, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary: This object is converted to a {@link Boolean}. If the result is `true` this object is retuned, otherwise the `other` expression is evaluated and the result retuned.
 			var a = args.get(0).getNativeValue(Expression.class);
 			var b = args.get(1).getNativeValue(Expression.class);
@@ -525,7 +527,7 @@ public class GlobalScope extends Scope {
 			}
 		};
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_COALESCE, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_COALESCE, NativeFunction.simple(this, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary: If this object is not {@link null} or {@link void}, it is returned, otherwise the `other` expression is evaluated and the result retuned.
 			var a = args.get(0).getNativeValue(Expression.class);
 			var b = args.get(1).getNativeValue(Expression.class);
@@ -562,7 +564,7 @@ public class GlobalScope extends Scope {
 			}
 		};
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_ELSE, NativeFunction.simple(this.globalScope, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_ELSE, NativeFunction.simple(this, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary: If this object is not {@link void}, it is returned, otherwise the `other` expression is evaluated and the result retuned.
 			var a = args.get(0).getNativeValue(Expression.class);
 			var b = args.get(1).getNativeValue(Expression.class);
@@ -585,7 +587,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.VOID;
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_BOOLEAN, NativeFunction.simple(this.globalScope, List.of("this"), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_BOOLEAN, NativeFunction.simple(this, List.of("this"), (args, scope, result) -> {
 			// @summary: This object is converted to a {@link Boolean}.
 			var self = args.get(0);
 
@@ -596,7 +598,7 @@ public class GlobalScope extends Scope {
 			}
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(this.globalScope, List.of("this", "other"), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(this, List.of("this", "other"), (args, scope, result) -> {
 			// @summary[[Returns `true` if this object is equal by reference to the other object.
 			// This function returns inconsistent results for objects of type {@link String} and
 			// {@link Number}, and should not be used with them. The intended use is for reference
@@ -605,7 +607,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(args.get(0) == args.get(1));
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedValue.class, Primitive.Number.class), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this, List.of("this", "depth?"), List.of(ManagedValue.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Formats the value into a textual form.
 			var self = args.get(0);
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
@@ -623,7 +625,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.from(self.toString());
 		}));
 
-		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this.globalScope, List.of("this"), (args, scope, result) -> {
+		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_STRING, NativeFunction.simple(this, List.of("this"), (args, scope, result) -> {
 			// @summary: Formats the value into a textual form, using its `k_dump` implementation
 			// with `depth` of `1`. An exception is an {@link void} object, in which case an empty
 			// string is returned.
@@ -637,7 +639,7 @@ public class GlobalScope extends Scope {
 			evaluateInvocation(self, self, OperatorConstants.OPERATOR_DUMP, Position.INTRINSIC, List.of(Primitive.from(1)), scope, result);
 		}));
 
-		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(this.globalScope, List.of("this", "receiver", "arguments?"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {
+		this.FunctionPrototype.declareProperty("call", NativeFunction.simple(this, List.of("this", "receiver", "arguments?"), List.of(ManagedFunction.class, ManagedValue.class, ManagedArray.class), (args, scope, result) -> {
 			// @summary: Calls the function with the specified receiver and arguments, returning its return value.
 			var self = args.get(0).getFunctionValue();
 			var receiver = args.get(1);
@@ -646,7 +648,7 @@ public class GlobalScope extends Scope {
 			evaluateInvocation(receiver, Primitive.VOID, self, Position.INTRINSIC, arguments, scope, result);
 		}));
 
-		this.declareGlobal("unreachable", NativeFunction.simple(this.globalScope, Collections.emptyList(), (args, scope, result) -> {
+		this.declareGlobal("unreachable", NativeFunction.simple(this, Collections.emptyList(), (args, scope, result) -> {
 			// @summary: Specifies that this portion of the code should not be reachable in standard operation. If it is reached an exception is generated.
 			result.setException(new Diagnostic("Reached unreachable code", Position.INTRINSIC));
 			return;
@@ -735,7 +737,7 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareGlobal("@while", NativeFunction.simple(this.globalScope, List.of("predicate", "body", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.declareGlobal("@while", NativeFunction.simple(this, List.of("predicate", "body", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary[[Repeatedly evaluates the `predicate` expression, which is expected to
 			// return a {@link Boolean} or be convertible to such. If `true` is returned, the `body`
 			// expression is executed, otherwise the cycle is terminated.]]
@@ -765,13 +767,13 @@ public class GlobalScope extends Scope {
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareGlobal("return", NativeFunction.simple(this.globalScope, List.of("value?"), (args, scope, result) -> {
+		this.declareGlobal("return", NativeFunction.simple(this, List.of("value?"), (args, scope, result) -> {
 			// @summary: Aborts the execution of the current function, optionally retuning the provided value.
 			result.value = args.isEmpty() ? Primitive.VOID : args.get(0);
 			result.label = LABEL_RETURN;
 		}));
 
-		this.declareGlobal("goto", NativeFunction.simple(this.globalScope, List.of("label"), List.of(Primitive.String.class), (args, scope, result) -> {
+		this.declareGlobal("goto", NativeFunction.simple(this, List.of("label"), List.of(Primitive.String.class), (args, scope, result) -> {
 			// @summary[[Switches execution to a label with the specified name. This label must be
 			// in a block that is at the same level as this invocation or in a parent block that is
 			// still in the same function.]]

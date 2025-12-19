@@ -9,7 +9,7 @@ import org.jline.terminal.TerminalBuilder;
 
 import bt7s7k7.treeburst.parsing.TreeBurstParser;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
-import bt7s7k7.treeburst.runtime.GlobalScope;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.support.InputDocument;
 
 public class Main {
@@ -27,7 +27,8 @@ public class Main {
 					.history(history)
 					.build();
 
-			var scope = new GlobalScope();
+			var realm = new Realm();
+			var scope = realm.globalScope;
 
 			var dumpBytecode = false;
 			var dumpAST = false;
@@ -92,7 +93,7 @@ public class Main {
 					}
 
 					if (result.value != null) {
-						terminal.writer().println(scope.inspect(result.value));
+						terminal.writer().println(realm.inspect(result.value));
 					}
 				} catch (UserInterruptException __) {
 					continue;

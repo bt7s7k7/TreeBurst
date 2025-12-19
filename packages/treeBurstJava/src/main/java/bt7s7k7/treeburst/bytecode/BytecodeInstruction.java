@@ -258,7 +258,7 @@ public interface BytecodeInstruction {
 
 		@Override
 		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
-			values.push(new ScriptFunction(scope.globalScope.FunctionPrototype, this.parameters, this.body, scope));
+			values.push(new ScriptFunction(scope.realm.FunctionPrototype, this.parameters, this.body, scope));
 			return STATUS_NORMAL;
 		}
 
@@ -681,7 +681,7 @@ public interface BytecodeInstruction {
 		@Override
 		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
 			var elements = values.popArguments(arguments.pop());
-			var array = ManagedArray.withCapacity(scope.globalScope.ArrayPrototype, elements.size());
+			var array = ManagedArray.withCapacity(scope.realm.ArrayPrototype, elements.size());
 
 			var arrayElements = array.getElementsMutable();
 			for (var element : elements) {
@@ -722,7 +722,7 @@ public interface BytecodeInstruction {
 				entries.put(key, value);
 			}
 
-			var map = ManagedMap.fromMutableEntries(scope.globalScope.MapPrototype, entries);
+			var map = ManagedMap.fromMutableEntries(scope.realm.MapPrototype, entries);
 			values.push(map);
 			return STATUS_NORMAL;
 		}

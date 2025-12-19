@@ -6,16 +6,11 @@ import java.util.Map;
 public class Scope {
 	public final Map<String, Variable> variables = new HashMap<>();
 	public final Scope parent;
-	public final GlobalScope globalScope;
+	public final Realm realm;
 
-	public Scope(Scope parent, GlobalScope globalScope) {
+	public Scope(Scope parent, Realm realm) {
 		this.parent = parent;
-		this.globalScope = globalScope;
-	}
-
-	protected Scope() {
-		this.parent = null;
-		this.globalScope = (GlobalScope) this;
+		this.realm = realm;
 	}
 
 	public Variable findVariable(String name) {
@@ -46,6 +41,6 @@ public class Scope {
 	}
 
 	public Scope makeChild() {
-		return new Scope(this, this.globalScope);
+		return new Scope(this, this.realm);
 	}
 }

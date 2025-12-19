@@ -7,12 +7,12 @@ import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 import java.util.List;
 
 import bt7s7k7.treeburst.runtime.EvaluationUtil;
-import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedMap;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.ManagedTable;
 import bt7s7k7.treeburst.runtime.NativeFunction;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.Position;
@@ -21,15 +21,15 @@ import bt7s7k7.treeburst.support.Primitive;
 public class TableApi extends LazyTable {
 	// @summary[[Represents an object with properties.]]
 
-	public TableApi(ManagedObject prototype, GlobalScope globalScope) {
-		super(prototype, globalScope);
+	public TableApi(ManagedObject prototype, Realm realm) {
+		super(prototype, realm);
 	}
 
 	@Override
 	protected void initialize() {
-		this.declareProperty("prototype", this.globalScope.TablePrototype);
+		this.declareProperty("prototype", this.realm.TablePrototype);
 
-		this.declareProperty("new", NativeFunction.simple(this.globalScope, List.of("this", "properties?"), (args, scope, result) -> {
+		this.declareProperty("new", NativeFunction.simple(this.realm, List.of("this", "properties?"), (args, scope, result) -> {
 			// @summary: Creates a new object that inherits from this table's `prototype` property, assuming it exists. Otherwise an exception is generated.
 			var self = args.get(0);
 
@@ -93,7 +93,7 @@ public class TableApi extends LazyTable {
 			result.value = table;
 		}));
 
-		this.declareProperty("getProperty", NativeFunction.simple(this.globalScope, List.of("object", "property", "receiver?"), List.of(ManagedValue.class, Primitive.String.class, ManagedValue.class), (args, scope, result) -> {
+		this.declareProperty("getProperty", NativeFunction.simple(this.realm, List.of("object", "property", "receiver?"), List.of(ManagedValue.class, Primitive.String.class, ManagedValue.class), (args, scope, result) -> {
 			// @summary[[If the `object` contains property named `property`, returns its value.
 			// Otherwise returns {@link void}. If the `receiver` arguments is specified, it will be
 			// provided to any possible getters.]]
@@ -106,20 +106,20 @@ public class TableApi extends LazyTable {
 			}
 		}));
 
-		this.declareProperty("getName", NativeFunction.simple(this.globalScope, List.of("object"), List.of(ManagedObject.class), (args, scope, result) -> {
+		this.declareProperty("getName", NativeFunction.simple(this.realm, List.of("object"), List.of(ManagedObject.class), (args, scope, result) -> {
 			// @summary: Returns the name of the object or {@link void} if it is not named.
 			var object = (ManagedObject) args.get(0);
 			result.value = object.name == null ? Primitive.VOID : Primitive.from(object.name);
 		}));
 
-		this.declareProperty("getNameOrInheritedName", NativeFunction.simple(this.globalScope, List.of("object"), List.of(ManagedObject.class), (args, scope, result) -> {
+		this.declareProperty("getNameOrInheritedName", NativeFunction.simple(this.realm, List.of("object"), List.of(ManagedObject.class), (args, scope, result) -> {
 			// @summary: Returns the name of the object, of the object's prototype or {@link void} if it is not named.
 			var object = (ManagedObject) args.get(0);
 			var name = object.getNameOrInheritedName();
 			result.value = name == null ? Primitive.VOID : Primitive.from(name);
 		}));
 
-		this.declareProperty("setName", NativeFunction.simple(this.globalScope, List.of("object", "name"), List.of(ManagedObject.class, ManagedValue.class), (args, scope, result) -> {
+		this.declareProperty("setName", NativeFunction.simple(this.realm, List.of("object", "name"), List.of(ManagedObject.class, ManagedValue.class), (args, scope, result) -> {
 			// @summary: Sets the name of the object. The `name` argument can also be set to {@link void}, in which case the name is cleared. Returns the object.
 			var object = (ManagedObject) args.get(0);
 			var name = args.get(1);
@@ -135,14 +135,14 @@ public class TableApi extends LazyTable {
 			result.value = object;
 		}));
 
-		this.declareProperty("getPrototype", NativeFunction.simple(this.globalScope, List.of("value"), (args, scope, result) -> {
+		this.declareProperty("getPrototype", NativeFunction.simple(this.realm, List.of("value"), (args, scope, result) -> {
 			// @summary: Returns the prototype of the value or {@link void} if it does not have a prototype.
 			var value = args.get(0);
 			var prototype = EvaluationUtil.getPrototype(value, scope);
 			result.value = prototype == null ? Primitive.VOID : prototype;
 		}));
 
-		this.declareProperty("instanceOf", NativeFunction.simple(this.globalScope, List.of("value", "type"), (args, scope, result) -> {
+		this.declareProperty("instanceOf", NativeFunction.simple(this.realm, List.of("value", "type"), (args, scope, result) -> {
 			// @summary[[Returns if the value is an instance of a type, that is if it has a
 			// prototype that is equal to the `type` prototype property. The only exception is the
 			// {@link void} and {@link null} values, which are singletons and instances of

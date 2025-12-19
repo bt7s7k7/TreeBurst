@@ -41,10 +41,10 @@ public class NativeFunction extends ManagedFunction {
 		return firstOptionalParameter;
 	}
 
-	public static NativeFunction simple(GlobalScope globalScope, List<String> parameters, Handler handler) {
+	public static NativeFunction simple(Realm realm, List<String> parameters, Handler handler) {
 		var parametersWithoutOptional = getParametersWithoutOptional(parameters);
 
-		return new NativeFunction(globalScope.FunctionPrototype, parameters, (args, scope, result) -> {
+		return new NativeFunction(realm.FunctionPrototype, parameters, (args, scope, result) -> {
 			if (!ManagedValueUtils.verifyArguments(parametersWithoutOptional, args, parameters, result)) {
 				return;
 			}
@@ -58,11 +58,11 @@ public class NativeFunction extends ManagedFunction {
 		});
 	}
 
-	public static NativeFunction simple(GlobalScope globalScope, List<String> parameters, List<Class<?>> types, Handler handler) {
+	public static NativeFunction simple(Realm realm, List<String> parameters, List<Class<?>> types, Handler handler) {
 		var parametersWithoutOptional = getParametersWithoutOptional(parameters);
 		if (parameters.size() != types.size()) throw new IllegalArgumentException("The lists of argument names and types must be of the same length");
 
-		return new NativeFunction(globalScope.FunctionPrototype, parameters, (args, scope, result) -> {
+		return new NativeFunction(realm.FunctionPrototype, parameters, (args, scope, result) -> {
 			args = ensureArgumentTypes(args, parametersWithoutOptional, parameters, types, scope, result);
 			if (result.label != null) return;
 

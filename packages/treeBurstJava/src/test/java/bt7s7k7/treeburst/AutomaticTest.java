@@ -23,9 +23,9 @@ import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.parsing.TreeBurstParser;
 import bt7s7k7.treeburst.runtime.EvaluationUtil;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
-import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.runtime.NativeHandle;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.standard.NativeHandleWrapper;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.InputDocument;
@@ -72,13 +72,14 @@ class AutomaticTest {
 				return;
 			}
 
-			var globalScope = new GlobalScope();
+			var realm = new Realm();
+			var globalScope = realm.globalScope;
 
 			var counter = new Object() {
 				public int count = 0;
 			};
 
-			globalScope.declareGlobal("assert", NativeFunction.simple(globalScope, List.of("predicate"), (args, scope, result) -> {
+			realm.declareGlobal("assert", NativeFunction.simple(realm, List.of("predicate"), (args, scope, result) -> {
 				var predicate = ensureBoolean(args.get(0), scope, result);
 				if (result.label != null) return;
 
@@ -90,7 +91,7 @@ class AutomaticTest {
 				result.value = Primitive.VOID;
 			}));
 
-			globalScope.declareGlobal("assertEqual", NativeFunction.simple(globalScope, List.of("value", "pattern"), (args, scope, result) -> {
+			realm.declareGlobal("assertEqual", NativeFunction.simple(realm, List.of("value", "pattern"), (args, scope, result) -> {
 				var value = args.get(0);
 				var pattern = args.get(1);
 
@@ -101,23 +102,23 @@ class AutomaticTest {
 				if (result.label != null) return;
 
 				if (predicate.equals(Primitive.FALSE)) {
-					result.setException(new Diagnostic("Assertion failed, " + scope.globalScope.inspect(value) + " != " + scope.globalScope.inspect(pattern), Position.INTRINSIC));
+					result.setException(new Diagnostic("Assertion failed, " + scope.realm.inspect(value) + " != " + scope.realm.inspect(pattern), Position.INTRINSIC));
 					return;
 				}
 
 				result.value = Primitive.VOID;
 			}));
 
-			globalScope.declareGlobal("increment", NativeFunction.simple(globalScope, Collections.emptyList(), (args, scope, result) -> {
+			realm.declareGlobal("increment", NativeFunction.simple(realm, Collections.emptyList(), (args, scope, result) -> {
 				counter.count++;
 				result.value = Primitive.VOID;
 			}));
 
-			globalScope.declareGlobal("getCounter", NativeFunction.simple(globalScope, Collections.emptyList(), (args, scope, result) -> {
+			realm.declareGlobal("getCounter", NativeFunction.simple(realm, Collections.emptyList(), (args, scope, result) -> {
 				result.value = Primitive.from(counter.count);
 			}));
 
-			globalScope.declareGlobal("dummy", new NativeHandle(DummyObject.WRAPPER.buildPrototype(globalScope), new DummyObject()));
+			realm.declareGlobal("dummy", new NativeHandle(DummyObject.WRAPPER.buildPrototype(realm), new DummyObject()));
 
 			{
 				var result = new ExpressionResult();

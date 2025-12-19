@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Map;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
-import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedMap;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.NativeFunction;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.ManagedValueUtils;
@@ -20,13 +20,13 @@ import bt7s7k7.treeburst.support.Primitive;
 public class MapPrototype extends LazyTable {
 	// @summary: Allows the storage of an unordered set of entries, indexed by a key, which may be any type of value.
 
-	public MapPrototype(ManagedObject prototype, GlobalScope globalScope) {
-		super(prototype, globalScope);
+	public MapPrototype(ManagedObject prototype, Realm realm) {
+		super(prototype, realm);
 	}
 
 	@Override
 	protected void initialize() {
-		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.realm, List.of("this", "index", "value?"), (args, scope, result) -> {
 			// @summary: Gets or sets an entry in the map. When writing, if the `value` is {@link void}, the selected entry is deleted. When reading, if the selected entry does not exist, a {@link void} is returned.
 			if (args.size() <= 2) {
 				args = ensureArgumentTypes(args, List.of("this", "index"), List.of(ManagedMap.class, ManagedValue.class), scope, result);
@@ -64,45 +64,45 @@ public class MapPrototype extends LazyTable {
 			}
 		}));
 
-		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("clone", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Creates a copy of the map.
 			var self = args.get(0).getMapValue();
 			result.value = ManagedMap.withEntries(self.prototype, self.entries);
 		}));
 
-		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("clear", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Removes all entries in the map.
 			var self = args.get(0).getMapValue();
 			self.entries.clear();
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareProperty("keys", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("keys", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing keys of all the entries in the map.
 			var self = args.get(0).getMapValue();
-			result.value = ManagedArray.withElements(this.globalScope.ArrayPrototype, self.entries.keySet());
+			result.value = ManagedArray.withElements(this.realm.ArrayPrototype, self.entries.keySet());
 		}));
 
-		this.declareProperty("values", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("values", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing values of all the entries in the map.
 			var self = args.get(0).getMapValue();
-			result.value = ManagedArray.withElements(this.globalScope.ArrayPrototype, self.entries.values());
+			result.value = ManagedArray.withElements(this.realm.ArrayPrototype, self.entries.values());
 		}));
 
-		this.declareProperty("entries", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
+		this.declareProperty("entries", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedMap.class), (args, scope, result) -> {
 			// @summary: Returns an {@link Array}, containing all the entries in the map.
 			var self = args.get(0).getMapValue();
-			var entries = ManagedArray.withCapacity(this.globalScope.ArrayPrototype, self.entries.size());
+			var entries = ManagedArray.withCapacity(this.realm.ArrayPrototype, self.entries.size());
 			var entriesElements = entries.getElementsMutable();
 
 			for (var kv : self.entries.entrySet()) {
-				entriesElements.add(ManagedArray.fromImmutableList(this.globalScope.ArrayPrototype, List.of(kv.getKey(), kv.getValue())));
+				entriesElements.add(ManagedArray.fromImmutableList(this.realm.ArrayPrototype, List.of(kv.getKey(), kv.getValue())));
 			}
 
 			result.value = entries;
 		}));
 
-		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedMap.class, Primitive.Number.class), (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.realm, List.of("this", "depth?"), List.of(ManagedMap.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Formats the map into a textual form.
 			var self = args.get(0).getMapValue();
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;

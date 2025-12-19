@@ -20,11 +20,11 @@ import bt7s7k7.treeburst.bytecode.ValueStack;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
-import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedFunction;
 import bt7s7k7.treeburst.runtime.ManagedObject;
 import bt7s7k7.treeburst.runtime.NativeFunction;
+import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.runtime.Scope;
 import bt7s7k7.treeburst.support.Diagnostic;
 import bt7s7k7.treeburst.support.ManagedValue;
@@ -35,8 +35,8 @@ import bt7s7k7.treeburst.support.Primitive;
 public class ArrayPrototype extends LazyTable {
 	// @summary: Allows the storage of an ordered list of elements, each indexed by a number starting from `0`.
 
-	public ArrayPrototype(ManagedObject prototype, GlobalScope globalScope) {
-		super(prototype, globalScope);
+	public ArrayPrototype(ManagedObject prototype, Realm realm) {
+		super(prototype, realm);
 	}
 
 	private static class ArrayForEachInstruction implements BytecodeInstruction {
@@ -98,7 +98,7 @@ public class ArrayPrototype extends LazyTable {
 
 	@Override
 	protected void initialize() {
-		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_AT, NativeFunction.simple(this.realm, List.of("this", "index", "value?"), (args, scope, result) -> {
 			// @summary[[Gets or sets an element at the requested index. If an index outside the
 			// array is specified, an exception is generated. As always, the index may be
 			// negative to index from the end of the array, where `-1` is the last element and so
@@ -138,7 +138,7 @@ public class ArrayPrototype extends LazyTable {
 			}
 		}));
 
-		this.declareProperty("tryAt", NativeFunction.simple(this.globalScope, List.of("this", "index", "value?"), (args, scope, result) -> {
+		this.declareProperty("tryAt", NativeFunction.simple(this.realm, List.of("this", "index", "value?"), (args, scope, result) -> {
 			// @summary[[Gets or sets an element at the requested index. If an index outside the
 			// array is specified, it returns {@link void} when reading or the length of array is
 			// extended on writing (all added elements are filled with {@link null}). As always, the
@@ -194,7 +194,7 @@ public class ArrayPrototype extends LazyTable {
 			}
 		}));
 
-		this.declareProperty("truncate", NativeFunction.simple(this.globalScope, List.of("this", "length"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
+		this.declareProperty("truncate", NativeFunction.simple(this.realm, List.of("this", "length"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary[[Sets the length of the array to the provided value. If the new length is
 			// shorter, elements at the end are discarded. If the length is longer, new elements are
 			// filled with {@link null}. Returns a reference to this array.]]
@@ -220,20 +220,20 @@ public class ArrayPrototype extends LazyTable {
 			result.value = self;
 		}));
 
-		this.declareProperty("clone", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+		this.declareProperty("clone", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Creates a copy of the array.
 			var self = args.get(0).getArrayValue();
 			result.value = self.makeCopy();
 		}));
 
-		this.declareProperty("clear", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+		this.declareProperty("clear", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Removes all elements in the array.
 			var self = args.get(0).getArrayValue();
 			self.clear();
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareProperty("slice", NativeFunction.simple(this.globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
+		this.declareProperty("slice", NativeFunction.simple(this.realm, List.of("this", "from", "to?"), (args, scope, result) -> {
 			// @summary[[Creates a copy of a section of the array starting at `from` and ending at
 			// `to` (or the end of the array if not provided). As always, the index may be
 			// negative to index from the end of the array, where `-1` is the last element and so
@@ -258,7 +258,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = self.makeView(from, to).makeCopy();
 		}));
 
-		this.declareProperty("view", NativeFunction.simple(this.globalScope, List.of("this", "from", "to?"), (args, scope, result) -> {
+		this.declareProperty("view", NativeFunction.simple(this.realm, List.of("this", "from", "to?"), (args, scope, result) -> {
 			// @summary[[Creates a view of a section of the array starting at `from` and ending at
 			// `to` (or the end of the array if not provided). As always, the index may be
 			// negative to index from the end of the array, where `-1` is the last element and so
@@ -283,7 +283,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = self.makeView(from, to);
 		}));
 
-		this.declareProperty("splice", NativeFunction.simple(this.globalScope, List.of("this", "index", "delete", "insert?"), (args, scope, result) -> {
+		this.declareProperty("splice", NativeFunction.simple(this.realm, List.of("this", "index", "delete", "insert?"), (args, scope, result) -> {
 			// @summary[[Removes a section of the array at `index` of length `delete`. Optionally
 			// replacing this section with the elements of `insert`. If the `delete` argument is
 			// `0`, this function is equivalent to an insertion function; in this case the `index`
@@ -319,7 +319,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareProperty("append", NativeFunction.simple(this.globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
+		this.declareProperty("append", NativeFunction.simple(this.realm, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
 			// @summary: Appends the provided elements to the end of the array. Returns the current array.
 			var self = args.get(0).getArrayValue();
 			var elements = args.get(1);
@@ -327,7 +327,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = self;
 		}));
 
-		this.declareProperty("prepend", NativeFunction.simple(this.globalScope, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
+		this.declareProperty("prepend", NativeFunction.simple(this.realm, List.of("this", "elements"), List.of(ManagedArray.class, ManagedArray.class), (args, scope, result) -> {
 			// @summary: Prepends the provided elements before the start of the array. Returns the current array.
 			var self = args.get(0).getArrayValue();
 			var elements = args.get(1);
@@ -335,7 +335,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = self;
 		}));
 
-		this.declareProperty("pop", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+		this.declareProperty("pop", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Removes the last element of the array and returns it. If the array is empty returns {@link void}.
 			var self = args.get(0).getArrayValue();
 			var removedValue = self.getLength() > 0 ? self.get(self.getLength() - 1) : Primitive.VOID;
@@ -346,7 +346,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = removedValue;
 		}));
 
-		this.declareProperty("shift", NativeFunction.simple(this.globalScope, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
+		this.declareProperty("shift", NativeFunction.simple(this.realm, List.of("this"), List.of(ManagedArray.class), (args, scope, result) -> {
 			// @summary: Removes the first element of the array and returns it. If the array is empty returns {@link void}.
 			var self = args.get(0).getArrayValue();
 			var removedValue = self.getLength() > 0 ? self.get(0) : Primitive.VOID;
@@ -357,7 +357,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = removedValue;
 		}));
 
-		this.declareProperty("push", new NativeFunction(this.globalScope.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
+		this.declareProperty("push", new NativeFunction(this.realm.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
 			// @summary: Adds an element after the end of the array. Returns the last added value.
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
@@ -375,7 +375,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = args.getLast();
 		}));
 
-		this.declareProperty("unshift", new NativeFunction(this.globalScope.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
+		this.declareProperty("unshift", new NativeFunction(this.realm.FunctionPrototype, List.of("this", "...elements"), (args, scope, result) -> {
 			// @summary: Adds an element before the start of the array. Returns the last added value.
 			var args_1 = ensureArgumentTypes(args, List.of("this"), List.of(ManagedArray.class), scope, result);
 			if (result.label != null) return;
@@ -393,7 +393,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = args.getLast();
 		}));
 
-		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.globalScope, List.of("this", "depth?"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_DUMP, NativeFunction.simple(this.realm, List.of("this", "depth?"), List.of(ManagedArray.class, Primitive.Number.class), (args, scope, result) -> {
 			// @summary: Formats the array into a textual form.
 			var self = args.get(0).getArrayValue();
 			var depth = args.size() > 1 ? args.get(1).getNumberValue() : 0;
@@ -412,7 +412,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = Primitive.from(header);
 		}));
 
-		this.declareProperty("map", NativeFunction.simple(this.globalScope, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
+		this.declareProperty("map", NativeFunction.simple(this.realm, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
 			// @summary[[Creates a new array with the results of calling `function` on every
 			// element. The function is called with `value` of the element, the `index` of the
 			// element and a reference to this `array`. If `function` returns {@link void}, the
@@ -420,7 +420,7 @@ public class ArrayPrototype extends LazyTable {
 			var self = args.get(0).getArrayValue();
 			var function = args.get(1).getFunctionValue();
 
-			var output = ManagedArray.withCapacity(this.globalScope.ArrayPrototype, self.getLength());
+			var output = ManagedArray.withCapacity(this.realm.ArrayPrototype, self.getLength());
 			var outputElements = output.getElementsMutable();
 
 			for (int i = 0; i < self.getLength(); i++) {
@@ -438,7 +438,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = output;
 		}));
 
-		this.declareProperty("foreach", NativeFunction.simple(this.globalScope, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
+		this.declareProperty("foreach", NativeFunction.simple(this.realm, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
 			// @summary[[Calls a function for every element of this array. The function is called
 			// with `value` of the element, the `index` of the element and a reference to this
 			// `array`. Returns this array.]]
@@ -455,14 +455,14 @@ public class ArrayPrototype extends LazyTable {
 			result.value = self;
 		}));
 
-		this.declareProperty("filter", NativeFunction.simple(this.globalScope, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
+		this.declareProperty("filter", NativeFunction.simple(this.realm, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
 			// @summary[[Creates a new array with only the elements for which `function` returned
 			// `true`. The function is called with `value` of the element, the `index` of the
 			// element and a reference to this `array`.]]
 			var self = args.get(0).getArrayValue();
 			var function = args.get(1).getFunctionValue();
 
-			var output = ManagedArray.empty(this.globalScope.ArrayPrototype);
+			var output = ManagedArray.empty(this.realm.ArrayPrototype);
 			var outputElements = output.getElementsMutable();
 
 			for (int i = 0; i < self.getLength(); i++) {
@@ -482,7 +482,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = output;
 		}));
 
-		this.declareProperty("@foreach", NativeFunction.simple(this.globalScope, List.of("this", "function", "@"), List.of(Expression.class, Expression.FunctionDeclaration.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.declareProperty("@foreach", NativeFunction.simple(this.realm, List.of("this", "function", "@"), List.of(Expression.class, Expression.FunctionDeclaration.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary[[Equivalent to the {@link Array.prototype.foreach} function, except this
 			// macro inlines the `function`, allowing you to share the scope and use control flow
 			// functions like {@link return} and {@link goto}.]]
@@ -513,7 +513,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = Primitive.VOID;
 		}));
 
-		this.declareProperty("join", NativeFunction.simple(this.globalScope, List.of("this", "separator"), List.of(ManagedArray.class, Primitive.String.class), (args, scope, result) -> {
+		this.declareProperty("join", NativeFunction.simple(this.realm, List.of("this", "separator"), List.of(ManagedArray.class, Primitive.String.class), (args, scope, result) -> {
 			// @summary[[Creates a {@link String} as that is a concatenation of all elements of the
 			// array. Elements that are not strings are converted to strings using their `k_string`
 			// method.]]
@@ -539,7 +539,7 @@ public class ArrayPrototype extends LazyTable {
 			result.value = Primitive.from(builder.toString());
 		}));
 
-		this.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_ADD, NativeFunction.simple(this.realm, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
 			// @summary[[Creates a new array that is a concatenation of the two input arrays.]]
 			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, ManagedArray.class, ManagedArray.class, args, scope, result);
 			if (result.label != null) return;
@@ -551,10 +551,10 @@ public class ArrayPrototype extends LazyTable {
 			output.addAll(left.getElementsReadOnly());
 			output.addAll(right.getElementsReadOnly());
 
-			result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, output);
+			result.value = ManagedArray.fromMutableList(scope.realm.ArrayPrototype, output);
 		}));
 
-		this.declareProperty(OperatorConstants.OPERATOR_MUL, NativeFunction.simple(this.globalScope, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
+		this.declareProperty(OperatorConstants.OPERATOR_MUL, NativeFunction.simple(this.realm, BINARY_OPERATOR_PARAMETERS, (args, scope, result) -> {
 			// @summary[[Creates a new array that is the input array repeated `n` times.]]
 			var operands = prepareBinaryOperator(OperatorConstants.OPERATOR_ADD, ManagedArray.class, Primitive.Number.class, args, scope, result);
 			if (result.label != null) return;
@@ -568,7 +568,7 @@ public class ArrayPrototype extends LazyTable {
 				output.addAll(elements);
 			}
 
-			result.value = ManagedArray.fromMutableList(scope.globalScope.ArrayPrototype, output);
+			result.value = ManagedArray.fromMutableList(scope.realm.ArrayPrototype, output);
 		}));
 	}
 }

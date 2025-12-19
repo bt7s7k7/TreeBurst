@@ -139,7 +139,7 @@ public class ManagedValueUtils {
 		value = result.value;
 		if (requestedType.isInstance(value)) return (T) value;
 
-		evaluateInvocation(value, scope.globalScope.TablePrototype, operator, Position.INTRINSIC, Collections.emptyList(), scope, result);
+		evaluateInvocation(value, scope.realm.TablePrototype, operator, Position.INTRINSIC, Collections.emptyList(), scope, result);
 		if (result.label != null) return null;
 
 		return requestedType.cast(result.value);

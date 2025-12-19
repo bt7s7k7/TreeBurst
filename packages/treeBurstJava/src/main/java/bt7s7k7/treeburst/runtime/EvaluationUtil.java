@@ -15,19 +15,19 @@ import bt7s7k7.treeburst.support.Primitive;
 public class EvaluationUtil {
 	public static ManagedObject getPrototype(ManagedValue value, Scope scope) {
 		if (value.equals(Primitive.NULL) || value.equals(Primitive.VOID)) {
-			return scope.globalScope.TablePrototype;
+			return scope.realm.TablePrototype;
 		}
 
 		if (value instanceof Primitive.Number) {
-			return scope.globalScope.NumberPrototype;
+			return scope.realm.NumberPrototype;
 		}
 
 		if (value instanceof Primitive.String) {
-			return scope.globalScope.StringPrototype;
+			return scope.realm.StringPrototype;
 		}
 
 		if (value instanceof Primitive.Boolean) {
-			return scope.globalScope.BooleanPrototype;
+			return scope.realm.BooleanPrototype;
 		}
 
 		if (value instanceof ManagedObject managedObject) {

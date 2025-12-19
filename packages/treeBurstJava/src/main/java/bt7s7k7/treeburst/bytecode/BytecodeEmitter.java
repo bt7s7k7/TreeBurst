@@ -18,12 +18,6 @@ import bt7s7k7.treeburst.support.Position;
 import bt7s7k7.treeburst.support.Primitive;
 
 public class BytecodeEmitter {
-	public class CompilationScope extends Scope {
-		public BytecodeEmitter getEmitter() {
-			return BytecodeEmitter.this;
-		}
-	}
-
 	public final Scope scope;
 	public Position nextPosition;
 
@@ -399,7 +393,7 @@ public class BytecodeEmitter {
 		if (invocation.target() instanceof Expression.MemberAccess memberAccess) {
 			var member = memberAccess.member();
 			if (member.startsWith("@")) {
-				var functionValue = this.scope.globalScope.TablePrototype.getOwnProperty(member);
+				var functionValue = this.scope.realm.TablePrototype.getOwnProperty(member);
 				if (functionValue != null && functionValue instanceof ManagedFunction function_1) {
 					function = function_1;
 					receiver = memberAccess.receiver();
@@ -430,13 +424,13 @@ public class BytecodeEmitter {
 
 	public List<ManagedValue> prepareArgumentsForCompilationStageMacroExecution(Expression receiver, List<Expression> expressions) {
 		var arguments = new ArrayList<ManagedValue>(expressions.size() + (receiver != null ? 2 : 1));
-		if (receiver != null) arguments.add(new NativeHandle(this.scope.globalScope.TablePrototype, receiver));
+		if (receiver != null) arguments.add(new NativeHandle(this.scope.realm.TablePrototype, receiver));
 
 		for (var argument : expressions) {
-			arguments.add(new NativeHandle(this.scope.globalScope.TablePrototype, argument));
+			arguments.add(new NativeHandle(this.scope.realm.TablePrototype, argument));
 		}
 
-		arguments.add(new NativeHandle(this.scope.globalScope.TablePrototype, this));
+		arguments.add(new NativeHandle(this.scope.realm.TablePrototype, this));
 
 		return arguments;
 	}
