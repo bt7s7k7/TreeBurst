@@ -55,11 +55,18 @@ public final class ValueStack {
 		return value;
 	}
 
-	public List<ManagedValue> getArguments(int length) {
+	public List<ManagedValue> popArguments(int length) {
 		if (length == 0) return Collections.emptyList();
 
 		var result = Arrays.asList(this.elements).subList(this.length - length, this.length);
 		this.length -= length;
+		return result;
+	}
+
+	public List<ManagedValue> peekArguments(int length) {
+		if (length == 0) return Collections.emptyList();
+
+		var result = Arrays.asList(this.elements).subList(this.length - length, this.length);
 		return result;
 	}
 
