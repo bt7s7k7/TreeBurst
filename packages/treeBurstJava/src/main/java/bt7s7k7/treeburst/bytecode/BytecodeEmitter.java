@@ -100,6 +100,50 @@ public class BytecodeEmitter {
 		return parameters;
 	}
 
+	public void emitInvocation(Expression.Invocation invocation, boolean duplicateArguments, ExpressionResult result) {
+		if (this.tryCompilationStageMacroExecution(invocation, result)) return;
+
+		String method = null;
+		String name = null;
+
+		if (invocation.target() instanceof Expression.MemberAccess memberAccess) {
+			this.compile(memberAccess.receiver(), result);
+			if (result.label != null) return;
+
+			name = method = memberAccess.member();
+		} else {
+			if (invocation.target() instanceof Expression.Identifier identifier) {
+				name = identifier.name();
+			}
+
+			this.compile(invocation.target(), result);
+			if (result.label != null) return;
+		}
+
+		var isMacro = name != null && name.startsWith("@");
+
+		if (duplicateArguments) {
+			this.emit(new BytecodeInstruction.DuplicateArguments(1));
+		} else {
+			var argumentCount = invocation.args().size();
+
+			if (isMacro) argumentCount = 0;
+
+			this.emit(new BytecodeInstruction.PrepareInvoke(argumentCount, method, invocation.position()));
+		}
+
+		if (!isMacro) {
+			this.compileBlock(invocation.args(), result);
+			if (result.label != null) return;
+		}
+
+		if (isMacro) {
+			this.emit(new BytecodeInstruction.InvokeMacroFallback(invocation.position(), invocation.args()));
+		} else {
+			this.emit(new BytecodeInstruction.Invoke(invocation.position()));
+		}
+	}
+
 	public void compile(Expression expression, ExpressionResult result) {
 		if (expression instanceof Expression.Literal literal) {
 			this.emit(literal.value());
@@ -112,43 +156,7 @@ public class BytecodeEmitter {
 		}
 
 		if (expression instanceof Expression.Invocation invocation) {
-			if (this.tryCompilationStageMacroExecution(invocation, result)) return;
-
-			String method = null;
-			String name = null;
-
-			if (invocation.target() instanceof Expression.MemberAccess memberAccess) {
-				this.compile(memberAccess.receiver(), result);
-				if (result.label != null) return;
-
-				name = method = memberAccess.member();
-			} else {
-				if (invocation.target() instanceof Expression.Identifier identifier) {
-					name = identifier.name();
-				}
-
-				this.compile(invocation.target(), result);
-				if (result.label != null) return;
-			}
-
-			var argumentCount = invocation.args().size();
-			var isMacro = name != null && name.startsWith("@");
-
-			if (isMacro) argumentCount = 0;
-
-			this.emit(new BytecodeInstruction.PrepareInvoke(argumentCount, method, invocation.position()));
-
-			if (!isMacro) {
-				this.compileBlock(invocation.args(), result);
-				if (result.label != null) return;
-			}
-
-			if (isMacro) {
-				this.emit(new BytecodeInstruction.InvokeMacroFallback(invocation.position(), invocation.args()));
-			} else {
-				this.emit(new BytecodeInstruction.Invoke(invocation.position()));
-			}
-
+			this.emitInvocation(invocation, false, result);
 			return;
 		}
 
@@ -199,6 +207,90 @@ public class BytecodeEmitter {
 			return;
 		}
 
+		if (expression instanceof Expression.AdvancedAssignment assignment) {
+			var receiver = assignment.receiver();
+			var value = assignment.value();
+
+			if (receiver instanceof Expression.Identifier identifier) {
+				// Read the variable, execute the operator
+				var invocation = Expression.Invocation.makeMethodCall(assignment.position(), identifier, assignment.operator(), List.of(value));
+				this.compile(invocation, result);
+				if (result.label != null) return;
+				// Store the result into the variable
+				this.emit(new BytecodeInstruction.Store(identifier.name(), identifier.position()));
+				return;
+			}
+
+			if (receiver instanceof Expression.MemberAccess memberAccess) {
+				// Evaluate and cache the receiver (e.g., 'obj'). We duplicate it on the stack so it
+				// can be reused for both the initial read and the subsequent write, avoiding
+				// re-evaluation.
+				this.compile(memberAccess.receiver(), result);
+				if (result.label != null) return;
+				this.emit(BytecodeInstruction.Duplicate.VALUE);
+
+				// Perform the operation. We create a synthetic access with an empty receiver to
+				// pull the cached value from the stack, then invoke the operator on it.
+				var provider = new Expression.MemberAccess(memberAccess.position(), RawInstructions.empty(assignment.position()), memberAccess.member());
+				var operatorCall = Expression.Invocation.makeMethodCall(assignment.position(), provider, assignment.operator(), List.of(value));
+				this.compile(operatorCall, result);
+				if (result.label != null) return;
+
+				// Set the result of the operator call using the receiver already on the stack
+				this.emit(new BytecodeInstruction.Set(memberAccess.member(), memberAccess.position()));
+				return;
+			}
+
+			if (receiver instanceof Expression.Invocation invocation) {
+				receiver = invocation.target();
+				String method = null;
+
+				if (receiver instanceof Expression.MemberAccess memberAccess) {
+					receiver = memberAccess.receiver();
+					method = memberAccess.member();
+				}
+
+				// The structure of operations is as follows:
+				// - evaluate the receiver
+				// + start write operation
+				// | - evaluate arguments of invocation
+				// | + start execute operator
+				// | | + start read operation
+				// | | | - duplicate the evaluated arguments of invocation
+				// | | # invoke
+				// | | - evaluate provided operand
+				// | # invoke
+				// # invoke
+
+				// Prepare the write call. This represents the final call that will update the
+				// value, but the last operand (the value) will be added later.
+				var executionOfTheInvocation = method == null
+						? (new Expression.Invocation(invocation.position(), receiver, invocation.args()))
+						: (Expression.Invocation.makeMethodCall(invocation.position(), receiver, method, invocation.args()));
+
+				// Prepare the read call via stack manipulation. We use DuplicateArguments to clone
+				// the stack portion containing the receiver and arguments, so they can be used for
+				// both reading and writing. The DuplicateArguments duplicates the arguments meant
+				// for the write operation, so the offset 1 is used to duplicate 1 less values, i.e.
+				// exclude what will be the last argument (new value) which should not be given to
+				// the read operation and also does not exist yet.
+				var readingTheOldValue = List.of(
+						new BytecodeInstruction.DuplicateArguments(1),
+						new BytecodeInstruction.Invoke(invocation.position()));
+
+				// Create the operator call, the receiver (first operand) will be the the result of the code above
+				var operatorCall = Expression.Invocation.makeMethodCall(assignment.position(), new RawInstructions(assignment.position(), readingTheOldValue), assignment.operator(), List.of(value));
+
+				// Append the operator result back into the original invocation's arguments, completing the write operation
+				var consumer = executionOfTheInvocation.withArgument(operatorCall);
+				this.compile(consumer, result);
+				return;
+			}
+
+			result.setException(new Diagnostic("Invalid advanced assignment target", receiver.position()));
+			return;
+		}
+
 		if (expression instanceof Expression.Group group) {
 			var first = true;
 			for (var child : group.children()) {
@@ -240,7 +332,7 @@ public class BytecodeEmitter {
 			this.compileBlock(arrayLiteral.elements(), result);
 			if (result.label != null) return;
 
-			this.emit(BytecodeInstruction.BuildArray.INSTANCE);
+			this.emit(BytecodeInstruction.BuildArray.VALUE);
 
 			return;
 		}
@@ -266,6 +358,14 @@ public class BytecodeEmitter {
 			this.label(label.name());
 			if (target == null) return;
 			this.compile(target, result);
+			return;
+		}
+
+		if (expression instanceof RawInstructions rawInstructions) {
+			for (var instruction : rawInstructions.instructions()) {
+				this.emit(instruction);
+			}
+
 			return;
 		}
 

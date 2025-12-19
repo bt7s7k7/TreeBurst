@@ -151,7 +151,7 @@ public interface BytecodeInstruction {
 		@Override
 		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
 			var argumentCount = arguments.pop();
-			var callArguments = values.getArguments(argumentCount);
+			var callArguments = values.popArguments(argumentCount);
 			var function = (ManagedFunction) values.pop();
 
 			function.invoke(callArguments, scope, result);
@@ -187,7 +187,7 @@ public interface BytecodeInstruction {
 		@Override
 		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
 			var argumentCount = arguments.pop();
-			var callArguments = values.getArguments(argumentCount);
+			var callArguments = values.popArguments(argumentCount);
 			var function = (ManagedFunction) values.pop();
 
 			execute(function, function.hasThisArgument() && !callArguments.isEmpty() ? callArguments.get(0) : null, this.expressionArguments, scope, result, this.position);
@@ -364,6 +364,32 @@ public interface BytecodeInstruction {
 		private Duplicate() {}
 
 		public static final Duplicate VALUE = new Duplicate();
+	}
+
+	public static class DuplicateArguments implements BytecodeInstruction {
+		public final int offset;
+
+		public DuplicateArguments(int offset) {
+			this.offset = offset;
+		}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			var count = arguments.peek() - this.offset;
+			var argumentValues = values.peekArguments(count);
+			var function = values.peek(count);
+
+			arguments.push(argumentValues.size());
+			values.push(function);
+			values.pushAll(argumentValues);
+
+			return STATUS_NORMAL;
+		}
+
+		@Override
+		public String toString() {
+			return "DuplicateArguments offset = " + this.offset;
+		}
 	}
 
 	public static class Get implements BytecodeInstruction {
@@ -553,7 +579,7 @@ public interface BytecodeInstruction {
 
 		@Override
 		public String toString() {
-			return this.position.format("Store " + this.name, "");
+			return this.position.format("Declare " + this.name, "");
 		}
 	}
 
@@ -634,7 +660,7 @@ public interface BytecodeInstruction {
 
 		@Override
 		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
-			var elements = values.getArguments(arguments.pop());
+			var elements = values.popArguments(arguments.pop());
 			var array = ManagedArray.withCapacity(scope.globalScope.ArrayPrototype, elements.size());
 
 			var arrayElements = array.getElementsMutable();
@@ -651,7 +677,7 @@ public interface BytecodeInstruction {
 			return "BuildArray";
 		}
 
-		public static final BuildArray INSTANCE = new BuildArray();
+		public static final BuildArray VALUE = new BuildArray();
 	}
 
 	public static class BuildMap implements BytecodeInstruction {
@@ -663,7 +689,7 @@ public interface BytecodeInstruction {
 
 		@Override
 		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
-			var kvs = values.getArguments(this.entryCount * 2);
+			var kvs = values.popArguments(this.entryCount * 2);
 			var entries = new LinkedHashMap<ManagedValue, ManagedValue>();
 
 			for (int i = 0; i < this.entryCount * 2; i += 2) {

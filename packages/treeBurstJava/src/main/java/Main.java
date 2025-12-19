@@ -29,6 +29,9 @@ public class Main {
 
 			var scope = new GlobalScope();
 
+			var dumpBytecode = false;
+			var dumpAST = false;
+
 			while (true) {
 				try {
 					var line = reader.readLine("> ").trim();
@@ -36,9 +39,33 @@ public class Main {
 					if (line.isEmpty()) continue;
 					if (line.equals("exit")) break;
 
+					while (line.startsWith(".")) {
+						if (line.startsWith(".byte")) {
+							dumpBytecode = !dumpBytecode;
+							terminal.writer().println("Dump bytecode: " + dumpBytecode);
+							line = line.substring(5);
+							continue;
+						}
+
+						if (line.equals(".ast")) {
+							dumpAST = !dumpAST;
+							terminal.writer().println("Dump AST: " + dumpAST);
+							line = line.substring(4);
+							continue;
+						}
+
+						terminal.writer().println("Invalid REPL command");
+						break;
+					}
+
 					var inputDocument = new InputDocument("repl", line);
 					var parser = new TreeBurstParser(inputDocument);
 					var root = parser.parse();
+
+					if (dumpAST) {
+						terminal.writer().println(root.getExpression().toFormattedString());
+					}
+
 					if (!parser.diagnostics.isEmpty()) {
 						for (var diagnostic : parser.diagnostics) {
 							terminal.writer().println(diagnostic.format());
@@ -48,7 +75,17 @@ public class Main {
 					}
 
 					var result = new ExpressionResult();
-					root.evaluate(scope, result);
+
+					if (dumpBytecode) {
+						root.compile(scope, result);
+						terminal.writer().println(root.toString());
+					}
+
+					// If an error was generated during dumping bytecode, do not evaluate
+					if (result.label == null) {
+						root.evaluate(scope, result);
+					}
+
 					var diagnostic = result.terminate();
 					if (diagnostic != null) {
 						terminal.writer().println(diagnostic.format());
