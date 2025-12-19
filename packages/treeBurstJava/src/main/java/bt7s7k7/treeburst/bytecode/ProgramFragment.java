@@ -13,6 +13,7 @@ import bt7s7k7.treeburst.runtime.ExecutionLimitReachedException;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.runtime.Scope;
+import bt7s7k7.treeburst.support.Primitive;
 
 public class ProgramFragment {
 	protected Expression expression;
@@ -73,6 +74,12 @@ public class ProgramFragment {
 	public void evaluate(int pc, ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
 		this.compile(scope, result);
 		if (result.label != null) return;
+
+		// If we are to not execute any instructions, we still need to set a return value
+		if (this.instructions.size() - pc <= 0) {
+			result.value = Primitive.VOID;
+			return;
+		}
 
 		for (; pc < this.instructions.size(); pc++) {
 			if (result.executionLimit != Integer.MAX_VALUE) {

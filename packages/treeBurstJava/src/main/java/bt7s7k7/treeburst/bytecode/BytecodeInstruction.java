@@ -164,6 +164,10 @@ public interface BytecodeInstruction {
 			values.push(result.value);
 
 			if (result.label != null) {
+				if (result.getExceptionIfPresent() != null) {
+					result.setException(new Diagnostic("While invoking " + function.toString(), this.position));
+				}
+
 				return STATUS_BREAK;
 			}
 
@@ -495,7 +499,7 @@ public interface BytecodeInstruction {
 
 		@Override
 		public String toString() {
-			return this.position.format("Get " + this.name, "");
+			return this.position.format("Set " + this.name, "");
 		}
 	}
 
@@ -535,7 +539,7 @@ public interface BytecodeInstruction {
 
 		@Override
 		public String toString() {
-			return this.position.format("Get " + this.name, "");
+			return this.position.format("DeclareProperty " + this.name, "");
 		}
 	}
 

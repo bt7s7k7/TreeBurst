@@ -703,6 +703,8 @@ public class GlobalScope extends Scope {
 					emitter.compile(elseValue, result);
 					if (result.label != null) return;
 
+					if (elseValue instanceof Expression.FunctionDeclaration _1) elseValue = _1.body();
+
 					emitter.label(endLabel);
 
 					result.value = Primitive.VOID;
@@ -713,6 +715,7 @@ public class GlobalScope extends Scope {
 				if (result.label != null) return;
 				var thenValue = ensureExpression(args.get(i + 1), result);
 				if (result.label != null) return;
+				if (thenValue instanceof Expression.FunctionDeclaration _1) thenValue = _1.body();
 
 				emitter.compile(predicate, result);
 				if (result.label != null) return;
@@ -739,6 +742,8 @@ public class GlobalScope extends Scope {
 			var predicate = args.get(0).getNativeValue(Expression.class);
 			var body = args.get(1).getNativeValue(Expression.class);
 			if (result.label != null) return;
+
+			if (body instanceof Expression.FunctionDeclaration _1) body = _1.body();
 
 			var emitter = args.getLast().getNativeValue(BytecodeEmitter.class);
 			var position = emitter.nextPosition;

@@ -43,6 +43,10 @@
                 {
                     "name": "constant.language.tree-burst",
                     "match": "\\b(null|void|true|false)\\b"
+                },
+                {
+                    "name": "keyword.control.tree-burst",
+                    "match": "@[\\w]*\\b"
                 }
             ]
         },
@@ -316,6 +320,10 @@
                 {
                     "name": "entity.name.function.tree-burst",
                     "match": "\\b[\\w]+\\b()(?=\\()"
+                },
+                {
+                    "name": "entity.name.function.tree-burst",
+                    "match": "\\b[\\w]+\\b(?:\\s)*(?=\\\\)"
                 },
                 {
                     "name": "entity.name.label.tree-burst",

@@ -652,6 +652,7 @@ public class TreeBurstParser extends GenericParser {
 			}
 
 			this._token = new Expression.FunctionDeclaration(this.getPosition(start), parameters, body);
+			this._skippedNewline = skippedNewline;
 			this._tokenStart = start;
 			return this._token;
 		}
@@ -884,13 +885,17 @@ public class TreeBurstParser extends GenericParser {
 				if (precedence > 100) return target;
 				target = Expression.Invocation.makeMethodCall(arrayLiteral.position(), target, OperatorConstants.OPERATOR_AT, arrayLiteral.elements());
 				this.nextToken();
-			} else if (!this._skippedNewline && next instanceof Expression.Literal literal && literal.value() instanceof Primitive.String) {
+			} else if (!this._skippedNewline && next instanceof Expression nextExpression
+					&& (target instanceof Expression.Identifier || target instanceof Expression.MemberAccess || target instanceof Expression.Invocation)
+					&& ((nextExpression instanceof Expression.Literal literal
+							&& literal.value() instanceof Primitive.String)
+							|| nextExpression instanceof Expression.FunctionDeclaration)) {
 				if (precedence > 100) return target;
 
 				if (target instanceof Expression.Invocation invocation) {
-					target = invocation.withArgument(literal);
+					target = invocation.withArgument(nextExpression);
 				} else {
-					target = new Expression.Invocation(literal.position(), target, List.of(literal));
+					target = new Expression.Invocation(nextExpression.position(), target, List.of(nextExpression));
 				}
 
 				this.nextToken();

@@ -385,24 +385,24 @@ $x = [1, 2, 3]
 $a = 0
 $b = 1
 
-x.@foreach(\(value, index) {
+x.@foreach \(value, index) {
     assertEqual(index, a)
     assertEqual(value, b)
     a += 1
     b += 1
-})
+}
 assertEqual(a, 3)
 
 assertEqual(b, 4)
 
 a = 0
 b = 0
-range(3).@foreach(\(value, index) {
+range(3).@foreach \(value, index) {
     assertEqual(index, a)
     assertEqual(value, b)
     a += 1
     b += 1
-})
+}
 
 assertEqual(a, 3)
 assertEqual(b, 3)
@@ -556,6 +556,28 @@ $s = \(key, value) {
 s"q" = 5
 assertEqual(state["q"], 5)
 
+$foo = Table.new()
+$foo.x = \() increment()
+
+foo.x""
+
+assertEqual(getCounter(), 2)
+
+// Test: implicit function argument
+
+$x = \() increment()
+
+x \dummy()
+
+assertEqual(getCounter(), 1)
+
+$foo = Table.new()
+$foo.x = \() increment()
+
+foo.x \dummy()
+
+assertEqual(getCounter(), 2)
+
 // Test: return statement
 $thunk = \{
     increment()
@@ -569,13 +591,13 @@ assertEqual(getCounter(), 1)
 // Test: return statement 2
 $thunk = \{
     $i = 0
-    @while(true, (
-        @if(i > 10, (
+    @while(true) \{
+        @if(i > 10) \{
             return(i)
-        ))
+		}
 
         i = i + 1
-    ))
+    }
 }
 
 // Test: return statement 3
