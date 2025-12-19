@@ -1,6 +1,6 @@
 package bt7s7k7.treeburst.standard;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.evaluateInvocation;
 
 import java.util.ArrayList;
 import java.util.Collections;

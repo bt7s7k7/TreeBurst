@@ -1,9 +1,8 @@
 package bt7s7k7.treeburst.bytecode;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.findProperty;
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.setProperty;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.findProperty;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.getValueName;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.setProperty;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 
 import java.util.LinkedHashMap;
@@ -650,30 +649,6 @@ public interface BytecodeInstruction {
 		@Override
 		public String toString() {
 			return this.position.format("Destructure", "");
-		}
-	}
-
-	public static class Dynamic implements BytecodeInstruction {
-		public final Expression expression;
-
-		public Dynamic(Expression expression) {
-			this.expression = expression;
-		}
-
-		@Override
-		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
-			evaluateExpression(this.expression, scope, result);
-			if (result.label != null) {
-				return STATUS_BREAK;
-			}
-
-			values.push(result.value);
-			return STATUS_NORMAL;
-		}
-
-		@Override
-		public String toString() {
-			return this.expression.toString();
 		}
 	}
 
