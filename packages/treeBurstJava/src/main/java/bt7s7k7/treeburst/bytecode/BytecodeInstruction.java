@@ -32,6 +32,7 @@ public interface BytecodeInstruction {
 
 	public static final int STATUS_NORMAL = -1;
 	public static final int STATUS_BREAK = -2;
+	public static final int STATUS_YIELD = -3;
 
 	public static String format(List<BytecodeInstruction> instructions, Map<String, Integer> labels) {
 		var result = new StringBuilder();
@@ -44,6 +45,8 @@ public interface BytecodeInstruction {
 						)));
 
 		for (int i = 0; i <= instructions.size(); i++) {
+			if (!result.isEmpty()) result.append("\n");
+
 			var foundLabels = labelPoints.get(i);
 			if (foundLabels != null) {
 				for (var label : foundLabels) {
@@ -56,7 +59,6 @@ public interface BytecodeInstruction {
 			if (i == instructions.size()) break;
 
 			result.append(instructions.get(i));
-			result.append("\n");
 		}
 
 		return result.toString();
@@ -179,6 +181,8 @@ public interface BytecodeInstruction {
 		public final Position position;
 		public final List<Expression> expressionArguments;
 
+		protected ProgramFragment cachedFragment = null;
+
 		public InvokeMacroFallback(Position position, List<Expression> expressionArguments) {
 			this.position = position;
 			this.expressionArguments = expressionArguments;
@@ -190,7 +194,26 @@ public interface BytecodeInstruction {
 			var callArguments = values.popArguments(argumentCount);
 			var function = (ManagedFunction) values.pop();
 
-			execute(function, function.hasThisArgument() && !callArguments.isEmpty() ? callArguments.get(0) : null, this.expressionArguments, scope, result, this.position);
+			if (this.cachedFragment == null) {
+				var newFragment = execute(function, function.hasThisArgument() && !callArguments.isEmpty() ? callArguments.get(0) : null, this.expressionArguments, scope, result, this.position);
+
+				if (result.label != null) {
+					result.setException(new Diagnostic("While executing macro (deferred execution)", this.position));
+					return STATUS_BREAK;
+				}
+
+				this.cachedFragment = newFragment;
+			}
+
+			if (function.hasThisArgument()) {
+				if (callArguments.isEmpty()) {
+					values.push(Primitive.VOID);
+				} else {
+					values.push(callArguments.get(0));
+				}
+			}
+
+			this.cachedFragment.evaluate(0, values, arguments, scope, result);
 			if (result.label != null) return STATUS_BREAK;
 
 			values.push(result.value);
@@ -198,19 +221,21 @@ public interface BytecodeInstruction {
 			return STATUS_NORMAL;
 		}
 
-		public static void execute(ManagedFunction function, ManagedValue receiver, List<Expression> expressionArguments, Scope scope, ExpressionResult result, Position position) {
+		public static ProgramFragment execute(ManagedFunction function, ManagedValue receiver, List<Expression> expressionArguments, Scope scope, ExpressionResult result, Position position) {
 			var emitter = new BytecodeEmitter(scope);
 			var receiverExpression = receiver == null ? null : new Expression.Literal(Position.INTRINSIC, receiver);
 
 			var compilationArgs = emitter.prepareArgumentsForCompilationStageMacroExecution(receiverExpression, expressionArguments);
 			emitter.nextPosition = position;
 			function.invoke(compilationArgs, scope, result);
-			if (result.label != null) return;
+			if (result.label != null) return null;
 			if (result.value != Primitive.VOID) throw new IllegalStateException("Compilation stage execution of '" + function.toString() + "' returned a value");
 
-			var createdProgram = new ProgramFragment(emitter.build());
-			createdProgram.evaluate(scope, result);
-			if (result.label != null) return;
+			var fragment = new ProgramFragment(emitter.build());
+			fragment.compile(scope, result);
+			if (result.label != null) return null;
+
+			return fragment;
 		}
 
 		@Override
@@ -236,8 +261,24 @@ public interface BytecodeInstruction {
 
 		@Override
 		public String toString() {
-			return "DeclareFunction ?" + this.parameters.toString();
+			return "DeclareFunction \\(" + this.parameters.stream().map(v -> v.name).collect(Collectors.joining(", ")) + ")";
 		}
+	}
+
+	public static class Yield implements BytecodeInstruction {
+		private Yield() {}
+
+		@Override
+		public int executeInstruction(ValueStack values, ArgumentStack arguments, Scope scope, ExpressionResult result) {
+			return STATUS_YIELD;
+		}
+
+		@Override
+		public String toString() {
+			return "Yield";
+		}
+
+		public static final Yield VALUE = new Yield();
 	}
 
 	public static class Jump implements BytecodeInstruction {

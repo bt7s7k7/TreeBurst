@@ -385,24 +385,24 @@ $x = [1, 2, 3]
 $a = 0
 $b = 1
 
-x.@foreach($value, $index, (
+x.@foreach(\(value, index) {
     assertEqual(index, a)
     assertEqual(value, b)
     a += 1
     b += 1
-))
-
+})
 assertEqual(a, 3)
+
 assertEqual(b, 4)
 
 a = 0
 b = 0
-range(3).@foreach(value, index, (
+range(3).@foreach(\(value, index) {
     assertEqual(index, a)
     assertEqual(value, b)
     a += 1
     b += 1
-))
+})
 
 assertEqual(a, 3)
 assertEqual(b, 3)
