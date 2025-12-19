@@ -482,17 +482,12 @@ public class ArrayPrototype extends LazyTable {
 			result.value = output;
 		}));
 
-		this.declareProperty("@foreach", NativeFunction.simple(this.globalScope, List.of("this", "function", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+		this.declareProperty("@foreach", NativeFunction.simple(this.globalScope, List.of("this", "function", "@"), List.of(Expression.class, Expression.FunctionDeclaration.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary[[Equivalent to the {@link Array.prototype.foreach} function, except this
 			// macro inlines the `function`, allowing you to share the scope and use control flow
 			// functions like {@link return} and {@link goto}.]]
 			var self = args.get(0).getNativeValue(Expression.class);
-			var functionValue = args.get(1).getNativeValue(Expression.class);
-
-			if (!(functionValue instanceof Expression.FunctionDeclaration functionDeclaration)) {
-				result.setException(new Diagnostic("Expected function declaration", functionValue.position()));
-				return;
-			}
+			var functionDeclaration = args.get(1).getNativeValue(Expression.FunctionDeclaration.class);
 
 			var emitter = args.get(2).getNativeValue(BytecodeEmitter.class);
 			var position = emitter.nextPosition;
