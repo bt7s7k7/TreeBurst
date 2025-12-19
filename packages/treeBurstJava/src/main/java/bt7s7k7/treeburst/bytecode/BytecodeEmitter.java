@@ -412,8 +412,16 @@ public class BytecodeEmitter {
 			var arguments = this.prepareArgumentsForCompilationStageMacroExecution(receiver, invocation.args());
 			this.nextPosition = invocation.position();
 			function.invoke(arguments, this.scope, result);
-			if (result.label != null) return true;
-			if (result.value != Primitive.VOID) throw new IllegalStateException("Compilation stage execution of '" + function.toString() + "' returned a value");
+
+			if (result.label != null) {
+				result.setException(new Diagnostic("While executing macro", invocation.position()));
+				return true;
+			}
+
+			if (result.value != Primitive.VOID) {
+				result.setException(new Diagnostic("Compilation stage execution of '" + function.toString() + "' returned a value", invocation.position()));
+			}
+
 			return true;
 		}
 

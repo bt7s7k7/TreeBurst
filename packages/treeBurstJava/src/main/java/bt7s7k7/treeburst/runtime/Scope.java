@@ -41,6 +41,10 @@ public class Scope {
 		return variable;
 	}
 
+	public Variable getOrDeclareLocal(String name) {
+		return this.variables.computeIfAbsent(name, __ -> new Variable());
+	}
+
 	public Scope makeChild() {
 		return new Scope(this, this.globalScope);
 	}

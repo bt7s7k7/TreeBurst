@@ -13,7 +13,7 @@ public class NativeHandle extends ManagedObject {
 
 	@Override
 	public String toString() {
-		return this.name == null ? "<native>" : String.format("<native %s>", this.name);
+		return this.name == null ? "<native " + this.value.getClass().getSimpleName() + ">" : "<native " + this.name + ">";
 	}
 
 	public Object getValue() {

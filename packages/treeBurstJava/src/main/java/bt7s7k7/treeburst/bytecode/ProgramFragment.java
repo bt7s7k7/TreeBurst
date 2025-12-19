@@ -1,9 +1,12 @@
 package bt7s7k7.treeburst.bytecode;
 
 import static bt7s7k7.treeburst.bytecode.BytecodeInstruction.STATUS_BREAK;
+import static bt7s7k7.treeburst.bytecode.BytecodeInstruction.STATUS_NORMAL;
+import static bt7s7k7.treeburst.bytecode.BytecodeInstruction.STATUS_YIELD;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.runtime.ExecutionLimitReachedException;
@@ -38,6 +41,13 @@ public class ProgramFragment {
 		this.expression = expression;
 		this.instructions = null;
 		this.labels = null;
+	}
+
+	public int getLabel(String label) {
+		if (this.labels == null) throw new IllegalStateException("Called getLabel on a not yet compiled ProgramFragment");
+		var index = this.labels.get(label);
+		if (index == null) throw new NoSuchElementException("Label '" + label + "' does not exist");
+		return index.intValue();
 	}
 
 	public boolean isCompiled() {
@@ -84,15 +94,18 @@ public class ProgramFragment {
 				continue;
 			}
 
-			if (status == STATUS_BREAK) {
-				var target = this.labels.get(result.label);
-				// If the label is not part of this fragment, move higher the execution stack
-				if (target == null) return;
+			if (status == STATUS_NORMAL) continue;
 
-				result.label = null;
-				pc = (int) target - 1;
-				continue;
-			}
+			if (status == STATUS_YIELD) return;
+
+			if (status != STATUS_BREAK) throw new IllegalStateException("Status " + status + " is not valid");
+
+			var target = this.labels.get(result.label);
+			// If the label is not part of this fragment, move higher the execution stack
+			if (target == null) return;
+
+			result.label = null;
+			pc = (int) target - 1;
 		}
 
 		result.value = values.pop();
