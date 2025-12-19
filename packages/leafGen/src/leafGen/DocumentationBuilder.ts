@@ -95,9 +95,19 @@ export class MarkdownPageBuilder {
             this._result.push("**Overloads:**")
 
             for (const overload of symbol.overloads) {
-                const formattedParameters: string[] = overload.parameters.map((v, i) =>
-                    `<span class="token-variable">${v}</span>: `
-                    + `${this.tryMakeLink(overload.types?.at(i) ?? this.owner.db.getSymbol("any"))}`)
+                let parameters = overload.parameters
+                if (parameters.at(-1) == "@" && overload.types?.at(-1)?.name == "BytecodeEmitter") {
+                    // For macros, we don't need to write this parameter, since it applies to all
+                    // macros so it gives no information and only takes up space.
+                    parameters = parameters.slice(0, -1)
+                }
+
+                const formattedParameters = parameters.map((name, index) => {
+                    const formattedName = `<span class="token-variable">${name}</span>`
+                    const type = overload.types?.at(index) ?? this.owner.db.getSymbol("any")
+
+                    return `${formattedName}: ${this.tryMakeLink(type)}`
+                })
 
                 if (overload.isVariadic) {
                     formattedParameters.push("...")
