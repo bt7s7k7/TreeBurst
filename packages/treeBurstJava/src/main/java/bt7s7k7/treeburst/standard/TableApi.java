@@ -1,12 +1,12 @@
 package bt7s7k7.treeburst.standard;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.findProperty;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.findProperty;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureString;
 
 import java.util.List;
 
-import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
+import bt7s7k7.treeburst.runtime.EvaluationUtil;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.ManagedArray;
 import bt7s7k7.treeburst.runtime.ManagedMap;
@@ -138,7 +138,7 @@ public class TableApi extends LazyTable {
 		this.declareProperty("getPrototype", NativeFunction.simple(this.globalScope, List.of("value"), (args, scope, result) -> {
 			// @summary: Returns the prototype of the value or {@link void} if it does not have a prototype.
 			var value = args.get(0);
-			var prototype = ExpressionEvaluator.getPrototype(value, scope);
+			var prototype = EvaluationUtil.getPrototype(value, scope);
 			result.value = prototype == null ? Primitive.VOID : prototype;
 		}));
 
@@ -162,7 +162,7 @@ public class TableApi extends LazyTable {
 			}
 
 			var prototype = result.value;
-			result.value = Primitive.from(ExpressionEvaluator.getPrototype(value, scope) == prototype);
+			result.value = Primitive.from(EvaluationUtil.getPrototype(value, scope) == prototype);
 		}));
 	}
 

@@ -1,6 +1,6 @@
 package bt7s7k7.treeburst.support;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.evaluateInvocation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
-import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
+import bt7s7k7.treeburst.runtime.EvaluationUtil;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.runtime.Scope;
@@ -101,7 +101,7 @@ public class ManagedValueUtils {
 				} while (false);
 
 				errors.add(new Diagnostic(
-						"Wrong type for argument \"" + name + "\", expected \"" + type.getSimpleName() + "\", but got \"" + ExpressionEvaluator.getValueName(value) + "\"",
+						"Wrong type for argument \"" + name + "\", expected \"" + type.getSimpleName() + "\", but got \"" + EvaluationUtil.getValueName(value) + "\"",
 						Position.INTRINSIC,
 						conversionError != null ? List.of(conversionError) : null));
 			}

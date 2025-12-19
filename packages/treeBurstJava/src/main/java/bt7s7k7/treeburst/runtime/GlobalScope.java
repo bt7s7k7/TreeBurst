@@ -1,7 +1,7 @@
 package bt7s7k7.treeburst.runtime;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateInvocation;
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.getValueName;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.evaluateInvocation;
+import static bt7s7k7.treeburst.runtime.EvaluationUtil.getValueName;
 import static bt7s7k7.treeburst.runtime.ExpressionResult.LABEL_RETURN;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.BINARY_OPERATOR_PARAMETERS;
 import static bt7s7k7.treeburst.support.ManagedValueUtils.ensureArgumentTypes;

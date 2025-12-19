@@ -21,7 +21,7 @@ import org.opentest4j.AssertionFailedError;
 
 import bt7s7k7.treeburst.parsing.OperatorConstants;
 import bt7s7k7.treeburst.parsing.TreeBurstParser;
-import bt7s7k7.treeburst.runtime.ExpressionEvaluator;
+import bt7s7k7.treeburst.runtime.EvaluationUtil;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.GlobalScope;
 import bt7s7k7.treeburst.runtime.NativeFunction;
@@ -94,7 +94,7 @@ class AutomaticTest {
 				var value = args.get(0);
 				var pattern = args.get(1);
 
-				ExpressionEvaluator.evaluateInvocation(value, value, OperatorConstants.OPERATOR_EQ, Position.INTRINSIC, List.of(pattern), scope, result);
+				EvaluationUtil.evaluateInvocation(value, value, OperatorConstants.OPERATOR_EQ, Position.INTRINSIC, List.of(pattern), scope, result);
 				if (result.label != null) return;
 
 				var predicate = ensureBoolean(result.value, scope, result);

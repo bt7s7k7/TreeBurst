@@ -365,7 +365,7 @@ public class BytecodeEmitter {
 			return;
 		}
 
-		this.emit(new BytecodeInstruction.Dynamic(expression));
+		result.setException(new Diagnostic("Expression of type " + expression.getClass().getSimpleName() + " is not valid here", expression.position()));
 	}
 
 	public static record BuildResult(List<BytecodeInstruction> instructions, Map<String, Integer> labels) {}

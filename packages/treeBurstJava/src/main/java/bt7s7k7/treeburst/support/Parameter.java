@@ -1,9 +1,8 @@
 package bt7s7k7.treeburst.support;
 
-import static bt7s7k7.treeburst.runtime.ExpressionEvaluator.evaluateExpression;
-
 import java.util.List;
 
+import bt7s7k7.treeburst.bytecode.ProgramFragment;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
 import bt7s7k7.treeburst.runtime.ManagedArray;
@@ -15,9 +14,9 @@ public class Parameter {
 	public final String name;
 	public final boolean isDeclaration;
 	public final boolean isSpread;
-	public final Expression defaultValue;
+	public final ProgramFragment defaultValue;
 
-	public Parameter(Position position, String name, boolean isDeclaration, boolean isSpread, Expression defaultValue) {
+	public Parameter(Position position, String name, boolean isDeclaration, boolean isSpread, ProgramFragment defaultValue) {
 		this.position = position;
 		this.name = name;
 		this.isDeclaration = isDeclaration;
@@ -34,7 +33,7 @@ public class Parameter {
 	}
 
 	public static final Parameter parse(Expression expression) {
-		Expression defaultValue = null;
+		ProgramFragment defaultValue = null;
 		var isSpread = false;
 
 		// A parameter can be a rest parameter or have a default value, but not both
@@ -42,7 +41,7 @@ public class Parameter {
 			isSpread = true;
 			expression = spread.target();
 		} else if (expression instanceof Expression.Assignment assignment) {
-			defaultValue = assignment.value();
+			defaultValue = new ProgramFragment(assignment.value());
 			expression = assignment.receiver();
 		}
 
@@ -132,7 +131,7 @@ public class Parameter {
 			var value = inputIndex < inputs.size() ? inputs.get(inputIndex++) : Primitive.VOID;
 
 			if (value == Primitive.VOID && parameter.defaultValue != null) {
-				evaluateExpression(parameter.defaultValue, scope, result);
+				parameter.defaultValue.evaluate(scope, result);
 				if (result.label != null) return;
 
 				if (variable == null) continue;
