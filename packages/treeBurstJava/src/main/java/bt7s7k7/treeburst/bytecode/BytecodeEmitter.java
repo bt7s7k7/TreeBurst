@@ -100,7 +100,7 @@ public class BytecodeEmitter {
 		return parameters;
 	}
 
-	public void emitInvocation(Expression.Invocation invocation, boolean duplicateArguments, ExpressionResult result) {
+	public void emitInvocation(Expression.Invocation invocation, ExpressionResult result) {
 		if (this.tryCompilationStageMacroExecution(invocation, result)) return;
 
 		String method = null;
@@ -122,15 +122,11 @@ public class BytecodeEmitter {
 
 		var isMacro = name != null && name.startsWith("@");
 
-		if (duplicateArguments) {
-			this.emit(new BytecodeInstruction.DuplicateArguments(1));
-		} else {
-			var argumentCount = invocation.args().size();
+		var argumentCount = invocation.args().size();
 
-			if (isMacro) argumentCount = 0;
+		if (isMacro) argumentCount = 0;
 
-			this.emit(new BytecodeInstruction.PrepareInvoke(argumentCount, method, invocation.position()));
-		}
+		this.emit(new BytecodeInstruction.PrepareInvoke(argumentCount, method, invocation.position()));
 
 		if (!isMacro) {
 			this.compileBlock(invocation.args(), result);
@@ -156,7 +152,7 @@ public class BytecodeEmitter {
 		}
 
 		if (expression instanceof Expression.Invocation invocation) {
-			this.emitInvocation(invocation, false, result);
+			this.emitInvocation(invocation, result);
 			return;
 		}
 
