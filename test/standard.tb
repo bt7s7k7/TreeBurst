@@ -964,3 +964,14 @@ assert(Table.instanceOf("fas", String))
 assert(Table.instanceOf([], Array))
 assert(Table.instanceOf({}, Map))
 assert(Table.instanceOf(Table.new(), Table))
+
+// Test: constexpr
+assertEqual(@constexpr(2 * 5), 10)
+
+$func = \{
+	$x = @constexpr([0])
+	x[0] += 1
+}
+
+assertEqual(func(), 1)
+assertEqual(func(), 2)

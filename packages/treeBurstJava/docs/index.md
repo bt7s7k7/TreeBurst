@@ -303,3 +303,19 @@ map->a
 // Equivalent to:
 map["a"]
 ```
+
+## Macros
+
+Macros are special functions prefixed by `@` that execute during bytecode compilation. Instead of operating on values, they take expressions as arguments and emit code.
+
+```js
+@while(true) \{
+	print("Forever")
+}
+
+[1, 2, 3].@foreach \print(?)
+```
+
+Bytecode compilation happens the first time a function is called. At this point, the function scope will be used to resolve the macro. If the macro is used as a method, the {@link Table.prototype} object will be used. If the macro is not found, the its execution will be deferred to the point, where the function execution first reaches the macro. This allows to use macros that are methods of custom classes. Next time the function executes, there will be no macro, only the emitted code.
+
+Currently macros can only be created using native code. While you can define a macro from code, there is no API to work with expressions.

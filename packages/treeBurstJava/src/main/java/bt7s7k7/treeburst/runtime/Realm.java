@@ -21,6 +21,7 @@ import java.util.RandomAccess;
 import bt7s7k7.treeburst.bytecode.ArgumentStack;
 import bt7s7k7.treeburst.bytecode.BytecodeEmitter;
 import bt7s7k7.treeburst.bytecode.BytecodeInstruction;
+import bt7s7k7.treeburst.bytecode.ProgramFragment;
 import bt7s7k7.treeburst.bytecode.ValueStack;
 import bt7s7k7.treeburst.parsing.Expression;
 import bt7s7k7.treeburst.parsing.OperatorConstants;
@@ -779,6 +780,23 @@ public class Realm {
 			// still in the same function.]]
 			result.value = Primitive.VOID;
 			result.label = args.get(0).getStringValue();
+		}));
+
+		this.declareGlobal("@constexpr", NativeFunction.simple(this, List.of("value", "@"), List.of(Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
+			// @summary[[Evaluates the value during compilation and returns it every time.]]
+			var provider = args.get(0).getNativeValue(Expression.class);
+
+			var emitter = args.getLast().getNativeValue(BytecodeEmitter.class);
+			var position = emitter.nextPosition;
+
+			new ProgramFragment(provider).evaluate(scope, result);
+			if (result.label != null) {
+				result.setException(new Diagnostic("While computing constant", position));
+				return;
+			}
+
+			emitter.emit(result.value);
+			result.value = Primitive.VOID;
 		}));
 	}
 }
