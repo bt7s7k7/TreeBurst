@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.List;
 
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
@@ -9,8 +10,10 @@ import org.jline.terminal.TerminalBuilder;
 
 import bt7s7k7.treeburst.parsing.TreeBurstParser;
 import bt7s7k7.treeburst.runtime.ExpressionResult;
+import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.support.InputDocument;
+import bt7s7k7.treeburst.support.Primitive;
 
 public class Main {
 	public static void main(String[] args) {
@@ -29,6 +32,17 @@ public class Main {
 
 			var realm = new Realm();
 			var scope = realm.globalScope;
+
+			realm.declareGlobal("print", NativeFunction.simple(realm, List.of("message"), (args_1, scope_1, result) -> {
+				var message = args_1.get(0);
+
+				if (message instanceof Primitive.String stringMessage) {
+					terminal.writer().println(stringMessage.value);
+					return;
+				}
+
+				terminal.writer().println(realm.inspect(message));
+			}));
 
 			var dumpBytecode = false;
 			var dumpAST = false;
