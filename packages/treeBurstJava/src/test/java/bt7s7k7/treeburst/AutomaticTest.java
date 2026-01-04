@@ -40,7 +40,7 @@ class AutomaticTest {
 
 		public final HashMap<String, Double> numbers = new HashMap<>();
 
-		public static final NativeHandleWrapper<DummyObject> WRAPPER = new NativeHandleWrapper<>("DummyObject", DummyObject.class, ctx -> ctx
+		public static final NativeHandleWrapper<DummyObject> WRAPPER = new NativeHandleWrapper<>("Container.DummyObject", DummyObject.class, ctx -> ctx
 				.addProperty("a", Primitive.Number.class, v -> Primitive.from(v.a), (v, a) -> v.a = a.value)
 				.addProperty("b", Primitive.Number.class, v -> Primitive.from(v.b), (v, b) -> v.b = b.value)
 				.addGetter("sum", v -> Primitive.from(v.a + v.b))
@@ -118,7 +118,7 @@ class AutomaticTest {
 				result.value = Primitive.from(counter.count);
 			}));
 
-			realm.declareGlobal("dummy", new NativeHandle(DummyObject.WRAPPER.buildPrototype(realm), new DummyObject()));
+			realm.declareGlobal("dummy", new NativeHandle(DummyObject.WRAPPER.ensurePrototype(realm), new DummyObject()));
 
 			{
 				var result = new ExpressionResult();

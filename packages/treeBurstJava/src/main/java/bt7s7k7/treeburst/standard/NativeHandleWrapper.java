@@ -23,7 +23,6 @@ import bt7s7k7.treeburst.runtime.NativeFunction;
 import bt7s7k7.treeburst.runtime.NativeHandle;
 import bt7s7k7.treeburst.runtime.Realm;
 import bt7s7k7.treeburst.runtime.Scope;
-import bt7s7k7.treeburst.runtime.Variable;
 import bt7s7k7.treeburst.support.ManagedValue;
 import bt7s7k7.treeburst.support.ManagedValueUtils;
 import bt7s7k7.treeburst.support.Position;
@@ -33,11 +32,13 @@ public class NativeHandleWrapper<T> {
 	public final Class<T> type;
 	protected final Consumer<NativeHandleWrapper<T>.InitializationContext> callback;
 	public final String name;
+	protected final String[] path;
 
 	public NativeHandleWrapper(String name, Class<T> type, Consumer<InitializationContext> callback) {
 		this.name = name;
 		this.type = type;
 		this.callback = callback;
+		this.path = name.split("\\.");
 	}
 
 	public class Prototype extends LazyTable {
@@ -245,36 +246,100 @@ public class NativeHandleWrapper<T> {
 		return new Prototype(realm.TablePrototype, realm);
 	}
 
+	protected ManagedTable buildClass(Realm realm, ManagedTable prototype) {
+		var classTable = new ManagedTable(realm.TablePrototype, Map.of("prototype", prototype));
+		classTable.name = this.name;
+		return classTable;
+	}
+
+	public ManagedTable buildClass(Realm realm) {
+		return this.buildClass(realm, this.buildPrototype(realm));
+	}
+
 	public ManagedTable ensurePrototype(Realm realm) {
 		if (this.name == null) throw new NullPointerException("Cannot cache prototype without a name");
 
-		// We need to check if a prototype was already created and if so, we need to make sure it
-		// valid. We don't actually check if the prototype has correct values, since this is way too
-		// expensive.
-		Variable classVariable = null;
+		ManagedTable container = null;
 
-		do {
-			classVariable = realm.globalScope.findVariable(this.name);
-			// Variable not defined, need to define
-			if (classVariable == null) break;
-			// Variable defined, but not correct, need to overwrite
-			if (!(classVariable.value instanceof ManagedTable classTable)) break;
-			var prototypeValue = classTable.getOwnProperty("prototype");
-			// Variable does not have a prototype, need to overwrite
-			if (prototypeValue != null && prototypeValue instanceof ManagedTable prototype) return prototype;
-		} while (false);
+		// Go through the parent objects and ensure they are all tables, then in the last iteration, create the class or get the prototype, if exists
+		for (int i = 0; i < this.path.length; i++) {
+			var segment = this.path[i];
+			var isLast = i == this.path.length - 1;
 
-		var prototype = this.buildPrototype(realm);
+			if (container == null) {
+				// In the first iteration, work with variables
+				var containerVariable = realm.globalScope.findVariable(segment);
+				if (containerVariable == null) {
+					if (isLast) {
+						var prototype = this.buildPrototype(realm);
+						realm.globalScope.declareVariable(segment).value = this.buildClass(realm, prototype);
+						return prototype;
+					}
 
-		if (classVariable == null) {
-			// Variable is not declared
-			classVariable = realm.globalScope.declareVariable(this.name);
+					container = new ManagedTable(realm.TablePrototype);
+					container.name = segment;
+					realm.globalScope.declareVariable(segment).value = container;
+					continue;
+				}
+
+				var potentialContainer = containerVariable.value;
+				if (potentialContainer instanceof ManagedTable newContainer) {
+					if (isLast) {
+						var potentialPrototype = newContainer.getOwnProperty("prototype");
+
+						if (potentialPrototype == null || !(potentialPrototype instanceof ManagedTable prototype)) {
+							var prototype = this.buildPrototype(realm);
+							containerVariable.value = this.buildClass(realm, prototype);
+							return prototype;
+						}
+
+						return prototype;
+					}
+					container = newContainer;
+					continue;
+				}
+
+				if (isLast) {
+					var prototype = this.buildPrototype(realm);
+					containerVariable.value = this.buildClass(realm, prototype);
+					return prototype;
+				}
+
+				container = new ManagedTable(realm.TablePrototype);
+				containerVariable.value = container;
+				continue;
+			}
+
+			var owner = container;
+			var value = owner.getOwnProperty(segment);
+			if (value == null || !(value instanceof ManagedTable newContainer)) {
+				if (isLast) {
+					var prototype = this.buildPrototype(realm);
+					owner.properties.put(segment, this.buildClass(realm, prototype));
+					return prototype;
+				}
+
+				container = new ManagedTable(realm.TablePrototype);
+				owner.properties.put(segment, container);
+				continue;
+			}
+
+			if (isLast) {
+				var potentialPrototype = newContainer.getOwnProperty("prototype");
+
+				if (potentialPrototype == null || !(potentialPrototype instanceof ManagedTable prototype)) {
+					var prototype = this.buildPrototype(realm);
+					owner.properties.put(segment, this.buildClass(realm, prototype));
+					return prototype;
+				}
+
+				return prototype;
+			}
+
+			container = newContainer;
 		}
 
-		// Overwrite or define variable
-		classVariable.value = new ManagedTable(realm.TablePrototype, Map.of("prototype", prototype));
-
-		return prototype;
+		throw new RuntimeException("Unreachable, failed to return from ensurePrototype");
 	}
 
 	public NativeHandle getHandle(T value, Realm realm) {
