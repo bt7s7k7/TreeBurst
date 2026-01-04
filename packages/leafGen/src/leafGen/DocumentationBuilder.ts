@@ -13,6 +13,7 @@ import { Project } from "./Project"
 import { SymbolDatabase } from "./SymbolDatabase"
 import { SymbolHandle } from "./SymbolHandle"
 import { ColorTheme, LanguageDefinition, SyntaxHighlighter } from "./SyntaxHighlighter"
+import { printWarn } from "./print"
 
 export class Page {
     public readonly instanceSymbols: SymbolHandle[] = []
@@ -22,7 +23,7 @@ export class Page {
         if (this.rootPrototypeSymbol == null) return null
         const prototype = this.rootPrototypeSymbol.prototype
         if (prototype == null) return null
-        const page = this.owner.rootSymbols.get(prototype)
+        const page = this.owner.symbolPages.get(prototype)
         return page ?? null
     }
 
@@ -82,7 +83,7 @@ export class MarkdownPageBuilder {
     }
 
     public addSymbolHeading(symbol: SymbolHandle) {
-        if (this.owner.rootSymbols.has(symbol)) {
+        if (this.owner.symbolPages.has(symbol)) {
             this._result.push(`### <code>${this.makeAnchoredText(this.tryMakeLink(symbol))}</code>`)
         } else {
             this._result.push(`### \`${this.makeAnchoredText(symbol.name)}\``)
@@ -139,7 +140,7 @@ export class MarkdownPageBuilder {
     public addSymbol(symbol: SymbolHandle, from: SymbolHandle | null) {
         this.addSymbolHeading(symbol)
 
-        if (!this.owner.rootSymbols.has(symbol)) {
+        if (!this.owner.symbolPages.has(symbol)) {
             this.addSites(symbol.sites)
         }
 
@@ -157,8 +158,18 @@ export class MarkdownPageBuilder {
 
     public resolveLinkMacros(source: string) {
         return source.replace(/\{@link\s?([\w.]+)\}/g, (_, name) => {
-            const symbol = this.owner.db.tryGetSymbol(name)
-            if (!symbol) return `\`${name}\``
+            let symbol = this.owner.db.tryGetSymbol(name)
+
+            if (!symbol) {
+                const isExternal = this.owner.project.findExternalReference(name) != null
+                if (isExternal) symbol = this.owner.db.getSymbol(name)
+            }
+
+            if (!symbol) {
+                printWarn(`Failed to find symbol in link macro for "${name}"`)
+                return `\`${name}\``
+            }
+
             return `<code>${this.tryMakeLink(symbol)}</code>`
         })
     }
@@ -240,11 +251,73 @@ export class DocumentationBuilder {
     public readonly globalPage = new Page(this, this.db.globalScope, null)
     public readonly pages: Page[] = [this.globalPage]
     public readonly printedSymbols = new Map<SymbolHandle, Set<Page>>()
-    public readonly rootSymbols = new Map<SymbolHandle, Page>()
+    public readonly symbolPages = new Map<SymbolHandle, Page>()
     public readonly includeCache = new Map<string, SyntaxNode.Inline | typeof _PENDING>()
 
     public markPrintedSymbol(symbol: SymbolHandle, page: Page) {
         ensureKey(this.printedSymbols, symbol, () => new Set()).add(page)
+    }
+
+    public shouldSymbolHavePage(symbol: SymbolHandle) {
+        const symbolName = symbol.name
+        const prototype = this.db.tryGetSymbol(symbolName + ".prototype")
+
+        return prototype != null || symbol.children.length > 0
+    }
+
+    public emitPage(symbol: SymbolHandle) {
+        if (this.symbolPages.has(symbol)) return
+
+        const symbolName = symbol.name
+
+        const prototype = this.db.tryGetSymbol(symbolName + ".prototype")
+
+        const shortName = symbol.getShortName()
+        const isRoot = prototype != null
+            || (isAlpha(shortName, 0) && shortName[0] == shortName[0].toUpperCase())
+            || (shortName[0] == "_" && isAlpha(shortName, 1) && shortName[1] == shortName[1].toUpperCase())
+
+        if (this.shouldSymbolHavePage(symbol)) {
+            const page = new Page(this, symbol, prototype)
+            this.pages.push(page)
+            this.symbolPages.set(symbol, page)
+            this.markPrintedSymbol(symbol, page)
+
+            for (const child of symbol.children) {
+                if (child == prototype) continue
+                page.staticSymbols.push(child)
+
+                if (this.shouldSymbolHavePage(child)) {
+                    this.emitPage(child)
+                } else {
+                    this.markPrintedSymbol(child, page)
+                }
+            }
+
+            if (prototype) {
+                this.symbolPages.set(prototype, page)
+                this.markPrintedSymbol(prototype, page)
+
+                for (const child of prototype.children) {
+                    page.instanceSymbols.push(child)
+
+                    if (this.shouldSymbolHavePage(child)) {
+                        this.emitPage(child)
+                    } else {
+                        this.markPrintedSymbol(child, page)
+                    }
+                }
+
+                symbol.summary.push(...prototype.summary)
+                prototype.summary.length = 0
+            }
+        }
+
+        if (symbol.isEntry) {
+            this.globalPage.staticSymbols.push(symbol)
+        }
+
+        if (!isRoot) this.markPrintedSymbol(symbol, this.globalPage)
     }
 
     public sortSymbols() {
@@ -252,42 +325,8 @@ export class DocumentationBuilder {
 
         for (const symbolName of symbols) {
             const symbol = this.db.getSymbol(symbolName)
-
             if (!symbol.isEntry) continue
-
-            const prototype = this.db.tryGetSymbol(symbolName + ".prototype")
-            const isRoot = prototype != null
-                || (isAlpha(symbolName, 0) && symbolName[0] == symbolName[0].toUpperCase())
-                || (symbolName[0] == "_" && isAlpha(symbolName, 1) && symbolName[1] == symbolName[1].toUpperCase())
-
-            if (isRoot) {
-                const page = new Page(this, symbol, prototype)
-                this.pages.push(page)
-                this.rootSymbols.set(symbol, page)
-                this.markPrintedSymbol(symbol, page)
-
-                for (const child of symbol.children) {
-                    if (child == prototype) continue
-                    page.staticSymbols.push(child)
-                    this.markPrintedSymbol(child, page)
-                }
-
-                if (prototype) {
-                    this.rootSymbols.set(prototype, page)
-                    this.markPrintedSymbol(prototype, page)
-
-                    for (const child of prototype.children) {
-                        page.instanceSymbols.push(child)
-                        this.markPrintedSymbol(child, page)
-                    }
-
-                    symbol.summary.push(...prototype.summary)
-                    prototype.summary.length = 0
-                }
-            }
-
-            this.globalPage.staticSymbols.push(symbol)
-            if (!isRoot) this.markPrintedSymbol(symbol, this.globalPage)
+            this.emitPage(symbol)
         }
 
         for (const page of this.pages) {
@@ -307,6 +346,7 @@ export class DocumentationBuilder {
             const externalReference = this.project.findExternalReference(symbol.name)
             if (externalReference != null) return externalReference
 
+            if (symbol.name != "any") printWarn(`Failed to find link to symbol: "${symbol.name}"`)
             return null
         }
 
@@ -332,7 +372,12 @@ export class DocumentationBuilder {
                 builder.add(builder.resolveLinkMacros(inserts.join("\n")))
                 builder.addHeading(builder.makeAnchoredText("Reference"))
             } else {
-                builder.add("[Back](index.html)")
+                let parentPage = null
+                for (let parent = page.rootSymbol.getParent(); parent != null; parent = parent.getParent()) {
+                    parentPage = this.symbolPages.get(parent)
+                }
+
+                builder.add(`[Back](${parentPage ? this.getFilenameForPage(parentPage, extension) : "./"})`)
                 builder.addHeading(builder.makeAnchoredText(page.rootSymbol.name))
 
                 if (page.rootPrototypeSymbol) {

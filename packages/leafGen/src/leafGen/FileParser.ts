@@ -2,7 +2,6 @@ import { EMPTY_ARRAY } from "../comTypes/const"
 import { unreachable } from "../comTypes/util"
 import { OPERATOR_CONSTANTS } from "./constants"
 import { FunctionOverload } from "./FunctionOverload"
-import { printWarn } from "./print"
 import { Project } from "./Project"
 import { SymbolDatabase } from "./SymbolDatabase"
 import { SymbolHandle } from "./SymbolHandle"
@@ -91,7 +90,7 @@ export class FileParser {
             return
         }
 
-        if (line.includes("class GlobalScope extends Scope")) {
+        if (line.includes("public class Realm ")) {
             const symbol = this.db.globalScope
             this.isGlobalScope = true
             this.scopes.push(new ScopeInfo(symbol, indent + 1))
@@ -181,16 +180,18 @@ export class FileParser {
             }
         }
 
-        const nativeHandleWrapper = line.match(/new NativeHandleWrapper<.*?>\("(\w+)", ([\w.]+)\.class/)
+        const nativeHandleWrapper = line.match(/new NativeHandleWrapper<.*?>\("([\w.]+)", ([\w.]+)\.class/)
         if (nativeHandleWrapper) {
             const name = nativeHandleWrapper[1]
             const className = nativeHandleWrapper[2]
-            if (name != className) {
-                printWarn(`Native handle name mismatch: "${name}" != ${className}.class`)
-            }
 
             const symbol = this.db.getSymbol(name).getChild("prototype")
             symbol.sites.push(this.getSite())
+
+            if (name != className) {
+                this.db.addNativeAlias(className, symbol)
+            }
+
             this.scopes.push(new ScopeInfo(symbol, indent + 1).setNativeHandleWrapper())
             this.parseAdditionalInfo()
             return
@@ -199,7 +200,7 @@ export class FileParser {
         const ensurePrototype = line.match(/(\w+).WRAPPER.ensurePrototype\(/)
         if (ensurePrototype) {
             const name = ensurePrototype[1]
-            const symbol = this.db.getSymbol(name)
+            const symbol = this.db.findManagedSymbolByNativeClass(name)
             symbol.isEntry = true
             symbol.sites.push(this.getSite())
             this.scopes.push(new ScopeInfo(symbol, indent + 1))
@@ -334,6 +335,11 @@ export class FileParser {
         const forceFunction = line.match(/@kind:\s?function/)
         if (forceFunction) {
             scope.symbol.isFunction = true
+        }
+
+        const nativeAlias = line.match(/@native-alias:\s?([\w.]+)/)
+        if (nativeAlias) {
+            this.db.addNativeAlias(nativeAlias[1], scope.symbol)
         }
 
         const summary = line.match(/@summary:\s?(.*)/)

@@ -1,4 +1,5 @@
 import { FunctionOverload } from "./FunctionOverload"
+import { printWarn } from "./print"
 import { SymbolHandle } from "./SymbolHandle"
 
 const _MANAGED_SYMBOL_BY_CLASS = new Map([
@@ -14,6 +15,7 @@ const _MANAGED_SYMBOL_BY_CLASS = new Map([
 
 export class SymbolDatabase {
     protected readonly _symbols = new Map<string, SymbolHandle>()
+    protected readonly _nativeAliases = new Map<string, SymbolHandle>()
 
     public readonly globalScope = new class extends SymbolHandle {
         public override getChild(name: string) {
@@ -56,7 +58,21 @@ export class SymbolDatabase {
         return this.getSymbol(className)
     }
 
+    public addNativeAlias(className: string, symbol: SymbolHandle) {
+        const existing = this._nativeAliases.get(className)
+        if (existing) {
+            printWarn(`Duplicate native alias, conflict between "${existing.name}" and "${symbol.name}"`)
+            return
+        }
+
+        this._nativeAliases.set(className, symbol)
+    }
+
     public postProcessSymbols() {
+        for (const [name, symbol] of this._nativeAliases) {
+            this._symbols.set(name, symbol)
+        }
+
         for (const symbol of this._symbols.values()) {
             if (symbol.prototype == null && symbol.isFunction) {
                 symbol.prototype = this.getSymbol("Function").getChild("prototype")
@@ -67,6 +83,19 @@ export class SymbolDatabase {
                     symbol.overloads = [new FunctionOverload([], null).withVariadic()]
                 } else {
                     symbol.overloads = [new FunctionOverload([], null)]
+                }
+            }
+
+            if (symbol.isFunction) {
+                for (const overload of symbol.overloads!) {
+                    if (overload.types == null) continue
+                    for (let i = 0; i < overload.types.length; i++) {
+                        const type = overload.types[i]
+                        const aliased = this._nativeAliases.get(type.name)
+                        if (aliased) {
+                            overload.types[i] = aliased
+                        }
+                    }
                 }
             }
 

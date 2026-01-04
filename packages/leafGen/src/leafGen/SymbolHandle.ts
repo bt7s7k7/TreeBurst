@@ -22,6 +22,12 @@ export class SymbolHandle {
         return this.name.slice(dot + 1)
     }
 
+    public getPath() {
+        const dot = this.name.lastIndexOf(".")
+        if (dot == -1) return ""
+        return this.name.slice(0, dot)
+    }
+
     public apply(template: SymbolHandle) {
         this.isFunction ||= template.isFunction
         this.isVariadicFunction ||= template.isVariadicFunction
@@ -39,6 +45,12 @@ export class SymbolHandle {
 
     public getChild(name: string) {
         return this.db.getSymbol(this.name + "." + name)
+    }
+
+    public getParent() {
+        const path = this.getPath()
+        if (path == "") return null
+        return this.db.getSymbol(path)
     }
 
     constructor(
