@@ -108,10 +108,10 @@ public class Realm {
 		makeNumberOperator(OperatorConstants.OPERATOR_MOD, (a, b) -> Primitive.from(a % b)); // @summary: Returns the remainder of the first number when divided by the second.
 		makeNumberOperator(OperatorConstants.OPERATOR_POW, (a, b) -> Primitive.from(Math.pow(a, b))); // @summary: Puts the first number to the second's power.
 
-		makeNumberOperator(OperatorConstants.OPERATOR_LT, (a, b) -> Primitive.from(a < b)); // @summary: Returns `true` if the first number is less than the second.
-		makeNumberOperator(OperatorConstants.OPERATOR_GT, (a, b) -> Primitive.from(a > b)); // @summary: Returns `true` if the first number is greater than the second.
-		makeNumberOperator(OperatorConstants.OPERATOR_GTE, (a, b) -> Primitive.from(a >= b)); // @summary: Returns `true` if the first number is greater or equal to the second.
-		makeNumberOperator(OperatorConstants.OPERATOR_LTE, (a, b) -> Primitive.from(a <= b)); // @summary: Returns `true` if the first number is less or equal to the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_LT, (a, b) -> Primitive.from(a < b)); // @summary: Returns {@link true} if the first number is less than the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_GT, (a, b) -> Primitive.from(a > b)); // @summary: Returns {@link true} if the first number is greater than the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_GTE, (a, b) -> Primitive.from(a >= b)); // @summary: Returns {@link true} if the first number is greater or equal to the second.
+		makeNumberOperator(OperatorConstants.OPERATOR_LTE, (a, b) -> Primitive.from(a <= b)); // @summary: Returns {@link true} if the first number is less or equal to the second.
 
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_XOR, (a, b) -> Primitive.from((int) a ^ (int) b)); // @summary: Performs a bitwise XOR over the two numbers, calculated using 32-bit signed integers.
 		makeNumberOperator(OperatorConstants.OPERATOR_BIT_AND, (a, b) -> Primitive.from((int) a & (int) b)); // @summary: Performs a bitwise AND over the two numbers, calculated using 32-bit signed integers.
@@ -161,7 +161,7 @@ public class Realm {
 	public final ManagedTable String = this.declareGlobal("String", new ManagedTable(this.TablePrototype)); // @summary: Represents a string of characters.
 
 	public final ManagedTable BooleanPrototype = new ManagedTable(this.TablePrototype); /// @symbol:Boolean.prototype
-	public final ManagedTable Boolean = this.declareGlobal("Boolean", new ManagedTable(this.TablePrototype)); // @summary: Represents a truth value of either `true` or `false`.
+	public final ManagedTable Boolean = this.declareGlobal("Boolean", new ManagedTable(this.TablePrototype)); // @summary: Represents a truth value of either {@link true} or {@link false}.
 
 	public final ManagedTable ArrayPrototype = new ArrayPrototype(this.TablePrototype, this);
 	public final ManagedTable Array = this.declareGlobal("Array", new ManagedTable(this.TablePrototype));
@@ -214,8 +214,8 @@ public class Realm {
 	public Realm() {
 		super();
 
-		this.declareGlobal("true", Primitive.TRUE); // @type: Boolean, @summary: Constant value of `true`
-		this.declareGlobal("false", Primitive.FALSE); // @type: Boolean, @summary: Constant value of `false`
+		this.declareGlobal("true", Primitive.TRUE); // @type: Boolean, @summary: Constant value of {@link true}
+		this.declareGlobal("false", Primitive.FALSE); // @type: Boolean, @summary: Constant value of {@link false}
 		this.declareGlobal("null", Primitive.NULL); // @summary: Object representing an empty value
 		this.declareGlobal("void", Primitive.VOID); // @summary: Object representing a missing or non-existent value.
 
@@ -469,7 +469,7 @@ public class Realm {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_AND, NativeFunction.simple(this, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
-			// @summary: This object is converted to a {@link Boolean}. If the result is `true`, the `other` expression is evaluated and the result retuned, otherwise this object is returned.
+			// @summary: This object is converted to a {@link Boolean}. If the result is {@link true}, the `other` expression is evaluated and the result retuned, otherwise this object is returned.
 			var a = args.get(0).getNativeValue(Expression.class);
 			var b = args.get(1).getNativeValue(Expression.class);
 
@@ -492,7 +492,7 @@ public class Realm {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_OR, NativeFunction.simple(this, List.of("this", "other", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
-			// @summary: This object is converted to a {@link Boolean}. If the result is `true` this object is retuned, otherwise the `other` expression is evaluated and the result retuned.
+			// @summary: This object is converted to a {@link Boolean}. If the result is {@link true} this object is retuned, otherwise the `other` expression is evaluated and the result retuned.
 			var a = args.get(0).getNativeValue(Expression.class);
 			var b = args.get(1).getNativeValue(Expression.class);
 
@@ -600,7 +600,7 @@ public class Realm {
 		}));
 
 		this.TablePrototype.declareProperty(OperatorConstants.OPERATOR_IS, NativeFunction.simple(this, List.of("this", "other"), (args, scope, result) -> {
-			// @summary[[Returns `true` if this object is equal by reference to the other object.
+			// @summary[[Returns {@link true} if this object is equal by reference to the other object.
 			// This function returns inconsistent results for objects of type {@link String} and
 			// {@link Number}, and should not be used with them. The intended use is for reference
 			// comparisons between compound objects and {@link null} or {@link void}, without using
@@ -688,10 +688,10 @@ public class Realm {
 			// follow a repeating pattern of `condition` + `result`, where the `condition`
 			// expression should return a {@link Boolean} or a value that can be converted to such.
 			// These pairs are evaluated in order, where if the result of the `condition` expression
-			// is `true`, the `result` expression is evaluated and returned. Otherwise the
+			// is {@link true}, the `result` expression is evaluated and returned. Otherwise the
 			// evaluation of the `result` is skipped and the next pair is evaluated. Optionally, a
 			// fallback expression may be added as the last argument, which will be evaluated and
-			// returned if no conditions return `true`.]]
+			// returned if no conditions return {@link true}.]]
 
 			var emitter = args.getLast().getNativeValue(BytecodeEmitter.class);
 			var position = emitter.nextPosition;
@@ -740,7 +740,7 @@ public class Realm {
 
 		this.declareGlobal("@while", NativeFunction.simple(this, List.of("predicate", "body", "@"), List.of(Expression.class, Expression.class, BytecodeEmitter.class), (args, scope, result) -> {
 			// @summary[[Repeatedly evaluates the `predicate` expression, which is expected to
-			// return a {@link Boolean} or be convertible to such. If `true` is returned, the `body`
+			// return a {@link Boolean} or be convertible to such. If {@link true} is returned, the `body`
 			// expression is executed, otherwise the cycle is terminated.]]
 			var predicate = args.get(0).getNativeValue(Expression.class);
 			var body = args.get(1).getNativeValue(Expression.class);

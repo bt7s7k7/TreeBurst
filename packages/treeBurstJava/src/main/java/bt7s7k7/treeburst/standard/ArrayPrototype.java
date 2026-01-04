@@ -457,7 +457,7 @@ public class ArrayPrototype extends LazyTable {
 
 		this.declareProperty("filter", NativeFunction.simple(this.realm, List.of("this", "function"), List.of(ManagedArray.class, ManagedFunction.class), (args, scope, result) -> {
 			// @summary[[Creates a new array with only the elements for which `function` returned
-			// `true`. The function is called with `value` of the element, the `index` of the
+			// {@link true}. The function is called with `value` of the element, the `index` of the
 			// element and a reference to this `array`.]]
 			var self = args.get(0).getArrayValue();
 			var function = args.get(1).getFunctionValue();

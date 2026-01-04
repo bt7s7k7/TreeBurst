@@ -20,6 +20,7 @@ import bt7s7k7.treeburst.support.Primitive;
 
 public class TableApi extends LazyTable {
 	// @summary[[Represents an object with properties.]]
+	// @native-alias: ManagedObject
 
 	public TableApi(ManagedObject prototype, Realm realm) {
 		super(prototype, realm);
