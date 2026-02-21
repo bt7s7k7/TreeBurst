@@ -356,10 +356,22 @@ export class DocumentationBuilder {
     }
 
     public getFilenameForPage(page: Page, extension: string) {
-        return page == this.globalPage ? "index" + extension : page.rootSymbol.name + extension
+        return page == this.globalPage ? (this.project.separateReferencePage ? "reference" : "index") + extension : page.rootSymbol.name + extension
     }
 
     public *buildMarkdown(extension = ".md") {
+        if (this.project.separateReferencePage) {
+            const builder = new MarkdownPageBuilder(
+                this.project.title,
+                this, extension, "index" + extension,
+            )
+
+            const inserts = this.project.getInsertsForFilename(builder.filename, ".md")
+            builder.add(builder.resolveLinkMacros(inserts.join("\n")))
+
+            yield builder
+        }
+
         for (const page of this.pages) {
             const builder = new MarkdownPageBuilder(
                 (page == this.globalPage ? "Reference" : page.rootSymbol.name) + " - " + this.project.title,
@@ -369,6 +381,10 @@ export class DocumentationBuilder {
             const inserts = this.project.getInsertsForFilename(builder.filename, ".md")
 
             if (page == this.globalPage) {
+                if (this.project.separateReferencePage) {
+                    builder.add(`[Back](./)`)
+                }
+
                 builder.add(builder.resolveLinkMacros(inserts.join("\n")))
                 builder.addHeading(builder.makeAnchoredText("Reference"))
             } else {
@@ -377,7 +393,12 @@ export class DocumentationBuilder {
                     parentPage = this.symbolPages.get(parent)
                 }
 
-                builder.add(`[Back](${parentPage ? this.getFilenameForPage(parentPage, extension) : "./"})`)
+                builder.add(`[Back](${parentPage ? (
+                    this.getFilenameForPage(parentPage, extension)
+                ) : this.project.separateReferencePage ? (
+                    this.getFilenameForPage(this.globalPage, extension)
+                ) : "./"})`)
+
                 builder.addHeading(builder.makeAnchoredText(page.rootSymbol.name))
 
                 if (page.rootPrototypeSymbol) {

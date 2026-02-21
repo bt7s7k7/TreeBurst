@@ -36,6 +36,7 @@ export class Project extends Struct.define("Project", {
     }).as(Type.array).as(Type.nullable),
     emitSymbolDatabase: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
     externalReferences: Type.string.as(Type.array).as(Type.nullable),
+    separateReferencePage: Type.boolean.as(Type.nullable, { skipNullSerialize: true }),
 }) {
     public path: string = null!
 
