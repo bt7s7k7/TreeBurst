@@ -20,7 +20,7 @@ import bt7s7k7.treeburst.support.Primitive;
 
 public class TreeBurstParser extends GenericParser {
 	public enum OperatorType {
-		INVOCATION, ASSIGNMENT, PIPELINE, MEMBER_ACCESS, VARIABLE_DECLARATION, SPECIAL_SYNTAX
+		INVOCATION, ASSIGNMENT, PIPELINE, MEMBER_ACCESS, DIRECT_INDEX, VARIABLE_DECLARATION, SPECIAL_SYNTAX
 	}
 
 	public static class Operator {
@@ -135,7 +135,7 @@ public class TreeBurstParser extends GenericParser {
 		_INFIX_OPERATORS.put("/", new Operator(7, OperatorConstants.OPERATOR_DIV));
 		_INFIX_OPERATORS.put("%", new Operator(7, OperatorConstants.OPERATOR_MOD));
 		_INFIX_OPERATORS.put("**", new Operator(8, OperatorConstants.OPERATOR_POW).withResultPrecedence(8));
-		_INFIX_OPERATORS.put("->", new Operator(100, OperatorType.SPECIAL_SYNTAX));
+		_INFIX_OPERATORS.put("->", new Operator(100, OperatorType.DIRECT_INDEX));
 		_INFIX_OPERATORS.put(".", new Operator(100, OperatorType.MEMBER_ACCESS));
 
 		_OPERATOR_TOKENS = Stream.concat(_PREFIX_OPERATORS.entrySet().stream(), _INFIX_OPERATORS.entrySet().stream())
@@ -795,6 +795,14 @@ public class TreeBurstParser extends GenericParser {
 							this.createDiagnostic("Expected member name");
 							return target;
 						}
+					} else if (infixOperator.type == OperatorType.DIRECT_INDEX) {
+						var index = operand;
+
+						if (index instanceof Expression.Identifier identifier) {
+							index = new Expression.Literal(identifier.position(), Primitive.from(identifier.name()));
+						}
+
+						target = Expression.Invocation.makeMethodCall(nextOpInstance.position(), target, OperatorConstants.OPERATOR_AT, List.of(index));
 					} else if (infixOperator.type == OperatorType.ASSIGNMENT) {
 						if (target instanceof Expression.Invocation invocation) {
 							target = invocation.withArgument(operand);
@@ -858,16 +866,6 @@ public class TreeBurstParser extends GenericParser {
 									nextOpInstance.position,
 									new Expression.Identifier(nextOpInstance.position, "@if"),
 									List.of(target, operand, alternative));
-						} else if (nextOpInstance.token.equals("->")) {
-							if (this._skippedNewline) return target;
-
-							var index = operand;
-
-							if (index instanceof Expression.Identifier identifier) {
-								index = new Expression.Literal(identifier.position(), Primitive.from(identifier.name()));
-							}
-
-							target = Expression.Invocation.makeMethodCall(nextOpInstance.position(), target, OperatorConstants.OPERATOR_AT, List.of(index));
 						} else if (nextOpInstance.token.equals(":")) {
 							throw new IllegalStateException("Cannot handle special syntax infix operator of token '" + nextOpInstance.token + "'");
 						}

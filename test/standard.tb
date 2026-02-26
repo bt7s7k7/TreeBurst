@@ -449,7 +449,7 @@ map["a"] = void
 assertEqual(map["a"], void)
 assertEqual(map.length, 2)
 
-// Test: map direct access operator
+// Test: map direct index operator
 $a = 5
 $map = {a, b: true, [1]: "c"}
 assertEqual(map->a, 5)
@@ -977,3 +977,13 @@ $func = \{
 
 assertEqual(func(), 1)
 assertEqual(func(), 2)
+
+// Test: direct index precedence
+
+$value = null
+$map = { q: 5 }
+
+value = map->q
+
+assertEqual(value, 5)
+

@@ -296,7 +296,7 @@ map["a"] == void
 map.length == 0
 ```
 
-If you only use a constant string key, you can use the direct access operator `->` for a simpler syntax.
+If you only use a constant string key, you can use the direct index operator `->` for a simpler syntax.
 
 ```js
 map->a
