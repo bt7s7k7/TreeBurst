@@ -6,6 +6,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.history.DefaultHistory;
+import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import bt7s7k7.treeburst.parsing.TreeBurstParser;
@@ -16,6 +17,19 @@ import bt7s7k7.treeburst.support.InputDocument;
 import bt7s7k7.treeburst.support.Primitive;
 
 public class Main {
+	private static void initializeRealm(Realm realm, Terminal terminal) {
+		realm.declareGlobal("print", NativeFunction.simple(realm, List.of("message"), (args_1, scope_1, result) -> {
+			var message = args_1.get(0);
+
+			if (message instanceof Primitive.String stringMessage) {
+				terminal.writer().println(stringMessage.value);
+				return;
+			}
+
+			terminal.writer().println(realm.inspect(message));
+		}));
+	}
+
 	public static void main(String[] args) {
 		try {
 			var terminal = TerminalBuilder.builder()
@@ -33,16 +47,7 @@ public class Main {
 			var realm = new Realm();
 			var scope = realm.globalScope;
 
-			realm.declareGlobal("print", NativeFunction.simple(realm, List.of("message"), (args_1, scope_1, result) -> {
-				var message = args_1.get(0);
-
-				if (message instanceof Primitive.String stringMessage) {
-					terminal.writer().println(stringMessage.value);
-					return;
-				}
-
-				terminal.writer().println(realm.inspect(message));
-			}));
+			initializeRealm(realm, terminal);
 
 			var dumpBytecode = false;
 			var dumpAST = false;
@@ -66,6 +71,18 @@ public class Main {
 							dumpAST = !dumpAST;
 							terminal.writer().println("Dump AST: " + dumpAST);
 							line = line.substring(4);
+							continue;
+						}
+
+						if (line.equals(".reset")) {
+							terminal.writer().println("Reset scope");
+
+							realm = new Realm();
+							scope = realm.globalScope;
+
+							initializeRealm(realm, terminal);
+
+							line = line.substring(6);
 							continue;
 						}
 
