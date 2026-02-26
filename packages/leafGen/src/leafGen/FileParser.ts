@@ -180,7 +180,7 @@ export class FileParser {
             }
         }
 
-        const nativeHandleWrapper = line.match(/new NativeHandleWrapper<.*?>\("([\w.]+)", ([\w.]+)\.class/)
+        const nativeHandleWrapper = line.match(/new NativeHandleWrapper<.*?>\("([\w.]+)".*?([\w.]+)\.class/)
         if (nativeHandleWrapper) {
             const name = nativeHandleWrapper[1]
             const className = nativeHandleWrapper[2]
