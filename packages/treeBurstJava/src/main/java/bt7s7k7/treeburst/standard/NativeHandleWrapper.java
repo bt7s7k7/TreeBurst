@@ -80,6 +80,11 @@ public class NativeHandleWrapper<T> {
 			public void run(T self, List<ManagedValue> args, Scope scope, ExpressionResult result);
 		}
 
+		public InitializationContext applyDecorator(BiConsumer<Realm, ManagedTable> decorator) {
+			decorator.accept(this.realm, this.prototype);
+			return this;
+		}
+
 		public InitializationContext addMethod(String name, Function<Realm, ManagedFunction> factory) {
 			this.prototype.declareProperty(name, factory.apply(this.realm));
 			return this;
