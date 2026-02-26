@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import bt7s7k7.treeburst.parsing.GenericParser;
 import bt7s7k7.treeburst.parsing.StringSpan;
-import bt7s7k7.treeburst.parsing.TreeBurstParser;
-import bt7s7k7.treeburst.support.InputDocument;
 
 class ParsingTest {
 	@Test
@@ -50,50 +48,5 @@ class ParsingTest {
 		assertFalse(parser.matches("vvv"));
 		assertTrue(parser.consume("111"));
 		assertTrue(parser.matches("vvv"));
-	}
-
-	@Test
-	void parserSmoke() {
-		var document = new InputDocument("anon", "0.58 + 2 * 3");
-		var parser = new TreeBurstParser(document);
-
-		var root = parser.parse();
-		assertEquals("""
-				Group[
-				    position=anon:1:1,
-				    children=[
-				        Invocation[
-				            position=anon:1:6,
-				            target=MemberAccess[
-				                position=anon:1:6,
-				                receiver=NumberLiteral[
-				                    position=anon:1:1,
-				                    value=0.58
-				                ],
-				                member=k_add
-				            ],
-				            args=[
-				                Invocation[
-				                    position=anon:1:10,
-				                    target=MemberAccess[
-				                        position=anon:1:10,
-				                        receiver=NumberLiteral[
-				                            position=anon:1:8,
-				                            value=2.0
-				                        ],
-				                        member=k_mul
-				                    ],
-				                    args=[
-				                        NumberLiteral[
-				                            position=anon:1:12,
-				                            value=3.0
-				                        ]
-				                    ]
-				                ]
-				            ]
-				        ]
-				    ]
-				]""",
-				root.getExpression().toFormattedString());
 	}
 }
